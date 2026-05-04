@@ -9,6 +9,8 @@
 
 #include <vtkNew.h>
 
+#include "reportitem.h"
+
 QT_FORWARD_DECLARE_CLASS(QTableWidgetItem);
 QT_FORWARD_DECLARE_CLASS(QSettings)
 QT_FORWARD_DECLARE_CLASS(QToolBar)
@@ -53,10 +55,13 @@ QTableWidgetItem* createTableItem(QString const& text, Qt::AlignmentFlag alignme
 QDialog* showAsDialog(QWidget* pWidget, QString const& title = QString(), QWidget* pParent = nullptr, bool isModal = false);
 
 // Render
+vtkSmartPointer<vtkLookupTable> createLookupTable(Backend::Core::ReportColorMap colorMap, double lower, double upper);
 vtkSmartPointer<vtkLookupTable> buildLookupTable(vtkSmartPointer<vtkColorTransferFunction> ctf);
 vtkSmartPointer<vtkLookupTable> createCoolToWarmColorMap();
 vtkSmartPointer<vtkLookupTable> createBlueToRedColorMap();
-
+vtkSmartPointer<vtkLookupTable> createVaradisColorMap();
+vtkSmartPointer<vtkLookupTable> createJetColorMap();
+vtkSmartPointer<vtkLookupTable> createPlasmaColorMap();
 void setIsometricView(vtkSmartPointer<vtkRenderer> renderer);
 void setPlaneView(vtkSmartPointer<vtkRenderer> renderer, int dir, int sign);
 QImage getImage(vtkSmartPointer<vtkRenderWindow> renderWindow, double quality = 2.0);

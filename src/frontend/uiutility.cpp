@@ -19,8 +19,10 @@
 #include "uiconstants.h"
 #include "uiutility.h"
 
+using namespace Backend::Core;
 using namespace Eigen;
 
+// Constants
 vtkNew<vtkNamedColors> const vtkColors;
 
 namespace Frontend::Utility
@@ -202,6 +204,37 @@ QDialog* showAsDialog(QWidget* pWidget, QString const& title, QWidget* pParent, 
     return pDialog;
 }
 
+//! Create enum associated lookup table within the specified range
+vtkSmartPointer<vtkLookupTable> createLookupTable(ReportColorMap colorMap, double lower, double upper)
+{
+    vtkSmartPointer<vtkLookupTable> result;
+    switch (colorMap)
+    {
+    case ReportColorMap::kCoolToWarm:
+        result = Utility::createCoolToWarmColorMap();
+        break;
+    case ReportColorMap::kBlueToRed:
+        result = Utility::createBlueToRedColorMap();
+        break;
+    case ReportColorMap::kVaradis:
+        result = Utility::createVaradisColorMap();
+        break;
+    case ReportColorMap::kJet:
+        result = Utility::createJetColorMap();
+        break;
+    case ReportColorMap::kPlasma:
+        result = Utility::createPlasmaColorMap();
+        break;
+    default:
+        result = Utility::createCoolToWarmColorMap();
+        break;
+    }
+    result->SetRange(lower, upper);
+    result->Build();
+    return result;
+}
+
+//! Build the lookup table out of the transfer function
 vtkSmartPointer<vtkLookupTable> buildLookupTable(vtkSmartPointer<vtkColorTransferFunction> ctf)
 {
     // Constants
@@ -241,15 +274,50 @@ vtkSmartPointer<vtkLookupTable> createCoolToWarmColorMap()
 vtkSmartPointer<vtkLookupTable> createBlueToRedColorMap()
 {
     vtkNew<vtkColorTransferFunction> ctf;
-    ctf->AddRGBPoint(0.0, 0.0, 0.0, 1.0);
-    ctf->AddRGBPoint(0.3, 0.498, 1.0, 0.83);
-    ctf->AddRGBPoint(0.4, 0.0, 1.0, 1.0);
-    ctf->AddRGBPoint(0.5, 0.0, 1.0, 0.0);
-    ctf->AddRGBPoint(0.6, 1.0, 0.84, 0.0);
-    ctf->AddRGBPoint(0.7, 1.0, 0.65, 0.0);
-    ctf->AddRGBPoint(0.8, 1.0, 0.55, 0.0);
-    ctf->AddRGBPoint(0.9, 0.8627, 0.0784, 0.2353);
-    ctf->AddRGBPoint(1.0, 1.0, 0.0, 0.0);
+    ctf->SetColorSpaceToRGB();
+    ctf->AddRGBPoint(0.0, 0.0, 0.0, 1.0);  // Blue
+    ctf->AddRGBPoint(0.25, 0.0, 1.0, 1.0); // Cyan
+    ctf->AddRGBPoint(0.5, 0.0, 1.0, 0.0);  // Green
+    ctf->AddRGBPoint(0.75, 1.0, 1.0, 0.0); // Yellow
+    ctf->AddRGBPoint(1.0, 1.0, 0.0, 0.0);  // Red
+    return buildLookupTable(ctf);
+}
+
+//! Create the Varadis color map
+vtkSmartPointer<vtkLookupTable> createVaradisColorMap()
+{
+    vtkNew<vtkColorTransferFunction> ctf;
+    ctf->SetColorSpaceToRGB();
+    ctf->AddRGBPoint(0.0, 0.267, 0.005, 0.329); // Dark purple
+    ctf->AddRGBPoint(0.25, 0.229, 0.322, 0.545);
+    ctf->AddRGBPoint(0.5, 0.127, 0.566, 0.550);
+    ctf->AddRGBPoint(0.75, 0.369, 0.788, 0.382);
+    ctf->AddRGBPoint(1.0, 0.993, 0.906, 0.144); // Yellow
+    return buildLookupTable(ctf);
+}
+
+//! Create the Jet color map
+vtkSmartPointer<vtkLookupTable> createJetColorMap()
+{
+    vtkNew<vtkColorTransferFunction> ctf;
+    ctf->SetColorSpaceToRGB();
+    ctf->AddRGBPoint(0.0, 0.0, 0.0, 1.0);  // Blue
+    ctf->AddRGBPoint(0.33, 0.0, 1.0, 1.0); // Cyan
+    ctf->AddRGBPoint(0.66, 1.0, 1.0, 0.0); // Yellow
+    ctf->AddRGBPoint(1.0, 1.0, 0.0, 0.0);  // Red
+    return buildLookupTable(ctf);
+}
+
+//! Create the Plasma color map
+vtkSmartPointer<vtkLookupTable> createPlasmaColorMap()
+{
+    vtkNew<vtkColorTransferFunction> ctf;
+    ctf->SetColorSpaceToRGB();
+    ctf->AddRGBPoint(0.0, 0.05, 0.03, 0.53); // Dark purple
+    ctf->AddRGBPoint(0.25, 0.49, 0.01, 0.66);
+    ctf->AddRGBPoint(0.5, 0.76, 0.22, 0.45); // Pink
+    ctf->AddRGBPoint(0.75, 0.93, 0.57, 0.14);
+    ctf->AddRGBPoint(1.0, 0.99, 0.94, 0.20); // Yellow
     return buildLookupTable(ctf);
 }
 

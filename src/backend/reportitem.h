@@ -52,6 +52,15 @@ enum class ReportView
     kIsometric
 };
 
+enum class ReportColorMap
+{
+    kCoolToWarm,
+    kBlueToRed,
+    kVaradis,
+    kJet,
+    kPlasma
+};
+
 //! Base class for items
 class ReportItem : public ISerializable
 {
@@ -280,6 +289,7 @@ public:
     // Header
     QString unit;
     ReportView view;
+    ReportColorMap colorMap;
     double zoom;
     double scale;
     QUuid link;

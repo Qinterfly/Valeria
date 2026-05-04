@@ -250,20 +250,7 @@ void ModeReportSceneItem::initialize()
     mOverlayRenderer->SetLayer(1);
 
     // Add the axes
-    mAxes = vtkAxesActor::New();
-    vtkTextProperty* xTextProp = mAxes->GetXAxisCaptionActor2D()->GetCaptionTextProperty();
-    vtkTextProperty* yTextProp = mAxes->GetYAxisCaptionActor2D()->GetCaptionTextProperty();
-    vtkTextProperty* zTextProp = mAxes->GetZAxisCaptionActor2D()->GetCaptionTextProperty();
-    xTextProp->SetColor(vtkColors->GetColor3d("Red").GetData());
-    yTextProp->SetColor(vtkColors->GetColor3d("Green").GetData());
-    zTextProp->SetColor(vtkColors->GetColor3d("Blue").GetData());
-    xTextProp->ShadowOff();
-    yTextProp->ShadowOff();
-    zTextProp->ShadowOff();
-    xTextProp->ItalicOff();
-    yTextProp->ItalicOff();
-    zTextProp->ItalicOff();
-    mOverlayRenderer->AddActor(mAxes);
+    drawAxes();
     mOverlayRenderer->ResetCamera();
 
     // Create the window
@@ -395,10 +382,8 @@ void ModeReportSceneItem::drawDeformedState()
         return;
 
     // Create the lookup table
-    vtkSmartPointer<vtkLookupTable> lookupTable = Utility::createCoolToWarmColorMap();
     double limit = std::max(std::abs(range.first), std::abs(range.second));
-    lookupTable->SetRange(-limit, limit);
-    lookupTable->Build();
+    vtkSmartPointer<vtkLookupTable> lookupTable = Utility::createLookupTable(pItem->colorMap, -limit, limit);
 
     // Set the relative mode scale
     double scale = pItem->scale * mMaximumDimension / limit;
@@ -574,7 +559,7 @@ void ModeReportSceneItem::drawElements(vtkSmartPointer<vtkPoints> points, std::v
 void ModeReportSceneItem::drawScalarBar(vtkSmartPointer<vtkLookupTable> lookupTable)
 {
     // Constants
-    double const kWidth = 1.0 / 5.0;
+    double const kRelMaxWidth = 1.0 / 5.0;
 
     // Get the report item
     ModeReportItem* pItem = (ModeReportItem*) mpItem;
@@ -609,9 +594,10 @@ void ModeReportSceneItem::drawScalarBar(vtkSmartPointer<vtkLookupTable> lookupTa
     labelProp->BoldOff();
     labelProp->SetColor(skTextColor.GetData());
     labelProp->SetFontSize(pItem->font.pointSize());
+    scalarBar->UnconstrainedFontSizeOn();
 
     // Set the geometry
-    int maxWidth = ceil(kWidth * mRenderWindow->GetSize()[0]);
+    int maxWidth = ceil(kRelMaxWidth * mRenderWindow->GetSize()[0]);
     scalarBar->SetLookupTable(lookupTable);
     scalarBar->SetMaximumWidthInPixels(maxWidth);
     scalarBar->SetPosition(0.9, 0.05);
@@ -619,6 +605,29 @@ void ModeReportSceneItem::drawScalarBar(vtkSmartPointer<vtkLookupTable> lookupTa
 
     // Add to the scene
     mRenderer->AddViewProp(scalarBar);
+}
+
+//! Render the axes
+void ModeReportSceneItem::drawAxes()
+{
+    mAxes = vtkAxesActor::New();
+
+    // Set the text properties
+    vtkTextProperty* xTextProp = mAxes->GetXAxisCaptionActor2D()->GetCaptionTextProperty();
+    vtkTextProperty* yTextProp = mAxes->GetYAxisCaptionActor2D()->GetCaptionTextProperty();
+    vtkTextProperty* zTextProp = mAxes->GetZAxisCaptionActor2D()->GetCaptionTextProperty();
+    xTextProp->SetColor(vtkColors->GetColor3d("Red").GetData());
+    yTextProp->SetColor(vtkColors->GetColor3d("Green").GetData());
+    zTextProp->SetColor(vtkColors->GetColor3d("Blue").GetData());
+    xTextProp->ShadowOff();
+    yTextProp->ShadowOff();
+    zTextProp->ShadowOff();
+    xTextProp->ItalicOff();
+    yTextProp->ItalicOff();
+    zTextProp->ItalicOff();
+
+    // Add them to the scene
+    mOverlayRenderer->AddActor(mAxes);
 }
 
 //! Render the title

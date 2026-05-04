@@ -63,6 +63,7 @@ private:
     void drawElements(vtkSmartPointer<vtkPoints> points, std::vector<std::vector<int>> const& indices, vtkSmartPointer<vtkDoubleArray> scalars,
                       vtkSmartPointer<vtkLookupTable> lookupTable, bool isWireframe = false);
     void drawScalarBar(vtkSmartPointer<vtkLookupTable> lookupTable);
+    void drawAxes();
     void drawTitle();
 
     // Helper functions
