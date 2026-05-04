@@ -417,7 +417,7 @@ void GraphReportSceneItem::processModeshape(ResponseBundle const& bundle)
             }
 
             // Get the point coordinates
-            std::vector<double> coords = Backend::Utility::getPointCoords(mGeometry, point);
+            std::vector<double> coords = Backend::Utility::getNodeCoords(mGeometry, point.component, point.node);
             if (coords.empty())
                 continue;
 

@@ -128,30 +128,42 @@ void ModeReportSceneItem::resolveStateSlaves()
         PairString slaveKey = getKey(dependency.slave);
         if (!mState.contains(slaveKey))
             continue;
+        Vector3d slaveCoords = Utility::convert3d(Backend::Utility::getNodeCoords(mGeometry, slaveKey.first, slaveKey.second));
         Vector3d slaveValues = mState[slaveKey];
 
-        // Average the master values
-        Vector3d masterValues = Vector3d::Zero();
-        int numAvg = 0;
+        // Count the valid master nodes
         int numMasters = dependency.masters.size();
+        int numValidMasters = 0;
         for (int iMaster = 0; iMaster != numMasters; ++iMaster)
         {
             PairString masterKey = getKey(dependency.masters[iMaster]);
             if (!mState.contains(masterKey))
                 continue;
-            masterValues += mState[masterKey];
-            ++numAvg;
+            ++numValidMasters;
         }
-        if (numAvg == 0)
+        if (numValidMasters == 0)
             continue;
-        masterValues /= numAvg;
 
-        // Distribute the values
+        // Get the data of master nodes
+        int numDirs = slaveValues.size();
+        MatrixXd masterCoords(numValidMasters, numDirs);
+        MatrixXd masterValues(numValidMasters, numDirs);
+        for (int iMaster = 0; iMaster != numMasters; ++iMaster)
+        {
+            PairString masterKey = getKey(dependency.masters[iMaster]);
+            if (!mState.contains(masterKey))
+                continue;
+            masterCoords.row(iMaster) = Utility::convert3d(Backend::Utility::getNodeCoords(mGeometry, masterKey.first, masterKey.second));
+            masterValues.row(iMaster) = mState[masterKey];
+        }
+
+        // Interpolate the master values
         int numFlags = dependency.flags.size();
+        VectorXd interpValues = Backend::Utility::interpolateIDW(slaveCoords, masterCoords, masterValues);
         for (int iFlag = 0; iFlag != numFlags; ++iFlag)
         {
             if (dependency.flags[iFlag] > 0)
-                slaveValues[iFlag] = masterValues[iFlag];
+                slaveValues[iFlag] = interpValues[iFlag];
         }
 
         // Store the result

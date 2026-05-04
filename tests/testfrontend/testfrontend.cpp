@@ -107,9 +107,6 @@ void TestFrontend::setImRePage()
     // Set the title
     pTitle->text = "${MODE}\nf = ${FREQ} Гц\n${EXCITE}, F = ${FORCE} Н";
 
-    // Refresh the page
-    pDesigner->refresh();
-
     // Select the first item
     pDesigner->selectItem(0);
 }
@@ -134,9 +131,6 @@ void TestFrontend::setMultiImRePage()
 
     // Set the title
     pTitle->text = "${MODE}\n${EXCITE}\nТочка ${NODE}";
-
-    // Refresh the page
-    pDesigner->refresh();
 
     // Select the first item
     pDesigner->selectItem(0);
@@ -174,9 +168,6 @@ void TestFrontend::setFreqAmpPage()
 
     // Set the title
     pTitle->text = "${MODE}\n${EXCITE}";
-
-    // Refresh the page
-    pDesigner->refresh();
 
     // Select the first item
     pDesigner->selectItem(0);
@@ -256,6 +247,9 @@ void TestFrontend::setProjModeYPage()
 
     // Set the title
     pTitle->text = "${MODE}\n${EXCITE}";
+
+    // Select the first item
+    pDesigner->selectItem(0);
 }
 
 //! Set the three dimensional modeshape page of the report
@@ -292,12 +286,13 @@ void TestFrontend::writeDocument()
 void TestFrontend::printReport()
 {
     QString pathFile = Utility::combineFilePath(OUTPUT_DIR, "MC-21.pdf");
+    mpReportWorkspace->refresh();
     // mpReportWorkspace->printDocument(pathFile);
 }
 
 TestFrontend::~TestFrontend()
 {
-    QTest::qWait(500000);
+    QTest::qWait(50000);
     mpMainWindow->deleteLater();
 }
 

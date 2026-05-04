@@ -200,17 +200,19 @@ Testlab::Response convertAcceleration(ResponseBundle const& bundle, Testlab::Res
 }
 
 //! Find the Testlab associated node associated with the graph point
-Testlab::Node getNode(Testlab::Geometry const& geometry, Backend::Core::GraphReportPoint const& point)
+Testlab::Node getNode(Testlab::Geometry const& geometry, QString const& componentName, QString const& nodeName)
 {
-    // Loop thrgouh all the components
+    QString tName;
+
+    // Loop through all the components
     int numComponents = geometry.components.size();
     for (int iComponent = 0; iComponent != numComponents; ++iComponent)
     {
         Testlab::Component const& component = geometry.components[iComponent];
 
         // Check if the component is the same
-        QString componentName = QString::fromStdWString(component.name);
-        if (componentName != point.component)
+        tName = QString::fromStdWString(component.name);
+        if (tName != componentName)
             continue;
 
         // Loop through all the nodes
@@ -220,24 +222,24 @@ Testlab::Node getNode(Testlab::Geometry const& geometry, Backend::Core::GraphRep
             Testlab::Node const& node = component.nodes[iNode];
 
             // Check if the node is the same
-            QString nodeName = QString::fromStdWString(node.name);
-            if (nodeName == point.node)
+            tName = QString::fromStdWString(node.name);
+            if (tName == nodeName)
                 return node;
         }
     }
     return {};
 }
 
-//! Get point location
-std::vector<double> getPointCoords(Testlab::Geometry const& geometry, GraphReportPoint const& point)
+//! Get node coordinates
+std::vector<double> getNodeCoords(Testlab::Geometry const& geometry, QString const& componentName, QString const& nodeName)
 {
-    return getNode(geometry, point).coordinates;
+    return getNode(geometry, componentName, nodeName).coordinates;
 }
 
-//! Get point angles
-std::vector<double> getPointAngles(Testlab::Geometry const& geometry, GraphReportPoint const& point)
+//! Get node angles
+std::vector<double> getNodeAngles(Testlab::Geometry const& geometry, QString const& componentName, QString const& nodeName)
 {
-    return getNode(geometry, point).angles;
+    return getNode(geometry, componentName, nodeName).angles;
 }
 
 //! Project response onto the target direction
@@ -246,7 +248,7 @@ Testlab::Response projectResponse(Testlab::Response const& response, Testlab::Ge
     // Get the point angles
     QString component = QString::fromStdWString(response.header.point.component);
     QString node = QString::fromStdWString(response.header.point.node);
-    std::vector<double> angles = getPointAngles(geometry, GraphReportPoint(component, node));
+    std::vector<double> angles = getNodeAngles(geometry, component, node);
     if (angles.empty())
         return response;
 
@@ -290,7 +292,7 @@ Vector3cd projectResponse(Testlab::Response const& response, Testlab::Geometry c
     // Get the point angles
     QString component = QString::fromStdWString(response.header.point.component);
     QString node = QString::fromStdWString(response.header.point.node);
-    std::vector<double> angles = getPointAngles(geometry, GraphReportPoint(component, node));
+    std::vector<double> angles = getNodeAngles(geometry, component, node);
     if (angles.empty())
         return zero;
 
@@ -371,5 +373,38 @@ std::vector<Root> findRoots(QList<double> const& keys, QList<double> const& valu
         }
     }
     return roots;
+}
+
+//! Interpolate the data at the query point use the inverse distance weighting method
+VectorXd interpolateIDW(Eigen::VectorXd const& query, Eigen::MatrixXd const& points, Eigen::MatrixXd const& values, double power)
+{
+    if (points.size() == 0 || points.size() != values.size())
+        return {};
+    int numPoints = points.rows();
+    int numDirs = points.cols();
+    VectorXd result(numDirs);
+    for (int iDir = 0; iDir != numDirs; ++iDir)
+    {
+        double tResult = 0.0;
+        double num = 0.0;
+        double denom = 0.0;
+        for (int iPoint = 0; iPoint != numPoints; ++iPoint)
+        {
+            double value = values(iPoint, iDir);
+            double dist = (query - points.row(iPoint).transpose()).norm();
+            if (dist < skEps)
+            {
+                tResult = value;
+                break;
+            }
+            double w = 1.0 / std::pow(dist, power);
+            num += w * value;
+            denom += w;
+        }
+        if (denom > skEps)
+            tResult = num / denom;
+        result[iDir] = tResult;
+    }
+    return result;
 }
 }
