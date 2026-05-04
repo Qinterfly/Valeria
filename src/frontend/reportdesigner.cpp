@@ -488,6 +488,8 @@ void ReportDesigner::changePageOrientation()
 void ReportDesigner::setDataEditor(ReportItem* pItem)
 {
     QLayout* pDataLayout = mpDataEditorContainer->layout();
+
+    // Process the existing editor
     if (mpDataEditor)
     {
         // Set the new data if the editor has the same type
@@ -506,13 +508,20 @@ void ReportDesigner::setDataEditor(ReportItem* pItem)
     // Create the new editor, if necessary
     if (pItem)
     {
-        if (pItem->type() == ReportItem::kGraph)
+        switch (pItem->type())
         {
+        case ReportItem::kGraph:
             mpDataEditor = new GraphReportDataEditor(mpGeometryView, mScenePage);
-            connect(mpDataEditor, &ReportDataEditor::edited, this, &ReportDesigner::processItemEdited);
+            break;
+        case ReportItem::kMode:
+            mpDataEditor = new ModeReportDataEditor(mScenePage);
+            break;
+        default:
+            break;
         }
         if (mpDataEditor)
         {
+            connect(mpDataEditor, &ReportDataEditor::edited, this, &ReportDesigner::processItemEdited);
             mpDataEditor->setItemGetter(createItemGetter(pItem->id));
             pDataLayout->addWidget(mpDataEditor);
         }
@@ -815,6 +824,7 @@ void ReportDesigner::resolveItemLinks()
                 {
                     GraphReportItem* pGraphSlaveItem = (GraphReportItem*) pSlaveItem;
                     GraphReportItem* pGraphMasterItem = (GraphReportItem*) pMasterItem;
+                    pGraphSlaveItem->font = pGraphMasterItem->font;
                     pGraphSlaveItem->responseDir = pGraphMasterItem->responseDir;
                     pGraphSlaveItem->unit = pGraphMasterItem->unit;
                     pGraphSlaveItem->curves = pGraphMasterItem->curves;
@@ -824,9 +834,13 @@ void ReportDesigner::resolveItemLinks()
                 {
                     ModeReportItem* pModeSlaveItem = (ModeReportItem*) pSlaveItem;
                     ModeReportItem* pModeMasterItem = (ModeReportItem*) pMasterItem;
+                    pModeSlaveItem->font = pModeMasterItem->font;
                     pModeSlaveItem->unit = pModeMasterItem->unit;
-                    pModeSlaveItem->zoom = pModeMasterItem->zoom;
+                    pModeSlaveItem->colorMap = pModeMasterItem->colorMap;
                     pModeSlaveItem->scale = pModeMasterItem->scale;
+                    pModeSlaveItem->amplitude = pModeMasterItem->amplitude;
+                    pModeSlaveItem->phase = pModeMasterItem->phase;
+                    pModeSlaveItem->showUndeformed = pModeMasterItem->showUndeformed;
                 }
             }
         }

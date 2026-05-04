@@ -290,9 +290,9 @@ public:
     QString unit;
     ReportView view;
     ReportColorMap colorMap;
-    double zoom;
     double scale;
-    QUuid link;
+    double amplitude;
+    double phase;
 
     // Settings
     QString title;

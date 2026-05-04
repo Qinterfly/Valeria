@@ -10,6 +10,7 @@
 #include <qtvariantproperty.h>
 
 #include "constants.h"
+#include "customlineedit.h"
 #include "customplot.h"
 #include "geometryview.h"
 #include "reportdataeditor.h"
@@ -28,7 +29,12 @@ int const skCurveRole = Qt::UserRole + 1;
 int const skPointRole = skCurveRole + 1;
 
 // Helper function
-QComboBox* createDirComboBox();
+QComboBox* createDirSelector();
+QComboBox* createUnitSelector();
+QComboBox* createViewSelector();
+QComboBox* createColorMapSelector();
+void refreshUnitSelector(QComboBox* pSelector, QString const& unit);
+void refreshLinkSelector(QComboBox* pSelector, ReportPage const& page, ReportItem* pItem);
 
 ReportDataEditor::ReportDataEditor(QWidget* pParent)
     : QWidget(pParent)
@@ -94,9 +100,9 @@ QLayout* GraphReportDataEditor::createHeaderLayout()
 {
     // Create the widgets
     mpSubTypeSelector = new QComboBox;
-    mpCoordDirSelector = createDirComboBox();
-    mpResponseDirSelector = createDirComboBox();
-    mpUnitSelector = new QComboBox;
+    mpCoordDirSelector = createDirSelector();
+    mpResponseDirSelector = createDirSelector();
+    mpUnitSelector = createUnitSelector();
     mpLinkSelector = new QComboBox;
 
     // Initialize the widgets
@@ -107,13 +113,6 @@ QLayout* GraphReportDataEditor::createHeaderLayout()
     mpSubTypeSelector->addItem(tr("Multi Im"), GraphReportItem::kMultiImag);
     mpSubTypeSelector->addItem(tr("Freq Amp"), GraphReportItem::kFreqAmp);
     mpSubTypeSelector->addItem(tr("Modeshape"), GraphReportItem::kModeshape);
-    mpUnitSelector->addItem(QString());
-    mpUnitSelector->addItem(tr("m/s%1").arg(QChar(0x00B2)), Units::skM_S2);
-    mpUnitSelector->addItem(tr("(m/s%1)/N").arg(QChar(0x00B2)), Units::skM_S2_N);
-    mpUnitSelector->addItem(tr("m"), Units::skM);
-    mpUnitSelector->addItem(tr("mm/s%1").arg(QChar(0x00B2)), Units::skMM_S2);
-    mpUnitSelector->addItem(tr("(mm/s%1)/N").arg(QChar(0x00B2)), Units::skMM_S2_N);
-    mpUnitSelector->addItem(tr("mm"), Units::skMM);
 
     // Combine the widgets
     QGridLayout* pLayout = new QGridLayout;
@@ -189,17 +188,7 @@ void GraphReportDataEditor::refreshHeader()
 
     // Set the unit
     QSignalBlocker blockerUnit(mpUnitSelector);
-    int numUnits = mpUnitSelector->count();
-    int iUnit = -1;
-    for (int i = 0; i != numUnits; ++i)
-    {
-        if (mpUnitSelector->itemData(i).toString() == pItem->unit)
-        {
-            iUnit = i;
-            break;
-        }
-    }
-    mpUnitSelector->setCurrentIndex(iUnit);
+    refreshUnitSelector(mpUnitSelector, pItem->unit);
 
     // Set the coordinate direction
     QSignalBlocker blockerCoordDir(mpCoordDirSelector);
@@ -211,20 +200,7 @@ void GraphReportDataEditor::refreshHeader()
 
     // Set the link
     QSignalBlocker blockerLink(mpLinkSelector);
-    mpLinkSelector->clear();
-    int numItems = mPage.count();
-    mpLinkSelector->addItem(QString(), QUuid());
-    for (int i = 0; i != numItems; ++i)
-    {
-        ReportItem const* pAnotherItem = mPage.get(i);
-        if (pAnotherItem->type() != ReportItem::kGraph)
-            continue;
-        if (pItem->id == pAnotherItem->id)
-            continue;
-        mpLinkSelector->addItem(pAnotherItem->name, pAnotherItem->id);
-        if (pItem->link == pAnotherItem->id)
-            mpLinkSelector->setCurrentIndex(mpLinkSelector->count() - 1);
-    }
+    refreshLinkSelector(mpLinkSelector, mPage, pItem);
 }
 
 //! Update the hierarchy widgets
@@ -796,8 +772,140 @@ void ReportCurvePropertyEditor::setValue(QtProperty* pProperty, QVariant value)
     emit edited();
 }
 
+ModeReportDataEditor::ModeReportDataEditor(ReportPage const& page, QWidget* pParent)
+    : ReportDataEditor(pParent)
+    , mPage(page)
+{
+    setFont(Utility::getFont());
+    createContent();
+    createConnections();
+}
+
+//! Get the editor type
+ReportItem::Type ModeReportDataEditor::type() const
+{
+    return ReportItem::kMode;
+}
+
+//! Update the widgets content
+void ModeReportDataEditor::refresh()
+{
+    // Get the item
+    ModeReportItem* pItem = getItem();
+    if (!pItem)
+        return;
+
+    // Set the unit
+    QSignalBlocker blockerUnit(mpUnitSelector);
+    refreshUnitSelector(mpUnitSelector, pItem->unit);
+
+    // Set the view
+    QSignalBlocker blockerView(mpViewSelector);
+    Utility::setIndexByKey(mpViewSelector, (int) pItem->view);
+
+    // Set the color map
+    QSignalBlocker blockerColorMap(mpColorMapSelector);
+    Utility::setIndexByKey(mpColorMapSelector, (int) pItem->colorMap);
+
+    // Set the scale
+    QSignalBlocker blockerScale(mpScaleEdit);
+    mpScaleEdit->setValue(pItem->scale);
+
+    // Set the amplitude
+    QSignalBlocker blockerAmplitude(mpAmplitudeEdit);
+    mpAmplitudeEdit->setValue(pItem->amplitude);
+
+    // Set the phase
+    QSignalBlocker blockerPhase(mpPhaseEdit);
+    mpPhaseEdit->setValue(pItem->phase);
+
+    // Set the link
+    QSignalBlocker blockerLink(mpLinkSelector);
+    refreshLinkSelector(mpLinkSelector, mPage, pItem);
+}
+
+//! Create all the widgets
+void ModeReportDataEditor::createContent()
+{
+    // Create the widgets
+    mpUnitSelector = createUnitSelector();
+    mpViewSelector = createViewSelector();
+    mpColorMapSelector = createColorMapSelector();
+    mpScaleEdit = new Edit1d;
+    mpAmplitudeEdit = new Edit1d;
+    mpPhaseEdit = new Edit1d;
+    mpLinkSelector = new QComboBox;
+
+    // Initialize the widgets
+    mpScaleEdit->setMinimum(0.0);
+
+    // Combine the widgets
+    QGridLayout* pLayout = new QGridLayout;
+    pLayout->addWidget(new QLabel(tr("Unit: ")), 0, 0);
+    pLayout->addWidget(mpUnitSelector, 0, 1);
+    pLayout->addWidget(new QLabel(tr("View: ")), 1, 0);
+    pLayout->addWidget(mpViewSelector, 1, 1);
+    pLayout->addWidget(new QLabel(tr("Color map: ")), 2, 0);
+    pLayout->addWidget(mpColorMapSelector, 2, 1);
+    pLayout->addWidget(new QLabel(tr("Scale: ")), 3, 0);
+    pLayout->addWidget(mpScaleEdit, 3, 1);
+    pLayout->addWidget(new QLabel(tr("Amplitude: ")), 4, 0);
+    pLayout->addWidget(mpAmplitudeEdit, 4, 1);
+    pLayout->addWidget(new QLabel(tr("Phase: ")), 5, 0);
+    pLayout->addWidget(mpPhaseEdit, 5, 1);
+    pLayout->addWidget(new QLabel(tr("Link: ")), 6, 0);
+    pLayout->addWidget(mpLinkSelector, 6, 1);
+    pLayout->addItem(new QSpacerItem(1, 1, QSizePolicy::Expanding, QSizePolicy::Preferred), 0, 2);
+    pLayout->addItem(new QSpacerItem(1, 1, QSizePolicy::Preferred, QSizePolicy::Expanding), 7, 0);
+    setLayout(pLayout);
+}
+
+//! Set the widget connections
+void ModeReportDataEditor::createConnections()
+{
+    connect(mpUnitSelector, &QComboBox::currentIndexChanged, this, &ModeReportDataEditor::processChanged);
+    connect(mpViewSelector, &QComboBox::currentIndexChanged, this, &ModeReportDataEditor::processChanged);
+    connect(mpColorMapSelector, &QComboBox::currentIndexChanged, this, &ModeReportDataEditor::processChanged);
+    connect(mpScaleEdit, &Edit1d::valueChanged, this, &ModeReportDataEditor::processChanged);
+    connect(mpAmplitudeEdit, &Edit1d::valueChanged, this, &ModeReportDataEditor::processChanged);
+    connect(mpPhaseEdit, &Edit1d::valueChanged, this, &ModeReportDataEditor::processChanged);
+    connect(mpLinkSelector, &QComboBox::currentIndexChanged, this, &ModeReportDataEditor::processChanged);
+}
+
+//! Get the item of the requested type
+ModeReportItem* ModeReportDataEditor::getItem()
+{
+    if (!mItemGetter)
+        return nullptr;
+    return (ModeReportItem*) mItemGetter();
+}
+
+//! Process item data changing
+void ModeReportDataEditor::processChanged()
+{
+    // Get the item
+    ModeReportItem* pItem = getItem();
+    if (!pItem)
+        return;
+
+    // Set the item data
+    pItem->unit = mpUnitSelector->currentData().toString();
+    pItem->view = (ReportView) mpViewSelector->currentData().toInt();
+    pItem->colorMap = (ReportColorMap) mpColorMapSelector->currentData().toInt();
+    pItem->scale = mpScaleEdit->value();
+    pItem->amplitude = mpAmplitudeEdit->value();
+    pItem->phase = mpPhaseEdit->value();
+    pItem->link = mpLinkSelector->currentData().toUuid();
+
+    // Update the content
+    refresh();
+
+    // Finish up the editing
+    emit edited();
+}
+
 //! Helper function to create a combobox with predefined directions
-QComboBox* createDirComboBox()
+QComboBox* createDirSelector()
 {
     QComboBox* pResult = new QComboBox;
     pResult->setSizeAdjustPolicy(QComboBox::AdjustToContents);
@@ -806,4 +914,81 @@ QComboBox* createDirComboBox()
     pResult->addItem("Y", (int) ReportDirection::kY);
     pResult->addItem("Z", (int) ReportDirection::kZ);
     return pResult;
+}
+
+//! Helper function to create a combobox with predefined units
+QComboBox* createUnitSelector()
+{
+    QComboBox* pResult = new QComboBox;
+    pResult->addItem(QString());
+    pResult->addItem(QObject::tr("m/s%1").arg(QChar(0x00B2)), Units::skM_S2);
+    pResult->addItem(QObject::tr("(m/s%1)/N").arg(QChar(0x00B2)), Units::skM_S2_N);
+    pResult->addItem(QObject::tr("m"), Units::skM);
+    pResult->addItem(QObject::tr("mm/s%1").arg(QChar(0x00B2)), Units::skMM_S2);
+    pResult->addItem(QObject::tr("(mm/s%1)/N").arg(QChar(0x00B2)), Units::skMM_S2_N);
+    pResult->addItem(QObject::tr("mm"), Units::skMM);
+    return pResult;
+}
+
+//! Helper function to create a combobox with predefined views
+QComboBox* createViewSelector()
+{
+    QComboBox* pResult = new QComboBox;
+    pResult->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    pResult->addItem(QObject::tr("Front"), (int) ReportView::kFront);
+    pResult->addItem(QObject::tr("Rear"), (int) ReportView::kRear);
+    pResult->addItem(QObject::tr("Top"), (int) ReportView::kTop);
+    pResult->addItem(QObject::tr("Bottom"), (int) ReportView::kBottom);
+    pResult->addItem(QObject::tr("Left"), (int) ReportView::kLeft);
+    pResult->addItem(QObject::tr("Right"), (int) ReportView::kRight);
+    pResult->addItem(QObject::tr("Isometric"), (int) ReportView::kIsometric);
+    return pResult;
+}
+
+//! Helper function to create a combobox with predefined color maps
+QComboBox* createColorMapSelector()
+{
+    QComboBox* pResult = new QComboBox;
+    pResult->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    pResult->addItem(QObject::tr("Cool-warm"), (int) ReportColorMap::kCoolToWarm);
+    pResult->addItem(QObject::tr("Blue-red"), (int) ReportColorMap::kBlueToRed);
+    pResult->addItem(QObject::tr("Varadis"), (int) ReportColorMap::kVaradis);
+    pResult->addItem(QObject::tr("Jet"), (int) ReportColorMap::kJet);
+    pResult->addItem(QObject::tr("Plasma"), (int) ReportColorMap::kPlasma);
+    return pResult;
+}
+
+//! Helper function to refresh unit selector
+void refreshUnitSelector(QComboBox* pSelector, QString const& unit)
+{
+    int numUnits = pSelector->count();
+    int iUnit = -1;
+    for (int i = 0; i != numUnits; ++i)
+    {
+        if (pSelector->itemData(i).toString() == unit)
+        {
+            iUnit = i;
+            break;
+        }
+    }
+    pSelector->setCurrentIndex(iUnit);
+}
+
+//! Helper function to refresh link selector
+void refreshLinkSelector(QComboBox* pSelector, ReportPage const& page, ReportItem* pItem)
+{
+    pSelector->clear();
+    int numItems = page.count();
+    pSelector->addItem(QString(), QUuid());
+    for (int i = 0; i != numItems; ++i)
+    {
+        ReportItem const* pAnotherItem = page.get(i);
+        if (pItem->type() != pAnotherItem->type())
+            continue;
+        if (pItem->id == pAnotherItem->id)
+            continue;
+        pSelector->addItem(pAnotherItem->name, pAnotherItem->id);
+        if (pItem->link == pAnotherItem->id)
+            pSelector->setCurrentIndex(pSelector->count() - 1);
+    }
 }

@@ -67,7 +67,7 @@ private:
     void drawTitle();
 
     // Helper functions
-    vtkSmartPointer<vtkPoints> createPoints(Testlab::Component const& component, double scale = 0.0);
+    vtkSmartPointer<vtkPoints> createPoints(Testlab::Component const& component, double scale = 0.0, double phase = 0.0);
     vtkSmartPointer<vtkCellArray> createPolygons(std::vector<std::vector<int>> const& indices);
     vtkSmartPointer<vtkDoubleArray> getMagnitudes(Testlab::Component const& component);
     PairDouble getMagnitudeRange();

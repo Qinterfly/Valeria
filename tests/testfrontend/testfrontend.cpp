@@ -258,6 +258,20 @@ void TestFrontend::setProjModeYPage()
     pTitle->text = "${MODE}\n${EXCITE}";
 }
 
+//! Set the three dimensional modeshape page of the report
+void TestFrontend::setMode3DPage()
+{
+    // Get the designer
+    ReportDesigner* pDesigner = mpReportWorkspace->designer(4);
+    QVERIFY(pDesigner);
+
+    // Get the items
+    ReportPage& page = pDesigner->page();
+
+    // Select the first item
+    pDesigner->selectItem(0);
+}
+
 //! Export report to a file
 void TestFrontend::writeDocument()
 {

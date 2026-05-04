@@ -313,7 +313,7 @@ void ModeReportSceneItem::setView()
     mOverlayRenderer->GetActiveCamera()->Zoom(1.5);
 
     // Set the zoom
-    mRenderer->GetActiveCamera()->Zoom(pItem->zoom);
+    mRenderer->GetActiveCamera()->Zoom(pItem->scale);
 }
 
 //! Represent geometry
@@ -385,8 +385,9 @@ void ModeReportSceneItem::drawDeformedState()
     double limit = std::max(std::abs(range.first), std::abs(range.second));
     vtkSmartPointer<vtkLookupTable> lookupTable = Utility::createLookupTable(pItem->colorMap, -limit, limit);
 
-    // Set the relative mode scale
-    double scale = pItem->scale * mMaximumDimension / limit;
+    // Set the mode parametsr
+    double scale = pItem->amplitude * mMaximumDimension / limit;
+    double phase = pItem->phase * M_PI / 180.0;
 
     // Loop through all the components
     int numComponents = mGeometry.components.size();
@@ -395,7 +396,7 @@ void ModeReportSceneItem::drawDeformedState()
         Testlab::Component const& component = mGeometry.components[i];
 
         // Construct the vertices
-        vtkSmartPointer<vtkPoints> points = createPoints(component, scale);
+        vtkSmartPointer<vtkPoints> points = createPoints(component, scale, phase);
 
         // Compute the magnitudes
         vtkSmartPointer<vtkDoubleArray> magnitudes = getMagnitudes(component);
@@ -656,7 +657,7 @@ void ModeReportSceneItem::drawTitle()
 }
 
 //! Create points which are associated with the geometry
-vtkSmartPointer<vtkPoints> ModeReportSceneItem::createPoints(Testlab::Component const& component, double scale)
+vtkSmartPointer<vtkPoints> ModeReportSceneItem::createPoints(Testlab::Component const& component, double scale, double phase)
 {
     vtkNew<vtkPoints> points;
     QString componentName = QString::fromStdWString(component.name);
@@ -671,7 +672,7 @@ vtkSmartPointer<vtkPoints> ModeReportSceneItem::createPoints(Testlab::Component 
 
         // Apply the values
         Vector3d values = getNodeValues(componentName, nodeName);
-        position += values * scale;
+        position += values * scale * cos(phase);
 
         // Add the point
         points->InsertPoint(iNode, position[0], position[1], position[2]);

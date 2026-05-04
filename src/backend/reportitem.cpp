@@ -537,8 +537,9 @@ ModeReportItem::ModeReportItem()
     // View
     view = ReportView::kIsometric;
     colorMap = ReportColorMap::kJet;
-    zoom = 1.5;
-    scale = 0.1;
+    scale = 1.5;
+    amplitude = 0.1;
+    phase = 0.0;
 
     // Scalars
     sRange = {0.0, 0.0};
@@ -575,9 +576,9 @@ ReportItem* ModeReportItem::clone() const
     pResult->unit = unit;
     pResult->view = view;
     pResult->colorMap = colorMap;
-    pResult->zoom = zoom;
     pResult->scale = scale;
-    pResult->link = link;
+    pResult->amplitude = amplitude;
+    pResult->phase = phase;
 
     // Settings
     pResult->title = title;
@@ -606,9 +607,9 @@ QJsonObject ModeReportItem::toJson() const
     obj["unit"] = unit;
     obj["view"] = (int) view;
     obj["colorMap"] = (int) colorMap;
-    obj["zoom"] = zoom;
     obj["scale"] = scale;
-    obj["link"] = Utility::toJson(link);
+    obj["amplitude"] = amplitude;
+    obj["phase"] = phase;
 
     // Settings
     obj["title"] = title;
@@ -637,8 +638,9 @@ void ModeReportItem::fromJson(QJsonObject const& obj)
     unit = obj["unit"].toString();
     view = (ReportView) obj["view"].toInt();
     colorMap = (ReportColorMap) obj["colorMap"].toInt();
-    zoom = obj["zoom"].toDouble();
     scale = obj["scale"].toDouble();
+    amplitude = obj["amplitude"].toDouble();
+    phase = obj["phase"].toDouble();
     Utility::fromJson(link, obj["link"]);
 
     // Settings
