@@ -100,14 +100,17 @@ void CustomTable::pasteSelection()
 {
     // Retrieve the selection
     QModelIndexList indices = selectionModel()->selectedIndexes();
-    if (indices.isEmpty())
-        return;
 
     // Sort the indices and take the first one as the start
-    std::sort(indices.begin(), indices.end());
-    QModelIndex startIndex = indices.first();
-    uint iStartRow = startIndex.row();
-    uint iStartColumn = startIndex.column();
+    uint iStartRow = 0;
+    uint iStartColumn = 0;
+    if (!indices.isEmpty())
+    {
+        std::sort(indices.begin(), indices.end());
+        QModelIndex startIndex = indices.first();
+        iStartRow = startIndex.row();
+        iStartColumn = startIndex.column();
+    }
 
     // Retrieve the clipboard data
     QString selectionText = QApplication::clipboard()->text();
@@ -146,6 +149,9 @@ void CustomTable::pasteSelection()
                 setItem(iRow, iColumn, Utility::createTableItem(itemText));
         }
     }
+
+    // Finish up the editing
+    emit pasted();
 }
 
 //! Clear selected data

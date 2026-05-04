@@ -18,6 +18,9 @@ public:
     QStringList horizontalHeaderLabels();
     void setDataAlignment(Qt::Alignment alignment);
 
+signals:
+    void pasted();
+
 private:
     void createActions();
     void copySelection();

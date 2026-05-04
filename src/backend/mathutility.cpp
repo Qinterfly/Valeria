@@ -290,16 +290,18 @@ Vector3cd projectResponse(Testlab::Response const& response, Testlab::Geometry c
         return zero;
 
     // Get the point angles
-    QString component = QString::fromStdWString(response.header.point.component);
-    QString node = QString::fromStdWString(response.header.point.node);
+    Testlab::ResponsePoint const& point = response.header.point;
+    QString component = QString::fromStdWString(point.component);
+    QString node = QString::fromStdWString(point.node);
     std::vector<double> angles = getNodeAngles(geometry, component, node);
     if (angles.empty())
         return zero;
 
-    // Slice the directions
-    int iRespDir = (int) response.header.point.direction - 1;
-    if (iRespDir < 0)
+    // Create the directional vector
+    int iDir = (int) point.direction - 1;
+    if (iDir < 0)
         return zero;
+    Vector3d dir = point.sign * Vector3d::Unit(iDir);
 
     // Construct the transformation matrix
     AngleAxisd rotX(angles[2], Vector3d::UnitX()); // YZ
@@ -307,7 +309,7 @@ Vector3cd projectResponse(Testlab::Response const& response, Testlab::Geometry c
     AngleAxisd rotZ(angles[0], Vector3d::UnitZ()); // XY
     Quaterniond q = rotX * rotY * rotZ;
     Matrix3d transform = q.toRotationMatrix();
-    Vector3d proj = transform * Vector3d::Unit(iRespDir);
+    Vector3d proj = transform * dir;
 
     // Multiply the projection
     std::complex<double> value(response.realValues[iKey], response.imagValues[iKey]);

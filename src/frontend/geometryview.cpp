@@ -1,4 +1,5 @@
 #include <QColorDialog>
+#include <QHeaderView>
 #include <QLabel>
 #include <QListWidget>
 #include <QToolBar>
@@ -24,12 +25,15 @@
 #include <vtkRenderer.h>
 #include <vtkTextProperty.h>
 
+#include "customtable.h"
 #include "geometryview.h"
 #include "mathutility.h"
+#include "uiconstants.h"
 #include "uiutility.h"
 
 using namespace Frontend;
 using namespace Eigen;
+using namespace Constants;
 
 // Macros
 vtkStandardNewMacro(GeometryInteractorStyle);
@@ -147,6 +151,11 @@ Testlab::Geometry const& GeometryView::getGeometry() const
     return mGeometry;
 }
 
+GeometryDependencyEditor* GeometryView::dependencyEditor()
+{
+    return mpDependencyEditor;
+}
+
 void GeometryView::clearSelection()
 {
     mStyle->deselectAll();
@@ -231,7 +240,8 @@ void GeometryView::createContent()
     QVBoxLayout* pLayout = new QVBoxLayout;
 
     // Create the editor
-    mpEditor = new GeometryViewEditor(mGeometry, mOptions, this);
+    mpViewEditor = new GeometryViewEditor(mGeometry, mOptions, this);
+    mpDependencyEditor = new GeometryDependencyEditor(mGeometry, this);
 
     // Create the VTK widget
     mRenderWidget = new QVTKOpenGLNativeWidget(this);
@@ -267,6 +277,7 @@ void GeometryView::createContent()
 
     // Create the editor actions
     QAction* pViewEditorAction = new QAction(QIcon(":/icons/edit-view.png"), tr("Edit view options"), this);
+    QAction* pDependencyEditorAction = new QAction(QIcon(":/icons/edit-dependency.svg"), tr("Edit dependencies"), this);
 
     // Create the view actions
     QAction* pIsometricViewAction = createViewAction(QIcon(":/icons/draw-isometric.svg"), tr("Show isometric view"));
@@ -286,11 +297,23 @@ void GeometryView::createContent()
     QAction* pWireframeAction = createShowAction(QIcon(":/icons/draw-wireframe.svg"), tr("Show wireframe"), mOptions.showWireframe);
 
     // Create the connections
-    connect(pViewEditorAction, &QAction::triggered, this, &GeometryView::showViewEditor);
+    connect(pViewEditorAction, &QAction::triggered, this,
+            [this]()
+            {
+                mpViewEditor->refresh();
+                showWidgetAtCenter(mpViewEditor);
+            });
+    connect(pDependencyEditorAction, &QAction::triggered, this,
+            [this]()
+            {
+                mpDependencyEditor->refresh();
+                showWidgetAtCenter(mpDependencyEditor);
+            });
 
     // Create the toolbar
     QToolBar* pToolBar = new QToolBar;
     pToolBar->addAction(pViewEditorAction);
+    pToolBar->addAction(pDependencyEditorAction);
     pToolBar->addSeparator();
     pToolBar->addAction(pIsometricViewAction);
     pToolBar->addAction(pFrontViewAction);
@@ -317,8 +340,7 @@ void GeometryView::createContent()
 //! Specify the connections between widgets
 void GeometryView::createConnections()
 {
-    // Editor
-    connect(mpEditor, &GeometryViewEditor::edited, this, &GeometryView::plot);
+    connect(mpViewEditor, &GeometryViewEditor::edited, this, &GeometryView::plot);
 }
 
 //! Represent geometry
@@ -518,20 +540,17 @@ vtkSmartPointer<vtkCellArray> GeometryView::createPolygons(std::vector<std::vect
     return polygons;
 }
 
-//! Represent a widget to change view properties
-void GeometryView::showViewEditor()
+//! Show the widget at the center
+void GeometryView::showWidgetAtCenter(QWidget* pWidget)
 {
-    // Refresh the editor
-    mpEditor->refresh();
+    // Show the widget
+    pWidget->show();
+    pWidget->raise();
+    pWidget->activateWindow();
 
-    // Show the dialog window
-    mpEditor->show();
-    mpEditor->raise();
-    mpEditor->activateWindow();
-
-    // Position the dialog on the screen
+    // Position the widget on the screen
     QPoint center = mapToGlobal(rect().center());
-    mpEditor->move(center.x() - mpEditor->width() / 2, center.y() - mpEditor->height() / 2);
+    pWidget->move(center.x() - pWidget->width() / 2, center.y() - pWidget->height() / 2);
 }
 
 GeometryViewEditor::GeometryViewEditor(Testlab::Geometry const& geometry, GeometryViewOptions& options, QWidget* pParent)
@@ -635,6 +654,158 @@ void GeometryViewEditor::processComponentDoubleClicked(QListWidgetItem* pItem)
 
     // Finish up the editing process
     emit edited();
+}
+
+GeometryDependencyEditor::GeometryDependencyEditor(Testlab::Geometry& geometry, QWidget* pParent)
+    : QDialog(pParent)
+    , mGeometry(geometry)
+{
+    setFont(Utility::getFont());
+    setWindowTitle(tr("Dependency Editor"));
+    createContent();
+    connect(mpTable, &CustomTable::pasted, this, &GeometryDependencyEditor::setData);
+}
+
+QSize GeometryDependencyEditor::sizeHint() const
+{
+    return QSize(600, 600);
+}
+
+//! Update the widgets content
+void GeometryDependencyEditor::refresh()
+{
+    // Constants
+    int const kNumCols = 8;
+    QStringList const kLabels = {"Slave", "X", "Y", "Z", "Master 1", "Master 2", "Master 3", "Master 4"};
+
+    // Set the table dimensions
+    QSignalBlocker blocker(mpTable);
+    mpTable->clear();
+    std::vector<Testlab::Dependency> const& dependencies = mGeometry.dependencies;
+    int numDependencies = dependencies.size();
+    mpTable->setRowCount(numDependencies);
+    mpTable->setColumnCount(kNumCols);
+    mpTable->setHorizontalHeaderLabels(kLabels);
+
+    // Set the dependencies
+    for (int iDepend = 0; iDepend != numDependencies; ++iDepend)
+    {
+        Testlab::Dependency const& dependency = dependencies[iDepend];
+
+        // Slave
+        QTableWidgetItem* pSlaveItem = Utility::createTableItem(QString::fromStdWString(dependency.slave));
+        mpTable->setItem(iDepend, 0, pSlaveItem);
+
+        // Flags
+        int numFlags = dependency.flags.size();
+        for (int iFlag = 0; iFlag != numFlags; ++iFlag)
+        {
+            QTableWidgetItem* pFlagItem = Utility::createTableItem(getFlagLabel(dependency.flags[iFlag]));
+            mpTable->setItem(iDepend, 1 + iFlag, pFlagItem);
+        }
+
+        // Masters
+        int numMasters = dependency.masters.size();
+        for (int iMaster = 0; iMaster != numMasters; ++iMaster)
+        {
+            QTableWidgetItem* pMasterItem = Utility::createTableItem(QString::fromStdWString(dependency.masters[iMaster]));
+            mpTable->setItem(iDepend, 4 + iMaster, pMasterItem);
+        }
+    }
+}
+
+//! Remove all the dependencies
+void GeometryDependencyEditor::clear()
+{
+    mGeometry.dependencies.clear();
+    refresh();
+    emit edited();
+}
+
+//! Create all the widgets
+void GeometryDependencyEditor::createContent()
+{
+    // Create the actions
+    QToolBar* pToolBar = new QToolBar;
+    pToolBar->addAction(QIcon(":/icons/edit-remove.svg"), tr("Clear"), this, &GeometryDependencyEditor::clear);
+    pToolBar->setIconSize(Size::skToolBarIcon);
+
+    // Create the widgets
+    mpTable = new CustomTable;
+    mpTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    mpTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+    // Combine the widgets
+    QVBoxLayout* pLayout = new QVBoxLayout;
+    pLayout->addWidget(pToolBar);
+    pLayout->addWidget(mpTable);
+    setLayout(pLayout);
+}
+
+//! Set the dependencies from the editor
+void GeometryDependencyEditor::setData()
+{
+    // Constants
+    int const kNumCols = 8;
+    int const kNumFlags = 3;
+    int const kNumMasters = 4;
+
+    // Get the tabular dimensions
+    int numRows = mpTable->rowCount();
+    int numCols = mpTable->columnCount();
+    if (numCols != kNumCols)
+    {
+        qWarning() << tr("Dependency set is not valid");
+        refresh();
+        return;
+    }
+
+    // Set the dependencies
+    std::vector<Testlab::Dependency>& dependencies = mGeometry.dependencies;
+    dependencies.resize(numRows, Testlab::Dependency());
+    for (int iDepend = 0; iDepend != numRows; ++iDepend)
+    {
+        Testlab::Dependency& dependency = dependencies[iDepend];
+
+        // Slave
+        QTableWidgetItem* pSlaveItem = mpTable->item(iDepend, 0);
+        if (pSlaveItem)
+            dependency.slave = pSlaveItem->text().toStdWString();
+
+        // Flags
+        dependency.flags.resize(kNumFlags);
+        for (int iFlag = 0; iFlag != kNumFlags; ++iFlag)
+        {
+            QTableWidgetItem* pFlagItem = mpTable->item(iDepend, 1 + iFlag);
+            if (pFlagItem)
+                dependency.flags[iFlag] = getFlagValue(pFlagItem->text());
+        }
+
+        // Masters
+        dependency.masters.resize(kNumMasters);
+        for (int iMaster = 0; iMaster != kNumMasters; ++iMaster)
+        {
+            QTableWidgetItem* pMasterItem = mpTable->item(iDepend, 4 + iMaster);
+            if (pMasterItem)
+                dependency.masters[iMaster] = pMasterItem->text().toStdWString();
+        }
+    }
+
+    // Finish up the editing
+    qInfo() << tr("Geometry dependencies edited");
+    emit edited();
+}
+
+//! Convert an integer to a Testlab text flag
+QString GeometryDependencyEditor::getFlagLabel(int value)
+{
+    return value > 0 ? "TRUE" : "FALSE";
+}
+
+//! Convert a Testlab flag to an integer value
+int GeometryDependencyEditor::getFlagValue(QString const& label)
+{
+    return label == "TRUE";
 }
 
 GeometrySelection::GeometrySelection()

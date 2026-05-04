@@ -10,6 +10,7 @@
 
 #include "config.h"
 #include "customstatusbar.h"
+#include "geometryview.h"
 #include "mainwindow.h"
 #include "reportworkspace.h"
 #include "sessioneditor.h"
@@ -100,6 +101,9 @@ void MainWindow::createContent()
 //! Connect the widgets between each other
 void MainWindow::createConnections()
 {
+    // Dependency editor
+    connect(mpSessionEditor->geometryView()->dependencyEditor(), &GeometryDependencyEditor::edited, mpReportWorkspace, &ReportWorkspace::refresh);
+
     // Response editor
     connect(mpSessionEditor->responseEditor(), &ResponseEditor::edited, mpReportWorkspace, &ReportWorkspace::refresh);
     connect(mpSessionEditor->responseEditor(), &ResponseEditor::selected, mpReportWorkspace, &ReportWorkspace::refresh);

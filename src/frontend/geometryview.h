@@ -24,6 +24,8 @@ QT_FORWARD_DECLARE_CLASS(QListWidgetItem)
 namespace Frontend
 {
 
+class CustomTable;
+
 struct GeometrySelection
 {
     GeometrySelection();
@@ -146,6 +148,35 @@ private:
     QListWidget* mpComponentList;
 };
 
+//! Class to edit dependencies
+class GeometryDependencyEditor : public QDialog
+{
+    Q_OBJECT
+
+public:
+    GeometryDependencyEditor(Testlab::Geometry& geometry, QWidget* pParent = nullptr);
+    ~GeometryDependencyEditor() = default;
+
+    QSize sizeHint() const override;
+
+    void refresh();
+    void clear();
+
+signals:
+    void edited();
+
+private:
+    void createContent();
+    void setData();
+
+    QString getFlagLabel(int value);
+    int getFlagValue(QString const& label);
+
+private:
+    Testlab::Geometry& mGeometry;
+    CustomTable* mpTable;
+};
+
 //! Class to plot a Testlab geometry
 class GeometryView : public QWidget
 {
@@ -163,6 +194,7 @@ public:
     QList<GeometrySelection> selections() const;
     QList<QPair<QString, QString>> selectionPairs() const;
     Testlab::Geometry const& getGeometry() const;
+    GeometryDependencyEditor* dependencyEditor();
 
     void clearSelection();
     bool addSelection(QString const& componentName, QString const& nodeName);
@@ -184,13 +216,14 @@ private:
     vtkSmartPointer<vtkPoints> createPoints(std::vector<Testlab::Node> const& nodes);
     vtkSmartPointer<vtkCellArray> createPolygons(std::vector<std::vector<int>> const& indices);
 
-    // Widgets
-    void showViewEditor();
+    // Slots
+    void showWidgetAtCenter(QWidget* pWidget);
 
 private:
     Testlab::Geometry mGeometry;
     GeometryViewOptions mOptions;
-    GeometryViewEditor* mpEditor;
+    GeometryViewEditor* mpViewEditor;
+    GeometryDependencyEditor* mpDependencyEditor;
     QVTKOpenGLNativeWidget* mRenderWidget;
     vtkSmartPointer<vtkRenderWindow> mRenderWindow;
     vtkSmartPointer<vtkRenderer> mRenderer;
@@ -198,7 +231,6 @@ private:
     vtkSmartPointer<GeometryInteractorStyle> mStyle;
     double mMaximumDimension;
 };
-
 }
 
 #endif // GEOMETRYVIEW_H
