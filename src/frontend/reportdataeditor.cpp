@@ -219,7 +219,7 @@ void GraphReportDataEditor::refreshTree()
     int numCurves = pItem->curves.size();
     for (int iCurve = 0; iCurve != numCurves; ++iCurve)
     {
-        GraphReportCurve const& curve = pItem->curves[iCurve];
+        ReportCurve const& curve = pItem->curves[iCurve];
         QTreeWidgetItem* pCurveItem = new QTreeWidgetItem;
         pCurveItem->setFont(0, font());
 
@@ -276,7 +276,7 @@ void GraphReportDataEditor::closeCurveEditor()
 void GraphReportDataEditor::addCurve()
 {
     // Constants
-    QList<GraphReportCurve> const kDefaultCurves = ReportDefaults::curves();
+    QList<ReportCurve> const kDefaultCurves = ReportDefaults::curves();
 
     // Get the item
     GraphReportItem* pItem = getItem();
@@ -284,10 +284,10 @@ void GraphReportDataEditor::addCurve()
         return;
 
     // Helper function
-    auto createCurve = [pItem, &kDefaultCurves](QList<GraphReportPoint> const& points)
+    auto createCurve = [pItem, &kDefaultCurves](QList<ReportPoint> const& points)
     {
         int iDefaultCurve = Utility::getRepeatedIndex(pItem->curves.count(), kDefaultCurves.size());
-        GraphReportCurve curve = kDefaultCurves[iDefaultCurve];
+        ReportCurve curve = kDefaultCurves[iDefaultCurve];
         if (points.size() == 1)
             curve.name = points.first().name();
         else
@@ -297,7 +297,7 @@ void GraphReportDataEditor::addCurve()
     };
 
     // Add the curve
-    QList<GraphReportPoint> selectedPoints = getSelectedPoints();
+    QList<ReportPoint> selectedPoints = getSelectedPoints();
     if (!selectedPoints.isEmpty())
     {
         if (pItem->isMultiPointCurve())
@@ -306,7 +306,7 @@ void GraphReportDataEditor::addCurve()
         }
         else
         {
-            for (GraphReportPoint const& p : std::as_const(selectedPoints))
+            for (ReportPoint const& p : std::as_const(selectedPoints))
                 createCurve({p});
         }
         qInfo() << tr("Curve consisted of %1 points is added").arg(selectedPoints.size());
@@ -337,7 +337,7 @@ void GraphReportDataEditor::editSelected()
 
     // Show the editor
     ReportCurveGetter curveGetter = createCurveGetter(iCurve);
-    GraphReportCurve* pCurve = curveGetter();
+    ReportCurve* pCurve = curveGetter();
     if (iPoint < 0)
     {
         mpCurveEditor->setCurveGetter(curveGetter);
@@ -346,11 +346,11 @@ void GraphReportDataEditor::editSelected()
     else if (pCurve && iPoint < pCurve->points.size())
     {
         bool isOk;
-        GraphReportPoint& point = pCurve->points[iPoint];
+        ReportPoint& point = pCurve->points[iPoint];
         QString name = QInputDialog::getText(this, tr("Change point"), tr("New point: "), QLineEdit::Normal, point.name(), &isOk);
         if (isOk)
         {
-            point = GraphReportPoint(name);
+            point = ReportPoint(name);
             if (pCurve->points.size() == 1)
                 pCurve->name = name;
             refreshTree();
@@ -380,16 +380,16 @@ void GraphReportDataEditor::replaceSelectedCurve()
         return;
 
     // Replace the current curve
-    QList<GraphReportPoint> selectedPoints = getSelectedPoints();
+    QList<ReportPoint> selectedPoints = getSelectedPoints();
     if (iCurve >= 0 && iCurve < pItem->curves.size())
     {
         if (!selectedPoints.isEmpty())
         {
-            GraphReportCurve curve;
+            ReportCurve curve;
             if (pItem->isMultiPointCurve())
-                curve = GraphReportCurve(selectedPoints);
+                curve = ReportCurve(selectedPoints);
             else
-                curve = GraphReportCurve({selectedPoints.first()});
+                curve = ReportCurve({selectedPoints.first()});
             pItem->curves[iCurve].points = curve.points;
             qInfo() << tr("Curve is replaced");
         }
@@ -468,15 +468,15 @@ void GraphReportDataEditor::removeAllCurves()
 }
 
 //! Retrieve the selected points from the geometry view
-QList<GraphReportPoint> GraphReportDataEditor::getSelectedPoints()
+QList<ReportPoint> GraphReportDataEditor::getSelectedPoints()
 {
     auto selections = mpGeometryView->selectionPairs();
     int numSelections = selections.size();
-    QList<GraphReportPoint> result(numSelections);
+    QList<ReportPoint> result(numSelections);
     for (int i = 0; i != numSelections; ++i)
     {
         auto selection = selections[i];
-        result[i] = GraphReportPoint(selection.first, selection.second);
+        result[i] = ReportPoint(selection.first, selection.second);
     }
     return result;
 }
@@ -496,7 +496,7 @@ void GraphReportDataEditor::processTreeSelected()
     auto [iCurve, iPoint] = getTreeSelected();
     if (iCurve >= 0 && iCurve < pItem->curves.size())
     {
-        GraphReportCurve const& curve = pItem->curves[iCurve];
+        ReportCurve const& curve = pItem->curves[iCurve];
         if (curve.isEmpty())
             return;
         int numPoints = curve.points.size();
@@ -506,13 +506,13 @@ void GraphReportDataEditor::processTreeSelected()
         {
             for (int i = 0; i != numPoints; ++i)
             {
-                GraphReportPoint const& point = curve.points[i];
+                ReportPoint const& point = curve.points[i];
                 mpGeometryView->addSelection(point.component, point.node);
             }
         }
         else
         {
-            GraphReportPoint const& point = curve.points[iPoint];
+            ReportPoint const& point = curve.points[iPoint];
             mpGeometryView->addSelection(point.component, point.node);
         }
         mpGeometryView->refresh();
@@ -600,7 +600,7 @@ ReportCurveGetter GraphReportDataEditor::createCurveGetter(int iCurve)
         GraphReportItem* pItem = getItem();
         if (pItem && iCurve >= 0 && iCurve < pItem->curves.size())
             return &pItem->curves[iCurve];
-        return (GraphReportCurve*) nullptr;
+        return (ReportCurve*) nullptr;
     };
 }
 
@@ -673,7 +673,7 @@ void ReportCurvePropertyEditor::createProperties()
     // Get the curve
     if (!mCurveGetter)
         return;
-    GraphReportCurve* pCurve = mCurveGetter();
+    ReportCurve* pCurve = mCurveGetter();
     if (!pCurve)
         return;
 
@@ -730,7 +730,7 @@ void ReportCurvePropertyEditor::setValue(QtProperty* pProperty, QVariant value)
     // Get the curve
     if (!mCurveGetter)
         return;
-    GraphReportCurve* pCurve = mCurveGetter();
+    ReportCurve* pCurve = mCurveGetter();
     if (!pCurve)
         return;
 

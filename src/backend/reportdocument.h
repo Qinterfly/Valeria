@@ -10,7 +10,7 @@ namespace Backend::Core
 {
 
 class ReportItem;
-class GraphReportCurve;
+class ReportCurve;
 
 //! Class to define report page layout
 class ReportPage : public ISerializable

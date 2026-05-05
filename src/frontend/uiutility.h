@@ -9,7 +9,7 @@
 
 #include <vtkNew.h>
 
-#include "reportitem.h"
+#include "reportcommon.h"
 
 QT_FORWARD_DECLARE_CLASS(QTableWidgetItem);
 QT_FORWARD_DECLARE_CLASS(QSettings)
@@ -47,7 +47,6 @@ QString getLastPathFile(QSettings const& settings);
 void setLastPathFile(QSettings& settings, QString const& pathFile);
 
 // Widgets
-Eigen::Vector3d convert3d(std::vector<double> const& data);
 void setIndexByKey(QComboBox* pComboBox, int key);
 QTableWidgetItem* createTableItem(double value, Qt::AlignmentFlag alignment = Qt::AlignCenter);
 QTableWidgetItem* createTableItem(std::vector<double> const& values, Qt::AlignmentFlag alignment = Qt::AlignCenter);
@@ -62,6 +61,7 @@ vtkSmartPointer<vtkLookupTable> createBlueToRedColorMap();
 vtkSmartPointer<vtkLookupTable> createVaradisColorMap();
 vtkSmartPointer<vtkLookupTable> createJetColorMap();
 vtkSmartPointer<vtkLookupTable> createPlasmaColorMap();
+void setView(Backend::Core::ReportView view, double scale, vtkSmartPointer<vtkRenderer> renderer, vtkSmartPointer<vtkRenderer> overlayRenderer);
 void setIsometricView(vtkSmartPointer<vtkRenderer> renderer);
 void setPlaneView(vtkSmartPointer<vtkRenderer> renderer, int dir, int sign);
 QImage getImage(vtkSmartPointer<vtkRenderWindow> renderWindow, double quality = 2.0);

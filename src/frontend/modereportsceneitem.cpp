@@ -32,13 +32,8 @@ using namespace Eigen;
 
 // Constants
 vtkNew<vtkNamedColors> const vtkColors;
-
-// Constants
 static double const skEps = std::numeric_limits<double>::epsilon();
 static vtkColor3d const skTextColor = vtkColors->GetColor3d("Black");
-
-// Helper functions
-PairString getKey(std::wstring const& name);
 
 ModeReportSceneItem::ModeReportSceneItem(ModeReportItem* pItem, ReportTextEngine& textEngine, ResponseCollection const& collection,
                                          int iSelectedBundle, Testlab::Geometry const& geometry, QGraphicsItem* pParent)
@@ -83,92 +78,10 @@ void ModeReportSceneItem::setState()
     mTextEngine.setVariable("unit", pItem->unit);
 
     // Set the vertex field
-    int numResponses = bundle.responses.size();
-    int iFound = -1;
-    for (int i = 0; i != numResponses; ++i)
-    {
-        // Retrieve the acceleration which has the requested units
-        Testlab::Response const& response = bundle.responses[i];
-        if (response.header.type != Testlab::ResponseType::kAccel)
-            continue;
-        Testlab::Response accel = Backend::Utility::convertAcceleration(bundle, response, pItem->unit);
-        int numKeys = accel.keys.size();
-        if (numKeys == 0)
-            continue;
-
-        // Find the closest frequency to the resonance one
-        if (iFound < 0 || iFound > numKeys)
-            iFound = Backend::Utility::findClosestKey(accel, bundle.freq);
-        if (iFound < 0)
-            continue;
-
-        // Set the field value
-        QString componentName = QString::fromStdWString(accel.header.point.component);
-        QString nodeName = QString::fromStdWString(accel.header.point.node);
-        Vector3d value = Backend::Utility::projectResponse(accel, mGeometry, iFound).imag();
-        PairString key(componentName, nodeName);
-        if (!mState.contains(key))
-            mState[key] = Vector3d::Zero();
-        mState[key] += value;
-    }
+    mState = Backend::Utility::getGeometryState(pItem->unit, bundle, mGeometry);
 
     // Resolve the depenedencies
-    resolveStateSlaves();
-}
-
-//! Resolve dependencies between state values
-void ModeReportSceneItem::resolveStateSlaves()
-{
-    int numSlaves = mGeometry.dependencies.size();
-    for (int iSlave = 0; iSlave != numSlaves; ++iSlave)
-    {
-        Testlab::Dependency const& dependency = mGeometry.dependencies[iSlave];
-
-        // Get the slave
-        PairString slaveKey = getKey(dependency.slave);
-        if (!mState.contains(slaveKey))
-            continue;
-        Vector3d slaveCoords = Utility::convert3d(Backend::Utility::getNodeCoords(mGeometry, slaveKey.first, slaveKey.second));
-        Vector3d slaveValues = mState[slaveKey];
-
-        // Count the valid master nodes
-        int numMasters = dependency.masters.size();
-        int numValidMasters = 0;
-        for (int iMaster = 0; iMaster != numMasters; ++iMaster)
-        {
-            PairString masterKey = getKey(dependency.masters[iMaster]);
-            if (!mState.contains(masterKey))
-                continue;
-            ++numValidMasters;
-        }
-        if (numValidMasters == 0)
-            continue;
-
-        // Get the data of master nodes
-        int numDirs = slaveValues.size();
-        MatrixXd masterCoords(numValidMasters, numDirs);
-        MatrixXd masterValues(numValidMasters, numDirs);
-        for (int iMaster = 0; iMaster != numMasters; ++iMaster)
-        {
-            PairString masterKey = getKey(dependency.masters[iMaster]);
-            if (!mState.contains(masterKey))
-                continue;
-            masterCoords.row(iMaster) = Utility::convert3d(Backend::Utility::getNodeCoords(mGeometry, masterKey.first, masterKey.second));
-            masterValues.row(iMaster) = mState[masterKey];
-        }
-
-        // Interpolate the master values
-        int numFlags = dependency.flags.size();
-        VectorXd interpValues = Backend::Utility::interpolateIDW(slaveCoords, masterCoords, masterValues);
-        for (int iFlag = 0; iFlag != numFlags; ++iFlag)
-        {
-            if (dependency.flags[iFlag] > 0)
-                slaveValues[iFlag] = interpValues[iFlag];
-        }
-
-        // Store the result
-        mState[slaveKey] = slaveValues;
-    }
+    Backend::Utility::resolveGeometryStateSlaves(mState, mGeometry);
 }
 
 //! Clean up the scene
@@ -281,51 +194,7 @@ void ModeReportSceneItem::initialize()
 void ModeReportSceneItem::setView()
 {
     ModeReportItem* pItem = (ModeReportItem*) mpItem;
-
-    // Set the camera position
-    switch (pItem->view)
-    {
-    case ReportView::kFront:
-        Utility::setPlaneView(mRenderer, 0, 1);
-        break;
-    case ReportView::kRear:
-        Utility::setPlaneView(mRenderer, 0, -1);
-        break;
-    case ReportView::kTop:
-        Utility::setPlaneView(mRenderer, 1, 1);
-        break;
-    case ReportView::kBottom:
-        Utility::setPlaneView(mRenderer, 1, -1);
-        break;
-    case ReportView::kLeft:
-        Utility::setPlaneView(mRenderer, 2, 1);
-        break;
-    case ReportView::kRight:
-        Utility::setPlaneView(mRenderer, 2, -1);
-        break;
-    case ReportView::kIsometric:
-        Utility::setIsometricView(mRenderer);
-        break;
-    default:
-        break;
-    }
-
-    // Copy the view to the overlay
-    double position[3];
-    double viewUp[3];
-    mRenderer->GetActiveCamera()->GetPosition(position);
-    mRenderer->GetActiveCamera()->GetViewUp(viewUp);
-    mOverlayRenderer->GetActiveCamera()->ParallelProjectionOn();
-    mOverlayRenderer->GetActiveCamera()->SetPosition(position[0], position[1], position[2]);
-    mOverlayRenderer->GetActiveCamera()->SetFocalPoint(0, 0, 0);
-    mOverlayRenderer->GetActiveCamera()->SetViewUp(viewUp);
-    mOverlayRenderer->ResetCamera();
-
-    // Fit the camera view
-    mOverlayRenderer->GetActiveCamera()->Zoom(1.5);
-
-    // Set the zoom
-    mRenderer->GetActiveCamera()->Zoom(pItem->scale);
+    Utility::setView(pItem->view, pItem->scale, mRenderer, mOverlayRenderer);
 }
 
 //! Represent geometry
@@ -680,7 +549,7 @@ vtkSmartPointer<vtkPoints> ModeReportSceneItem::createPoints(Testlab::Component 
         QString nodeName = QString::fromStdWString(node.name);
 
         // Get the nodal position
-        Vector3d position = Utility::convert3d(node.coordinates);
+        Vector3d position = Backend::Utility::convert3d(node.coordinates);
 
         // Apply the values
         Vector3d values = getNodeValues(componentName, nodeName);
@@ -770,19 +639,8 @@ PairDouble ModeReportSceneItem::getMagnitudeRange()
 Eigen::Vector3d ModeReportSceneItem::getNodeValues(QString const& componentName, QString const& nodeName)
 {
     Vector3d result = Vector3d::Zero();
-    PairString key(componentName, nodeName);
-    if (mState.contains(key))
-        result = mState[key];
+    ReportPoint point(componentName, nodeName);
+    if (mState.contains(point))
+        result = mState[point];
     return result;
-}
-
-//! Helper functin to get key out of full node name
-PairString getKey(std::wstring const& name)
-{
-    PairString result;
-    QString text = QString::fromStdWString(name);
-    QStringList tokens = text.split(':');
-    if (tokens.size() == 2)
-        return {tokens[0], tokens[1]};
-    return {QString(), text};
 }

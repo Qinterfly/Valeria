@@ -63,7 +63,7 @@ public:
     void replaceSelectedCurve();
     void removeSelected();
     void removeAllCurves();
-    QList<Backend::Core::GraphReportPoint> getSelectedPoints();
+    QList<Backend::Core::ReportPoint> getSelectedPoints();
 
 private:
     void createContent();

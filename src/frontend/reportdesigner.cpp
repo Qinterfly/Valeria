@@ -14,6 +14,7 @@
 
 #include "constants.h"
 #include "customtabwidget.h"
+#include "diagramreportsceneitem.h"
 #include "geometryview.h"
 #include "graphreportsceneitem.h"
 #include "modereportsceneitem.h"
@@ -204,6 +205,10 @@ void ReportDesigner::drawItems()
             pSceneItem = new ModeReportSceneItem((ModeReportItem*) pReportItem, mTextEngine, mpResponseEditor->collection(),
                                                  mpResponseEditor->iSelectedBundle(), mpGeometryView->getGeometry());
             break;
+        case ReportItem::kDiagram:
+            pSceneItem = new DiagramReportSceneItem((DiagramReportItem*) pReportItem, mTextEngine, mpResponseEditor->collection(),
+                                                    mpResponseEditor->iSelectedBundle(), mpGeometryView->getGeometry());
+            break;
         default:
             break;
         }
@@ -295,6 +300,10 @@ void ReportDesigner::addItem(ReportItem::Type type)
     case ReportItem::kMode:
         pItem = new ModeReportItem;
         pItem->rect = QRect(50, 110, 100, 100);
+        break;
+    case ReportItem::kDiagram:
+        pItem = new DiagramReportItem;
+        pItem->rect = QRect(50, 130, 100, 100);
         break;
     default:
         break;
@@ -738,6 +747,7 @@ QWidget* ReportDesigner::createListWidget()
     pToolBar->addAction(QIcon(":/icons/item-picture.svg"), tr("Add picture"), this, [this]() { addItem(ReportItem::kPicture); });
     pToolBar->addAction(QIcon(":/icons/item-table.svg"), tr("Add table"), this, [this]() { addItem(ReportItem::kTable); });
     pToolBar->addAction(QIcon(":/icons/item-mode.svg"), tr("Add mode"), this, [this]() { addItem(ReportItem::kMode); });
+    pToolBar->addAction(QIcon(":/icons/item-diagram.svg"), tr("Add diagram"), this, [this]() { addItem(ReportItem::kDiagram); });
     pToolBar->addSeparator();
     pToolBar->addAction(QIcon(":/icons/edit-copy.svg"), tr("Duplicate"), this, &ReportDesigner::duplicateSelectedItems);
     QAction* pRemoveAction = pToolBar->addAction(QIcon(":/icons/edit-remove.svg"), tr("Remove"), this, &ReportDesigner::removeSelectedItems);
@@ -1217,6 +1227,10 @@ QListWidgetItem* createListItem(ReportPage const& page, int index)
     case ReportItem::kMode:
         icon = QIcon(":/icons/item-mode.svg");
         prefix = QObject::tr("Mode");
+        break;
+    case ReportItem::kDiagram:
+        icon = QIcon(":/icons/item-diagram.svg");
+        prefix = QObject::tr("Diagram");
         break;
     default:
         break;

@@ -6,7 +6,7 @@
 namespace Backend::Core
 {
 
-class GraphReportCurve;
+class ReportCurve;
 class ReportDocument;
 class ReportPage;
 
@@ -15,13 +15,14 @@ class ReportDefaults
 public:
     ReportDefaults() = delete;
 
-    static QList<GraphReportCurve> curves();
+    static QList<ReportCurve> curves();
     static ReportDocument document();
     static ReportPage imRePage();
     static ReportPage multiImRePage();
     static ReportPage freqAmpPage();
     static ReportPage projModeYPage();
     static ReportPage mode3DPage();
+    static ReportPage diagramPage();
 };
 
 }

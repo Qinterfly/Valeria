@@ -45,6 +45,7 @@ set(FRONTEND_HEADERS
     reportdataeditor.h
     graphreportsceneitem.h
     modereportsceneitem.h
+    diagramreportsceneitem.h
 )
 
 set(FRONTEND_SOURCES
@@ -64,6 +65,7 @@ set(FRONTEND_SOURCES
     reportdataeditor.cpp
     graphreportsceneitem.cpp
     modereportsceneitem.cpp
+    diagramreportsceneitem.cpp
 )
 
 qt_add_library(frontend STATIC

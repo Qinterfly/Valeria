@@ -8,6 +8,7 @@
 #include <vtkColor.h>
 #include <vtkPolyDataMapper.h>
 
+#include "mathutility.h"
 #include "reportinterface.h"
 #include "reportsceneitem.h"
 
@@ -16,12 +17,12 @@ class vtkCellArray;
 class vtkLookupTable;
 class vtkDoubleArray;
 class vtkAxesActor;
-class vtkWindowToImageFilter;
 
 namespace Backend::Core
 {
 class ResponseCollection;
 class ModeReportItem;
+class ReportPoint;
 }
 
 namespace Frontend
@@ -50,7 +51,6 @@ private:
 
     // State
     void setState();
-    void resolveStateSlaves();
 
     // Rendering
     void setView();
@@ -80,7 +80,7 @@ private:
     Testlab::Geometry const& mGeometry;
 
     // Data
-    QHash<PairString, Eigen::Vector3d> mState;
+    Backend::Core::GeometryState mState;
     double mMaximumDimension;
 
     // VTK

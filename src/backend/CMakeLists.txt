@@ -11,6 +11,7 @@ set(BACKEND_HEADERS
     reporttextengine.h
     reportdefaults.h
     reportinterface.h
+    reportcommon.h
     mathutility.h
     constants.h
 )
@@ -22,6 +23,7 @@ set(BACKEND_SOURCES
     reportdocument.cpp
     reporttextengine.cpp
     reportdefaults.cpp
+    reportcommon.cpp
     mathutility.cpp
 )
 

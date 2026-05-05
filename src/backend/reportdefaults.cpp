@@ -10,9 +10,9 @@ using namespace Backend::Constants;
 using namespace Backend::Core;
 
 //! Create curves
-QList<GraphReportCurve> ReportDefaults::curves()
+QList<ReportCurve> ReportDefaults::curves()
 {
-    QList<GraphReportCurve> result;
+    QList<ReportCurve> result;
     result.emplaceBack("red", ReportMarkerShape::kCircle, true);
     result.emplaceBack("green", ReportMarkerShape::kCircle, false);
     result.emplaceBack("blue", ReportMarkerShape::kSquare, true);
@@ -38,6 +38,7 @@ ReportDocument ReportDefaults::document()
     result.add(ReportDefaults::freqAmpPage());
     result.add(ReportDefaults::projModeYPage());
     result.add(ReportDefaults::mode3DPage());
+    result.add(ReportDefaults::diagramPage());
     return result;
 }
 
@@ -312,6 +313,40 @@ ReportPage ReportDefaults::mode3DPage()
     // Combine
     page.add(pIso);
     page.add(pFront);
+    page.add(pTop);
+    page.add(pTitle);
+    page.add(pCaption);
+
+    return page;
+}
+
+//! Create a page with diagrams
+ReportPage ReportDefaults::diagramPage()
+{
+    ReportPage page(QObject::tr("Diagram"));
+
+    // Create top mode
+    DiagramReportItem* pTop = new DiagramReportItem;
+    pTop->name = QObject::tr("Top");
+    pTop->rect = QRect(30, 25, 155, 80);
+    pTop->unit = Units::skM_S2;
+    pTop->view = ReportView::kTop;
+    pTop->title = QObject::tr("${BUNDLE}");
+    pTop->sLabel = QObject::tr("Im a, ${UNIT}");
+
+    // Create title
+    TextReportItem* pTitle = new TextReportItem;
+    pTitle->name = QObject::tr("Title");
+    pTitle->rect = QRect(30, 10, 155, 20);
+    pTitle->text = QObject::tr("Mode name\nExcitation");
+
+    // Create the caption
+    TextReportItem* pCaption = new TextReportItem;
+    pCaption->name = QObject::tr("Caption");
+    pCaption->rect = QRect(30, 265, 155, 10);
+    pCaption->text = QObject::tr("Figure X.YY");
+
+    // Combine
     page.add(pTop);
     page.add(pTitle);
     page.add(pCaption);

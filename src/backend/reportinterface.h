@@ -15,10 +15,10 @@ namespace Backend::Core
 {
 
 class ReportItem;
-class GraphReportCurve;
+class ReportCurve;
 
 using ReportItemGetter = std::function<ReportItem*()>;
-using ReportCurveGetter = std::function<GraphReportCurve*()>;
+using ReportCurveGetter = std::function<ReportCurve*()>;
 
 class ISerializable
 {

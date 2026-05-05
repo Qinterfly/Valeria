@@ -89,149 +89,6 @@ void TextReportItem::fromJson(QJsonObject const& obj)
     text = obj["text"].toString();
 }
 
-GraphReportPoint::GraphReportPoint()
-{
-}
-
-GraphReportPoint::GraphReportPoint(QString const& uName)
-{
-    QStringList tokens = uName.split(':');
-    if (tokens.size() == 2)
-    {
-        component = tokens[0];
-        node = tokens[1];
-    }
-    else
-    {
-        node = uName;
-    }
-}
-
-GraphReportPoint::GraphReportPoint(QString const& uComponent, QString const& uNode)
-    : component(uComponent)
-    , node(uNode)
-{
-}
-
-bool GraphReportPoint::isEmpty() const
-{
-    return name().isEmpty();
-}
-
-QString GraphReportPoint::name() const
-{
-    return QString("%1:%2").arg(component, node);
-}
-
-QJsonObject GraphReportPoint::toJson() const
-{
-    QJsonObject obj;
-    obj["component"] = component;
-    obj["node"] = node;
-    return obj;
-}
-
-void GraphReportPoint::fromJson(QJsonObject const& obj)
-{
-    component = obj["component"].toString();
-    node = obj["node"].toString();
-}
-
-GraphReportCurve::GraphReportCurve()
-{
-    lineStyle = Qt::SolidLine;
-    lineWidth = 1.25;
-    lineColor = Qt::red;
-    markerShape = ReportMarkerShape::kDisc;
-    markerSize = 6.0;
-    markerFill = false;
-    markerSkip = 0;
-}
-
-GraphReportCurve::GraphReportCurve(QList<GraphReportPoint> const& uPoints, QString const& uName)
-    : GraphReportCurve()
-{
-    name = uName;
-    points = uPoints;
-}
-
-GraphReportCurve::GraphReportCurve(QList<QString> const& uPoints, QString const& uName)
-    : GraphReportCurve()
-{
-    name = uName;
-    int numPoints = uPoints.size();
-    points.resize(numPoints);
-    for (int i = 0; i != numPoints; ++i)
-        points[i] = GraphReportPoint(uPoints[i]);
-}
-
-GraphReportCurve::GraphReportCurve(QColor const& uLineColor, ReportMarkerShape const& uMarkerShape, bool uMarkerFill)
-    : GraphReportCurve()
-{
-    lineColor = uLineColor;
-    markerShape = uMarkerShape;
-    markerFill = uMarkerFill;
-}
-
-GraphReportCurve::GraphReportCurve(QList<QString> const& uPoints, QColor const& uLineColor, ReportMarkerShape const& uMarkerShape,
-                                   bool uMarkerFill)
-    : GraphReportCurve(uLineColor, uMarkerShape, uMarkerFill)
-{
-    int numPoints = uPoints.size();
-    points.resize(numPoints);
-    for (int i = 0; i != numPoints; ++i)
-        points[i] = GraphReportPoint(uPoints[i]);
-}
-
-bool GraphReportCurve::isEmpty() const
-{
-    return points.isEmpty();
-}
-
-QJsonObject GraphReportCurve::toJson() const
-{
-    QJsonObject obj;
-    obj["name"] = name;
-    QJsonArray jsonPoints;
-    for (auto const& p : points)
-        jsonPoints.push_back(p.toJson());
-    obj["points"] = jsonPoints;
-
-    // Line
-    obj["lineStyle"] = (int) lineStyle;
-    obj["lineWidth"] = lineWidth;
-    obj["lineColor"] = Utility::toJson(lineColor);
-
-    // Marker
-    obj["markerShape"] = (int) markerShape;
-    obj["markerSize"] = markerSize;
-    obj["markerFill"] = markerFill;
-    obj["markerSkip"] = markerSkip;
-
-    return obj;
-}
-
-void GraphReportCurve::fromJson(QJsonObject const& obj)
-{
-    name = obj["name"].toString();
-    QJsonArray jsonPoints = obj["points"].toArray();
-    int numPoints = jsonPoints.size();
-    points.resize(numPoints);
-    for (int i = 0; i != numPoints; ++i)
-        points[i].fromJson(jsonPoints[i].toObject());
-
-    // Line
-    lineStyle = (Qt::PenStyle) obj["lineStyle"].toInt();
-    lineWidth = obj["lineWidth"].toDouble();
-    Utility::fromJson(lineColor, obj["lineColor"]);
-
-    // Marker
-    markerShape = (ReportMarkerShape) obj["markerShape"].toInt();
-    markerSize = obj["markerSize"].toDouble();
-    markerFill = obj["markerFill"].toBool();
-    markerSkip = obj["markerSkip"].toInt();
-}
-
 GraphReportItem::GraphReportItem()
 {
     // Header
@@ -304,17 +161,17 @@ bool GraphReportItem::isMultiPointCurve() const
     return subType == GraphReportItem::kModeshape;
 }
 
-void GraphReportItem::addCurve(GraphReportCurve const& curve)
+void GraphReportItem::addCurve(ReportCurve const& curve)
 {
     curves.push_back(curve);
 }
 
-GraphReportCurve& GraphReportItem::addCurve(QStringList const& points, QString const& name)
+ReportCurve& GraphReportItem::addCurve(QStringList const& points, QString const& name)
 {
-    return curves.emplace_back(GraphReportCurve(points, name));
+    return curves.emplace_back(ReportCurve(points, name));
 }
 
-GraphReportCurve& GraphReportItem::addPoint(QString const& point, QString const& name)
+ReportCurve& GraphReportItem::addPoint(QString const& point, QString const& name)
 {
     return addCurve({point}, name);
 }
@@ -541,10 +398,8 @@ ModeReportItem::ModeReportItem()
     amplitude = 0.1;
     phase = 0.0;
 
-    // Scalars
-    sRange = {0.0, 0.0};
-
     // Settings
+    sRange = {0.0, 0.0};
     quality = 2.0;
     edgeColor = QColor("grey");
     undeformedColor = QColor("grey");
@@ -660,6 +515,103 @@ void ModeReportItem::fromJson(QJsonObject const& obj)
     showQuads = obj["showQuads"].toBool();
 }
 
+DiagramReportItem::DiagramReportItem()
+{
+    // View
+    view = ReportView::kTop;
+    colorMap = ReportColorMap::kJet;
+    scale = 1.5;
+    amplitude = 0.1;
+    phase = 0.0;
+
+    // Settings
+    sRange = {0.0, 0.0};
+    quality = 2.0;
+}
+
+DiagramReportItem::DiagramReportItem(ReportItem const* pAnother)
+    : ReportItem(pAnother)
+{
+}
+
+ReportItem::Type DiagramReportItem::type() const
+{
+    return ReportItem::kDiagram;
+}
+
+ReportItem* DiagramReportItem::clone() const
+{
+    DiagramReportItem* pResult = new DiagramReportItem(this);
+
+    // Header
+    pResult->unit = unit;
+    pResult->view = view;
+    pResult->colorMap = colorMap;
+    pResult->scale = scale;
+    pResult->amplitude = amplitude;
+    pResult->phase = phase;
+
+    // Settings
+    pResult->title = title;
+    pResult->sLabel = sLabel;
+    pResult->sRange = sRange;
+    pResult->quality = quality;
+
+    return pResult;
+}
+
+QJsonObject DiagramReportItem::toJson() const
+{
+    QJsonObject obj = ReportItem::toJson();
+
+    QJsonArray jsonSections;
+    for (auto const& s : sections)
+        jsonSections.push_back(s.toJson());
+    obj["sections"] = jsonSections;
+
+    // Header
+    obj["unit"] = unit;
+    obj["view"] = (int) view;
+    obj["colorMap"] = (int) colorMap;
+    obj["scale"] = scale;
+    obj["amplitude"] = amplitude;
+    obj["phase"] = phase;
+
+    // Settings
+    obj["title"] = title;
+    obj["sLabel"] = sLabel;
+    obj["sRange"] = Utility::toJson(sRange);
+    obj["quality"] = quality;
+
+    return obj;
+}
+
+void DiagramReportItem::fromJson(QJsonObject const& obj)
+{
+    ReportItem::fromJson(obj);
+
+    QJsonArray jsonSections = obj["sections"].toArray();
+    int numSections = jsonSections.size();
+    sections.resize(numSections);
+    for (int i = 0; i != numSections; ++i)
+        sections[i].fromJson(jsonSections[i].toObject());
+
+    // Header
+    unit = obj["unit"].toString();
+    view = (ReportView) obj["view"].toInt();
+    colorMap = (ReportColorMap) obj["colorMap"].toInt();
+    scale = obj["scale"].toDouble();
+    amplitude = obj["amplitude"].toDouble();
+    phase = obj["phase"].toDouble();
+    Utility::fromJson(link, obj["link"]);
+
+    // Settings
+    title = obj["title"].toString();
+    sLabel = obj["sLabel"].toString();
+    Utility::fromJson(sRange, obj["sRange"]);
+    quality = obj["quality"].toDouble();
+}
+
 ReportItem* Backend::Core::createItem(ReportItem::Type type)
 {
     switch (type)
@@ -674,6 +626,8 @@ ReportItem* Backend::Core::createItem(ReportItem::Type type)
         return new TableReportItem;
     case ReportItem::kMode:
         return new ModeReportItem;
+    case ReportItem::kDiagram:
+        return new DiagramReportItem;
     default:
         break;
     }

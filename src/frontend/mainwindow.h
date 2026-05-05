@@ -8,7 +8,7 @@
 
 namespace Backend::Core
 {
-class GraphReportCurve;
+class ReportCurve;
 }
 
 namespace Frontend

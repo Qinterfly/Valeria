@@ -188,14 +188,14 @@ void GraphReportSceneItem::processReIm(ResponseBundle const& bundle)
     int numCurves = pItem->curves.size();
     for (int iCurve = 0; iCurve != numCurves; ++iCurve)
     {
-        GraphReportCurve const& curve = pItem->curves[iCurve];
+        ReportCurve const& curve = pItem->curves[iCurve];
 
         // Loop through all the points belonged to the curve
         int numPoints = curve.points.size();
         for (int iPoint = 0; iPoint != numPoints; ++iPoint)
         {
             // Get the response which has the requested unit and direction
-            GraphReportPoint const& point = curve.points[iPoint];
+            ReportPoint const& point = curve.points[iPoint];
             Testlab::Response response = Backend::Utility::getAcceleration(bundle, point, pItem->responseDir, pItem->unit);
             if (response.keys.size() == 0)
             {
@@ -231,21 +231,21 @@ void GraphReportSceneItem::processReIm(ResponseBundle const& bundle)
 //! Process the item of the multi real (imag) subtype
 void GraphReportSceneItem::processMultiReIm()
 {
-    QList<GraphReportCurve> const kDefaultCurves = ReportDefaults::curves();
+    QList<ReportCurve> const kDefaultCurves = ReportDefaults::curves();
 
     GraphReportItem* pItem = (GraphReportItem*) mpItem;
 
     // Process only the first curve
     if (pItem->curves.isEmpty())
         return;
-    GraphReportCurve const& baseCurve = pItem->curves.first();
+    ReportCurve const& baseCurve = pItem->curves.first();
 
     // Process only the first curve point
     if (baseCurve.points.isEmpty())
         return;
 
     // Set the variable
-    GraphReportPoint const& point = baseCurve.points.first();
+    ReportPoint const& point = baseCurve.points.first();
     mTextEngine.setVariable("point", point.name());
     mTextEngine.setVariable("component", point.component);
     mTextEngine.setVariable("node", point.node);
@@ -275,7 +275,7 @@ void GraphReportSceneItem::processMultiReIm()
 
         // Set the curve for plotting
         int iDefaultCurve = Utility::getRepeatedIndex(iBundle, kDefaultCurves.size());
-        GraphReportCurve currentCurve = kDefaultCurves[iDefaultCurve];
+        ReportCurve currentCurve = kDefaultCurves[iDefaultCurve];
         currentCurve.points = {point};
         currentCurve.lineStyle = baseCurve.lineStyle;
         currentCurve.lineWidth = baseCurve.lineWidth;
@@ -298,12 +298,12 @@ void GraphReportSceneItem::processFreqAmp()
     int numBundles = mCollection.count();
     for (int iCurve = 0; iCurve != numCurves; ++iCurve)
     {
-        GraphReportCurve const& curve = pItem->curves[iCurve];
+        ReportCurve const& curve = pItem->curves[iCurve];
 
         // Process only the first point
         if (curve.isEmpty())
             continue;
-        GraphReportPoint const& point = curve.points.first();
+        ReportPoint const& point = curve.points.first();
 
         // Loop through all the bundles
         QList<double> xData(numBundles, 0.0);
@@ -396,7 +396,7 @@ void GraphReportSceneItem::processModeshape(ResponseBundle const& bundle)
     int numCurves = pItem->curves.size();
     for (int iCurve = 0; iCurve != numCurves; ++iCurve)
     {
-        GraphReportCurve const& curve = pItem->curves[iCurve];
+        ReportCurve const& curve = pItem->curves[iCurve];
         if (curve.isEmpty())
             continue;
         int numPoints = curve.points.size();
@@ -406,7 +406,7 @@ void GraphReportSceneItem::processModeshape(ResponseBundle const& bundle)
         QList<double> yData(numPoints, 0.0);
         for (int iPoint = 0; iPoint != numPoints; ++iPoint)
         {
-            GraphReportPoint const& point = curve.points[iPoint];
+            ReportPoint const& point = curve.points[iPoint];
 
             // Get the response which has the requested unit and direction
             Testlab::Response response = Backend::Utility::getAcceleration(bundle, point, pItem->responseDir, pItem->unit);
@@ -449,8 +449,7 @@ void GraphReportSceneItem::processModeshape(ResponseBundle const& bundle)
 }
 
 //! Add the plottable to the plot
-void GraphReportSceneItem::addPlottable(QList<double> const& xData, QList<double> const& yData, GraphReportCurve const& curve,
-                                        QString const& name)
+void GraphReportSceneItem::addPlottable(QList<double> const& xData, QList<double> const& yData, ReportCurve const& curve, QString const& name)
 {
     // Define the style
     QPen pen(curve.lineColor, curve.lineWidth, curve.lineStyle);

@@ -1,6 +1,7 @@
 #include <Eigen/Geometry>
 #include <complex.h>
 #include <QMap>
+#include <QtMath>
 
 #include "constants.h"
 #include "mathutility.h"
@@ -25,6 +26,15 @@ QList<double> convert(std::vector<double> const& data)
 std::vector<double> convert(QList<double> const& data)
 {
     return std::vector<double>(data.begin(), data.end());
+}
+
+//! Convert to three dimensional vector
+Vector3d convert3d(std::vector<double> const& data)
+{
+    Vector3d result;
+    if (data.size() == result.size())
+        std::copy(data.begin(), data.end(), result.begin());
+    return result;
 }
 
 //! Find closest key to the requested one
@@ -56,10 +66,18 @@ QString getDirLabel(ReportDirection dir)
         return "Y";
     case ReportDirection::kZ:
         return "Z";
+    case ReportDirection::kN:
+        return "N";
     default:
         break;
     }
     return QString();
+}
+
+//! Get point out of full node name
+ReportPoint getPoint(std::wstring const& name)
+{
+    return ReportPoint(QString::fromStdWString(name));
 }
 
 //! Multiply real and imaginary parts of response by the specified factor
@@ -76,8 +94,7 @@ Testlab::Response multiplyResponse(Testlab::Response const& response, double fac
 }
 
 //! Find the response measured at the specified point along the requested direction
-int findResponse(ResponseBundle const& bundle, GraphReportPoint const& point, ReportDirection dir, Testlab::ResponseType type,
-                 QString const& unit)
+int findResponse(ResponseBundle const& bundle, ReportPoint const& point, ReportDirection dir, Testlab::ResponseType type, QString const& unit)
 {
     int iFound = -1;
     int numResponses = bundle.responses.size();
@@ -103,8 +120,7 @@ int findResponse(ResponseBundle const& bundle, GraphReportPoint const& point, Re
 }
 
 //! Retrieve acceleration response
-Testlab::Response getAcceleration(ResponseBundle const& bundle, GraphReportPoint const& point, ReportDirection targetDir,
-                                  QString const& targetUnit)
+Testlab::Response getAcceleration(ResponseBundle const& bundle, ReportPoint const& point, ReportDirection targetDir, QString const& targetUnit)
 {
     int iResponse = findResponse(bundle, point, targetDir, Testlab::ResponseType::kAccel);
     if (iResponse < 0)
@@ -130,18 +146,18 @@ Testlab::Response convertAcceleration(ResponseBundle const& bundle, Testlab::Res
 
     // Set the reference point
     bool isFRF = unit == Units::skM_S2_N;
-    GraphReportPoint refPoint;
+    ReportPoint refPoint;
     ReportDirection refDir = ReportDirection::kNone;
     if (isFRF)
     {
         QString refComponent = QString::fromStdWString(accel.header.refPoint.component);
         QString refNode = QString::fromStdWString(accel.header.refPoint.node);
-        refPoint = GraphReportPoint(refComponent, refNode);
+        refPoint = ReportPoint(refComponent, refNode);
         refDir = (ReportDirection) accel.header.refPoint.direction;
     }
     else
     {
-        refPoint = GraphReportPoint(bundle.refPoint);
+        refPoint = ReportPoint(bundle.refPoint);
     }
 
     // Process the force, if presented
@@ -352,6 +368,96 @@ double getMaximumDimension(Testlab::Geometry const& geometry)
     result = std::max(result, std::abs(maxCoords[2] - minCoords[2]));
 
     return result;
+}
+
+//! Get the deformed geometry state
+GeometryState getGeometryState(QString const& unit, ResponseBundle const& bundle, Testlab::Geometry const& geometry)
+{
+    GeometryState result;
+    int numResponses = bundle.responses.size();
+    int iFound = -1;
+    for (int i = 0; i != numResponses; ++i)
+    {
+        // Retrieve the acceleration which has the requested units
+        Testlab::Response const& response = bundle.responses[i];
+        if (response.header.type != Testlab::ResponseType::kAccel)
+            continue;
+        Testlab::Response accel = Backend::Utility::convertAcceleration(bundle, response, unit);
+        int numKeys = accel.keys.size();
+        if (numKeys == 0)
+            continue;
+
+        // Find the closest frequency to the resonance one
+        if (iFound < 0 || iFound > numKeys)
+            iFound = Backend::Utility::findClosestKey(accel, bundle.freq);
+        if (iFound < 0)
+            continue;
+
+        // Set the field value
+        QString componentName = QString::fromStdWString(accel.header.point.component);
+        QString nodeName = QString::fromStdWString(accel.header.point.node);
+        Vector3d value = projectResponse(accel, geometry, iFound).imag();
+        ReportPoint point(componentName, nodeName);
+        if (!result.contains(point))
+            result[point] = Vector3d::Zero();
+        result[point] += value;
+    }
+    return result;
+}
+
+//! Resolve dependencies between state values
+void resolveGeometryStateSlaves(Backend::Core::GeometryState& state, Testlab::Geometry const& geometry)
+{
+    int numSlaves = geometry.dependencies.size();
+    for (int iSlave = 0; iSlave != numSlaves; ++iSlave)
+    {
+        Testlab::Dependency const& dependency = geometry.dependencies[iSlave];
+
+        // Get the slave
+        ReportPoint slavePoint = getPoint(dependency.slave);
+        if (!state.contains(slavePoint))
+            continue;
+        Vector3d slaveCoords = convert3d(getNodeCoords(geometry, slavePoint.component, slavePoint.node));
+        Vector3d slaveValues = state[slavePoint];
+
+        // Count the valid master nodes
+        int numMasters = dependency.masters.size();
+        int numValidMasters = 0;
+        for (int iMaster = 0; iMaster != numMasters; ++iMaster)
+        {
+            ReportPoint masterPoint = getPoint(dependency.masters[iMaster]);
+            if (!state.contains(masterPoint))
+                continue;
+            ++numValidMasters;
+        }
+        if (numValidMasters == 0)
+            continue;
+
+        // Get the data of master nodes
+        int numDirs = slaveValues.size();
+        MatrixXd masterCoords(numValidMasters, numDirs);
+        MatrixXd masterValues(numValidMasters, numDirs);
+        for (int iMaster = 0; iMaster != numMasters; ++iMaster)
+        {
+            ReportPoint masterPoint = getPoint(dependency.masters[iMaster]);
+            if (!state.contains(masterPoint))
+                continue;
+            masterCoords.row(iMaster) = convert3d(getNodeCoords(geometry, masterPoint.component, masterPoint.node));
+            masterValues.row(iMaster) = state[masterPoint];
+        }
+
+        // Interpolate the master values
+        int numFlags = dependency.flags.size();
+        VectorXd interpValues = interpolateIDW(slaveCoords, masterCoords, masterValues);
+        for (int iFlag = 0; iFlag != numFlags; ++iFlag)
+        {
+            if (dependency.flags[iFlag] > 0)
+                slaveValues[iFlag] = interpValues[iFlag];
+        }
+
+        // Store the result
+        state[slavePoint] = slaveValues;
+    }
 }
 
 //! Find all the response roots

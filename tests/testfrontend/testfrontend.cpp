@@ -99,7 +99,7 @@ void TestFrontend::setImRePage()
     int numPoints = points.size();
     for (int i = 0; i != numPoints; ++i)
     {
-        GraphReportCurve& curve = pImag->addPoint(points[i]);
+        ReportCurve& curve = pImag->addPoint(points[i]);
         curve.lineColor = colors[i];
         curve.markerShape = markerShapes[i];
     }
@@ -158,7 +158,7 @@ void TestFrontend::setFreqAmpPage()
     int numPoints = points.size();
     for (int i = 0; i != numPoints; ++i)
     {
-        GraphReportCurve& curve = pAmp->addPoint(points[i]);
+        ReportCurve& curve = pAmp->addPoint(points[i]);
         curve.lineColor = colors[i];
         curve.markerShape = markerShapes[i];
     }
@@ -192,45 +192,45 @@ void TestFrontend::setProjModeYPage()
     // clang-format off
 
     // Add the fuselage
-    pFus->addCurve(GraphReportCurve({"F:5p1", "F:5p4", "F:5p7", "F:5p14", "F:4p25", "F:4p22", "F:4p19"}, "black", ReportMarkerShape::kCircle, true));
-    pFus->addCurve(GraphReportCurve({"F:5p2", "F:5p5", "F:5p8", "F:5p15", "F:4p26", "F:4p23", "F:4p20"}, "black", ReportMarkerShape::kCircle, false));
+    pFus->addCurve(ReportCurve({"F:5p1", "F:5p4", "F:5p7", "F:5p14", "F:4p25", "F:4p22", "F:4p19"}, "black", ReportMarkerShape::kCircle, true));
+    pFus->addCurve(ReportCurve({"F:5p2", "F:5p5", "F:5p8", "F:5p15", "F:4p26", "F:4p23", "F:4p20"}, "black", ReportMarkerShape::kCircle, false));
 
-    pFus->addCurve(GraphReportCurve({"OOSh:3p17"}, "red", ReportMarkerShape::kSquare, true));
-    pFus->addCurve(GraphReportCurve({"OOSh:3p20"}, "red", ReportMarkerShape::kSquare, false));
+    pFus->addCurve(ReportCurve({"OOSh:3p17"}, "red", ReportMarkerShape::kSquare, true));
+    pFus->addCurve(ReportCurve({"OOSh:3p20"}, "red", ReportMarkerShape::kSquare, false));
 
-    pFus->addCurve(GraphReportCurve({"OOSh:3p21"}, "green", ReportMarkerShape::kTriangle, true));
-    pFus->addCurve(GraphReportCurve({"OOSh:3p24"}, "green", ReportMarkerShape::kTriangle, false));
+    pFus->addCurve(ReportCurve({"OOSh:3p21"}, "green", ReportMarkerShape::kTriangle, true));
+    pFus->addCurve(ReportCurve({"OOSh:3p24"}, "green", ReportMarkerShape::kTriangle, false));
 
-    pFus->addCurve(GraphReportCurve({"POSh:5p10"}, "blue", ReportMarkerShape::kTriangleInverted, true));
-    pFus->addCurve(GraphReportCurve({"POSh:5p13"}, "blue", ReportMarkerShape::kTriangleInverted, false));
+    pFus->addCurve(ReportCurve({"POSh:5p10"}, "blue", ReportMarkerShape::kTriangleInverted, true));
+    pFus->addCurve(ReportCurve({"POSh:5p13"}, "blue", ReportMarkerShape::kTriangleInverted, false));
 
     // Add the wing
-    pWing->addCurve(GraphReportCurve({"W:1p2", "W:1p6", "W:1p11", "W:1p14", "W:1p17", "W:1p22"}, "black", ReportMarkerShape::kCircle, true));
-    pWing->addCurve(GraphReportCurve({"W:1p3", "W:1p7", "W:1p12", "W:1p15", "W:1p18", "W:1p23"}, "black", ReportMarkerShape::kCircle, false));
-    pWing->addCurve(GraphReportCurve({"W:2p2", "W:2p6", "W:2p11", "W:2p14", "W:2p17", "W:2p22"}, "black", ReportMarkerShape::kCircle, true));
-    pWing->addCurve(GraphReportCurve({"W:2p3", "W:2p7", "W:2p12", "W:2p15", "W:2p18", "W:2p23"}, "black", ReportMarkerShape::kCircle, false));
+    pWing->addCurve(ReportCurve({"W:1p2", "W:1p6", "W:1p11", "W:1p14", "W:1p17", "W:1p22"}, "black", ReportMarkerShape::kCircle, true));
+    pWing->addCurve(ReportCurve({"W:1p3", "W:1p7", "W:1p12", "W:1p15", "W:1p18", "W:1p23"}, "black", ReportMarkerShape::kCircle, false));
+    pWing->addCurve(ReportCurve({"W:2p2", "W:2p6", "W:2p11", "W:2p14", "W:2p17", "W:2p22"}, "black", ReportMarkerShape::kCircle, true));
+    pWing->addCurve(ReportCurve({"W:2p3", "W:2p7", "W:2p12", "W:2p15", "W:2p18", "W:2p23"}, "black", ReportMarkerShape::kCircle, false));
 
-    pWing->addCurve(GraphReportCurve({"En:3p2", "En:3p7"}, "red", ReportMarkerShape::kSquare, true));
-    pWing->addCurve(GraphReportCurve({"En:3p4", "En:3p8"}, "red", ReportMarkerShape::kSquare, false));
-    pWing->addCurve(GraphReportCurve({"En:3p15", "En:3p10"}, "red", ReportMarkerShape::kSquare, true));
-    pWing->addCurve(GraphReportCurve({"En:3p16", "En:3p12"}, "red", ReportMarkerShape::kSquare, false));
+    pWing->addCurve(ReportCurve({"En:3p2", "En:3p7"}, "red", ReportMarkerShape::kSquare, true));
+    pWing->addCurve(ReportCurve({"En:3p4", "En:3p8"}, "red", ReportMarkerShape::kSquare, false));
+    pWing->addCurve(ReportCurve({"En:3p15", "En:3p10"}, "red", ReportMarkerShape::kSquare, true));
+    pWing->addCurve(ReportCurve({"En:3p16", "En:3p12"}, "red", ReportMarkerShape::kSquare, false));
 
-    pWing->addCurve(GraphReportCurve({"Ail:1p4", "Ail:1p8"}, "green", ReportMarkerShape::kTriangle, true));
-    pWing->addCurve(GraphReportCurve({"Ail:2p4", "Ail:2p8"}, "green", ReportMarkerShape::kTriangle, true));
+    pWing->addCurve(ReportCurve({"Ail:1p4", "Ail:1p8"}, "green", ReportMarkerShape::kTriangle, true));
+    pWing->addCurve(ReportCurve({"Ail:2p4", "Ail:2p8"}, "green", ReportMarkerShape::kTriangle, true));
 
-    pWing->addCurve(GraphReportCurve({"Fl:1p9", "Fl:1p19", "Fl:1p20", "Fl:1p24"}, "blue", ReportMarkerShape::kTriangleInverted, true));
-    pWing->addCurve(GraphReportCurve({"Fl:2p9", "Fl:2p19", "Fl:2p20", "Fl:2p24"}, "blue", ReportMarkerShape::kTriangleInverted, true));
+    pWing->addCurve(ReportCurve({"Fl:1p9", "Fl:1p19", "Fl:1p20", "Fl:1p24"}, "blue", ReportMarkerShape::kTriangleInverted, true));
+    pWing->addCurve(ReportCurve({"Fl:2p9", "Fl:2p19", "Fl:2p20", "Fl:2p24"}, "blue", ReportMarkerShape::kTriangleInverted, true));
 
     // Add the horizontal stabilizer
-    pHStab->addCurve(GraphReportCurve({"GO:4p8", "GO:4p10", "GO:4p11"}, "black", ReportMarkerShape::kCircle, true));
-    pHStab->addCurve(GraphReportCurve({"GO:4p14", "GO:4p16", "GO:4p17"}, "black", ReportMarkerShape::kCircle, true));
+    pHStab->addCurve(ReportCurve({"GO:4p8", "GO:4p10", "GO:4p11"}, "black", ReportMarkerShape::kCircle, true));
+    pHStab->addCurve(ReportCurve({"GO:4p14", "GO:4p16", "GO:4p17"}, "black", ReportMarkerShape::kCircle, true));
 
-    pHStab->addCurve(GraphReportCurve({"El:4p9", "El:4p12"}, "red", ReportMarkerShape::kSquare, true));
-    pHStab->addCurve(GraphReportCurve({"El:4p15", "El:4p18"}, "red", ReportMarkerShape::kSquare, true));
+    pHStab->addCurve(ReportCurve({"El:4p9", "El:4p12"}, "red", ReportMarkerShape::kSquare, true));
+    pHStab->addCurve(ReportCurve({"El:4p15", "El:4p18"}, "red", ReportMarkerShape::kSquare, true));
 
     // Add the vertical stabilizer
-    pVStab->addCurve(GraphReportCurve({"VO:4p2", "VO:4p4", "VO:4p5"}, "black", ReportMarkerShape::kCircle, true));
-    pVStab->addCurve(GraphReportCurve({"Rd:4p3", "Rd:4p6"}, "red", ReportMarkerShape::kSquare, true));
+    pVStab->addCurve(ReportCurve({"VO:4p2", "VO:4p4", "VO:4p5"}, "black", ReportMarkerShape::kCircle, true));
+    pVStab->addCurve(ReportCurve({"Rd:4p3", "Rd:4p6"}, "red", ReportMarkerShape::kSquare, true));
 
     // clang-format on
 
@@ -257,6 +257,20 @@ void TestFrontend::setMode3DPage()
 {
     // Get the designer
     ReportDesigner* pDesigner = mpReportWorkspace->designer(4);
+    QVERIFY(pDesigner);
+
+    // Get the items
+    ReportPage& page = pDesigner->page();
+
+    // Select the first item
+    pDesigner->selectItem(0);
+}
+
+//! Set the diagram page of the report
+void TestFrontend::setDiagramPage()
+{
+    // Get the designer
+    ReportDesigner* pDesigner = mpReportWorkspace->designer(5);
     QVERIFY(pDesigner);
 
     // Get the items

@@ -134,15 +134,6 @@ void setLastPathFile(QSettings& settings, QString const& pathFile)
     settings.setValue(Constants::Settings::skLastPathFile, pathFile);
 }
 
-//! Convert to three dimensional vector
-Vector3d convert3d(std::vector<double> const& data)
-{
-    Vector3d result;
-    if (data.size() == result.size())
-        std::copy(data.begin(), data.end(), result.begin());
-    return result;
-}
-
 //! Set combobox current index by item key
 void setIndexByKey(QComboBox* pComboBox, int key)
 {
@@ -319,6 +310,55 @@ vtkSmartPointer<vtkLookupTable> createPlasmaColorMap()
     ctf->AddRGBPoint(0.75, 0.93, 0.57, 0.14);
     ctf->AddRGBPoint(1.0, 0.99, 0.94, 0.20); // Yellow
     return buildLookupTable(ctf);
+}
+
+//! Set the camera position as well as zoom
+void setView(ReportView view, double scale, vtkSmartPointer<vtkRenderer> renderer, vtkSmartPointer<vtkRenderer> overlayRenderer)
+{
+    // Set the camera position
+    switch (view)
+    {
+    case ReportView::kFront:
+        Utility::setPlaneView(renderer, 0, 1);
+        break;
+    case ReportView::kRear:
+        Utility::setPlaneView(renderer, 0, -1);
+        break;
+    case ReportView::kTop:
+        Utility::setPlaneView(renderer, 1, 1);
+        break;
+    case ReportView::kBottom:
+        Utility::setPlaneView(renderer, 1, -1);
+        break;
+    case ReportView::kLeft:
+        Utility::setPlaneView(renderer, 2, 1);
+        break;
+    case ReportView::kRight:
+        Utility::setPlaneView(renderer, 2, -1);
+        break;
+    case ReportView::kIsometric:
+        Utility::setIsometricView(renderer);
+        break;
+    default:
+        break;
+    }
+
+    // Copy the view to the overlay
+    double position[3];
+    double viewUp[3];
+    renderer->GetActiveCamera()->GetPosition(position);
+    renderer->GetActiveCamera()->GetViewUp(viewUp);
+    overlayRenderer->GetActiveCamera()->ParallelProjectionOn();
+    overlayRenderer->GetActiveCamera()->SetPosition(position[0], position[1], position[2]);
+    overlayRenderer->GetActiveCamera()->SetFocalPoint(0, 0, 0);
+    overlayRenderer->GetActiveCamera()->SetViewUp(viewUp);
+    overlayRenderer->ResetCamera();
+
+    // Fit the camera view
+    overlayRenderer->GetActiveCamera()->Zoom(1.5);
+
+    // Set the zoom
+    renderer->GetActiveCamera()->Zoom(scale);
 }
 
 //! Set the isometric view

@@ -513,7 +513,7 @@ vtkSmartPointer<vtkPoints> GeometryView::createPoints(std::vector<Testlab::Node>
     int numNodes = nodes.size();
     for (int i = 0; i != numNodes; ++i)
     {
-        Vector3d position = Utility::convert3d(nodes[i].coordinates);
+        Vector3d position = Backend::Utility::convert3d(nodes[i].coordinates);
         position = position.cwiseProduct(mOptions.sceneScale);
         points->InsertPoint(i, position[0], position[1], position[2]);
     }
