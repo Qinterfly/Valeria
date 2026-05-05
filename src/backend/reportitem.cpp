@@ -407,10 +407,6 @@ ModeReportItem::ModeReportItem()
     vertexSize = 5.0;
     lineWidth = 2.0;
     showUndeformed = true;
-    showVertices = true;
-    showLines = true;
-    showTrias = true;
-    showQuads = true;
 }
 
 ModeReportItem::ModeReportItem(ReportItem const* pAnother)
@@ -446,10 +442,6 @@ ReportItem* ModeReportItem::clone() const
     pResult->vertexSize = vertexSize;
     pResult->lineWidth = lineWidth;
     pResult->showUndeformed = showUndeformed;
-    pResult->showVertices = showVertices;
-    pResult->showLines = showLines;
-    pResult->showTrias = showTrias;
-    pResult->showQuads = showQuads;
 
     return pResult;
 }
@@ -477,10 +469,6 @@ QJsonObject ModeReportItem::toJson() const
     obj["vertexSize"] = vertexSize;
     obj["lineWidth"] = lineWidth;
     obj["showUndeformed"] = showUndeformed;
-    obj["showVertices"] = showVertices;
-    obj["showLines"] = showLines;
-    obj["showTrias"] = showTrias;
-    obj["showQuads"] = showQuads;
 
     return obj;
 }
@@ -509,10 +497,6 @@ void ModeReportItem::fromJson(QJsonObject const& obj)
     vertexSize = obj["vertexSize"].toDouble();
     lineWidth = obj["lineWidth"].toDouble();
     showUndeformed = obj["showUndeformed"].toBool();
-    showVertices = obj["showVertices"].toBool();
-    showLines = obj["showLines"].toBool();
-    showTrias = obj["showTrias"].toBool();
-    showQuads = obj["showQuads"].toBool();
 }
 
 DiagramReportItem::DiagramReportItem()
@@ -521,12 +505,15 @@ DiagramReportItem::DiagramReportItem()
     view = ReportView::kTop;
     colorMap = ReportColorMap::kJet;
     scale = 1.5;
-    amplitude = 0.1;
+    amplitude = 1.0;
     phase = 0.0;
 
     // Settings
     sRange = {0.0, 0.0};
     quality = 2.0;
+    undeformedColor = QColor(175, 238, 238);
+    vertexSize = 5.0;
+    lineWidth = 2.0;
 }
 
 DiagramReportItem::DiagramReportItem(ReportItem const* pAnother)
@@ -542,6 +529,7 @@ ReportItem::Type DiagramReportItem::type() const
 ReportItem* DiagramReportItem::clone() const
 {
     DiagramReportItem* pResult = new DiagramReportItem(this);
+    pResult->sections = sections;
 
     // Header
     pResult->unit = unit;
@@ -556,8 +544,16 @@ ReportItem* DiagramReportItem::clone() const
     pResult->sLabel = sLabel;
     pResult->sRange = sRange;
     pResult->quality = quality;
+    pResult->undeformedColor = undeformedColor;
+    pResult->vertexSize = vertexSize;
+    pResult->lineWidth = lineWidth;
 
     return pResult;
+}
+
+void DiagramReportItem::addSection(ReportSection const& section)
+{
+    sections.push_back(section);
 }
 
 QJsonObject DiagramReportItem::toJson() const
@@ -582,6 +578,9 @@ QJsonObject DiagramReportItem::toJson() const
     obj["sLabel"] = sLabel;
     obj["sRange"] = Utility::toJson(sRange);
     obj["quality"] = quality;
+    obj["undeformedColor"] = Utility::toJson(undeformedColor);
+    obj["vertexSize"] = vertexSize;
+    obj["lineWidth"] = lineWidth;
 
     return obj;
 }
@@ -610,6 +609,9 @@ void DiagramReportItem::fromJson(QJsonObject const& obj)
     sLabel = obj["sLabel"].toString();
     Utility::fromJson(sRange, obj["sRange"]);
     quality = obj["quality"].toDouble();
+    Utility::fromJson(undeformedColor, obj["undeformedColor"]);
+    vertexSize = obj["vertexSize"].toDouble();
+    lineWidth = obj["lineWidth"].toDouble();
 }
 
 ReportItem* Backend::Core::createItem(ReportItem::Type type)

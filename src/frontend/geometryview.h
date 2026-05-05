@@ -214,7 +214,6 @@ private:
     void drawVertexLabel(vtkSmartPointer<vtkActor> actor);
     void drawElements(vtkSmartPointer<vtkPoints> points, std::vector<std::vector<int>> const& indices, vtkColor3d color, double opacity = 1.0);
     vtkSmartPointer<vtkPoints> createPoints(std::vector<Testlab::Node> const& nodes);
-    vtkSmartPointer<vtkCellArray> createPolygons(std::vector<std::vector<int>> const& indices);
 
     // Slots
     void showWidgetAtCenter(QWidget* pWidget);

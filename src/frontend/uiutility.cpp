@@ -3,15 +3,21 @@
 #include <QTableWidgetItem>
 #include <QToolBar>
 
+#include <vtkAxesActor.h>
 #include <vtkCamera.h>
+#include <vtkCaptionActor2D.h>
 #include <vtkColor.h>
 #include <vtkColorTransferFunction.h>
 #include <vtkCubeSource.h>
 #include <vtkLookupTable.h>
 #include <vtkNamedColors.h>
 #include <vtkPolyDataMapper.h>
+#include <vtkPolygon.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
+#include <vtkScalarBarActor.h>
+#include <vtkTextActor.h>
+#include <vtkTextProperty.h>
 #include <vtkTransform.h>
 #include <vtkWindowToImageFilter.h>
 
@@ -24,6 +30,9 @@ using namespace Eigen;
 
 // Constants
 vtkNew<vtkNamedColors> const vtkColors;
+
+// Initialize the font file
+QTemporaryFile* spFontFile = QTemporaryFile::createNativeFile(":/fonts/Roboto.ttf");
 
 namespace Frontend::Utility
 {
@@ -404,6 +413,26 @@ QImage getImage(vtkSmartPointer<vtkRenderWindow> renderWindow, double quality)
     return QImage(ptr, dims[0], dims[1], QImage::Format_RGBA8888).mirrored();
 }
 
+//! Create polygons using given indices
+vtkSmartPointer<vtkCellArray> createPolygons(std::vector<std::vector<int>> const& indices)
+{
+    vtkNew<vtkCellArray> polygons;
+    int numElements = indices.size();
+    for (int i = 0; i != numElements; ++i)
+    {
+        vtkNew<vtkPolygon> polygon;
+        std::vector<int> const& elementIndices = indices[i];
+        int numElementIndices = elementIndices.size();
+        for (int j = 0; j != numElementIndices; ++j)
+        {
+            int iVertex = elementIndices[j];
+            polygon->GetPointIds()->InsertNextId(iVertex);
+        }
+        polygons->InsertNextCell(polygon);
+    }
+    return polygons;
+}
+
 //! Construct a cube of specified dimension
 vtkSmartPointer<vtkActor> createCubeActor(Eigen::Vector3d const& position, double length)
 {
@@ -424,6 +453,107 @@ vtkSmartPointer<vtkActor> createCubeActor(Eigen::Vector3d const& position, doubl
     actor->SetMapper(mapper);
 
     return actor;
+}
+
+//! Create the axes actor
+vtkSmartPointer<vtkAxesActor> createAxesActor(int fontSize)
+{
+    vtkNew<vtkAxesActor> actor;
+
+    // Set the text properties
+    vtkCaptionActor2D* xCaption = actor->GetXAxisCaptionActor2D();
+    vtkCaptionActor2D* yCaption = actor->GetYAxisCaptionActor2D();
+    vtkCaptionActor2D* zCaption = actor->GetZAxisCaptionActor2D();
+    vtkTextProperty* xProp = xCaption->GetCaptionTextProperty();
+    vtkTextProperty* yProp = yCaption->GetCaptionTextProperty();
+    vtkTextProperty* zProp = zCaption->GetCaptionTextProperty();
+    xProp->SetColor(vtkColors->GetColor3d("Red").GetData());
+    yProp->SetColor(vtkColors->GetColor3d("Green").GetData());
+    zProp->SetColor(vtkColors->GetColor3d("Blue").GetData());
+    xProp->ShadowOff();
+    yProp->ShadowOff();
+    zProp->ShadowOff();
+    xProp->ItalicOff();
+    yProp->ItalicOff();
+    zProp->ItalicOff();
+
+    // Set the font size
+    if (fontSize > 0)
+    {
+        xProp->SetFontSize(fontSize);
+        yProp->SetFontSize(fontSize);
+        zProp->SetFontSize(fontSize);
+        xCaption->GetTextActor()->SetTextScaleModeToNone();
+        yCaption->GetTextActor()->SetTextScaleModeToNone();
+        zCaption->GetTextActor()->SetTextScaleModeToNone();
+    }
+
+    return actor;
+}
+
+//! Create the title actor
+vtkSmartPointer<vtkTextActor> createTitleActor(QString const& text, Vector2d const& pos1, Vector2d const& pos2, int fontSize)
+{
+    vtkNew<vtkTextActor> actor;
+
+    actor->SetInput(text.toStdString().c_str());
+    vtkTextProperty* prop = actor->GetTextProperty();
+    prop->SetFontFamily(VTK_FONT_FILE);
+    prop->SetFontFile(spFontFile->fileName().toStdString().data());
+    prop->SetColor(vtkColors->GetColor3d("Black").GetData());
+    prop->SetFontSize(fontSize);
+    prop->SetJustificationToLeft();
+    actor->GetPositionCoordinate()->SetCoordinateSystemToNormalizedViewport();
+    actor->GetPosition2Coordinate()->SetCoordinateSystemToNormalizedViewport();
+    actor->SetPosition(pos1[0], pos1[1]);
+    actor->SetPosition2(pos2[0], pos2[1]);
+
+    return actor;
+}
+
+//! Create the scalar bar title actor
+vtkSmartPointer<vtkTextActor> createScalarBarTitleActor(QString const& title, Vector2d const& pos1, Vector2d const& pos2, int fontSize)
+{
+    vtkNew<vtkTextActor> actor;
+    actor->SetInput(title.toStdString().c_str());
+
+    vtkTextProperty* prop = actor->GetTextProperty();
+    prop->SetFontFamily(VTK_FONT_FILE);
+    prop->SetFontFile(spFontFile->fileName().toStdString().data());
+    prop->SetColor(vtkColors->GetColor3d("Black").GetData());
+    prop->SetOrientation(90);
+    prop->SetFontSize(fontSize);
+    prop->SetJustificationToCentered();
+    actor->GetPositionCoordinate()->SetCoordinateSystemToNormalizedViewport();
+    actor->GetPosition2Coordinate()->SetCoordinateSystemToNormalizedViewport();
+    actor->SetPosition(pos1[0], pos1[1]);
+    actor->SetPosition2(pos2[0], pos2[1]);
+
+    return actor;
+}
+
+//! Create the scalar bar actor
+vtkSmartPointer<vtkScalarBarActor> createScalarBarActor(vtkSmartPointer<vtkLookupTable> lookupTable, Vector2d const& pos1, Vector2d const& pos2,
+                                                        int fontSize)
+{
+    vtkNew<vtkScalarBarActor> scalarBar;
+
+    // Set the labels
+    scalarBar->SetLabelFormat("%5.2f");
+    scalarBar->SetNumberOfLabels(2);
+    vtkTextProperty* labelProp = scalarBar->GetLabelTextProperty();
+    labelProp->ShadowOff();
+    labelProp->BoldOff();
+    labelProp->SetColor(vtkColors->GetColor3d("Black").GetData());
+    labelProp->SetFontSize(fontSize);
+    scalarBar->UnconstrainedFontSizeOn();
+
+    // Set the geometry
+    scalarBar->SetLookupTable(lookupTable);
+    scalarBar->SetPosition(pos1[0], pos1[1]);
+    scalarBar->SetPosition2(pos2[0], pos2[1]);
+
+    return scalarBar;
 }
 
 //! Get an icon for a legend

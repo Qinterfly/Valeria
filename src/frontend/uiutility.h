@@ -23,6 +23,10 @@ class vtkColor3d;
 class vtkRenderer;
 class vtkLookupTable;
 class vtkActor;
+class vtkAxesActor;
+class vtkCellArray;
+class vtkTextActor;
+class vtkScalarBarActor;
 class vtkRenderWindow;
 class vtkColorTransferFunction;
 
@@ -53,7 +57,7 @@ QTableWidgetItem* createTableItem(std::vector<double> const& values, Qt::Alignme
 QTableWidgetItem* createTableItem(QString const& text, Qt::AlignmentFlag alignment = Qt::AlignCenter);
 QDialog* showAsDialog(QWidget* pWidget, QString const& title = QString(), QWidget* pParent = nullptr, bool isModal = false);
 
-// Render
+// Render: color scheme
 vtkSmartPointer<vtkLookupTable> createLookupTable(Backend::Core::ReportColorMap colorMap, double lower, double upper);
 vtkSmartPointer<vtkLookupTable> buildLookupTable(vtkSmartPointer<vtkColorTransferFunction> ctf);
 vtkSmartPointer<vtkLookupTable> createCoolToWarmColorMap();
@@ -61,11 +65,22 @@ vtkSmartPointer<vtkLookupTable> createBlueToRedColorMap();
 vtkSmartPointer<vtkLookupTable> createVaradisColorMap();
 vtkSmartPointer<vtkLookupTable> createJetColorMap();
 vtkSmartPointer<vtkLookupTable> createPlasmaColorMap();
+
+// Render: view
 void setView(Backend::Core::ReportView view, double scale, vtkSmartPointer<vtkRenderer> renderer, vtkSmartPointer<vtkRenderer> overlayRenderer);
 void setIsometricView(vtkSmartPointer<vtkRenderer> renderer);
 void setPlaneView(vtkSmartPointer<vtkRenderer> renderer, int dir, int sign);
 QImage getImage(vtkSmartPointer<vtkRenderWindow> renderWindow, double quality = 2.0);
+
+// Render: actors
+vtkSmartPointer<vtkCellArray> createPolygons(std::vector<std::vector<int>> const& indices);
 vtkSmartPointer<vtkActor> createCubeActor(Eigen::Vector3d const& position, double length);
+vtkSmartPointer<vtkAxesActor> createAxesActor(int fontSize);
+vtkSmartPointer<vtkTextActor> createTitleActor(QString const& text, Eigen::Vector2d const& pos1, Eigen::Vector2d const& pos2, int fontSize);
+vtkSmartPointer<vtkTextActor> createScalarBarTitleActor(QString const& title, Eigen::Vector2d const& pos1, Eigen::Vector2d const& pos2,
+                                                        int fontSize);
+vtkSmartPointer<vtkScalarBarActor> createScalarBarActor(vtkSmartPointer<vtkLookupTable> lookupTable, Eigen::Vector2d const& pos1,
+                                                        Eigen::Vector2d const& pos2, int fontSize);
 
 // Icons
 QIcon getIcon(QCPScatterStyle const& style, QSize const& size, bool isLine, bool isMarker);

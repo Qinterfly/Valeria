@@ -33,11 +33,11 @@ QList<ReportCurve> ReportDefaults::curves()
 ReportDocument ReportDefaults::document()
 {
     ReportDocument result;
-    result.add(ReportDefaults::imRePage());
-    result.add(ReportDefaults::multiImRePage());
-    result.add(ReportDefaults::freqAmpPage());
-    result.add(ReportDefaults::projModeYPage());
-    result.add(ReportDefaults::mode3DPage());
+    // result.add(ReportDefaults::imRePage());
+    // result.add(ReportDefaults::multiImRePage());
+    // result.add(ReportDefaults::freqAmpPage());
+    // result.add(ReportDefaults::projModeYPage());
+    // result.add(ReportDefaults::mode3DPage());
     result.add(ReportDefaults::diagramPage());
     return result;
 }
@@ -320,34 +320,35 @@ ReportPage ReportDefaults::mode3DPage()
     return page;
 }
 
-//! Create a page with diagrams
+//! Create a page with a diagram
 ReportPage ReportDefaults::diagramPage()
 {
     ReportPage page(QObject::tr("Diagram"));
+    page.layout.setOrientation(QPageLayout::Landscape);
 
-    // Create top mode
-    DiagramReportItem* pTop = new DiagramReportItem;
-    pTop->name = QObject::tr("Top");
-    pTop->rect = QRect(30, 25, 155, 80);
-    pTop->unit = Units::skM_S2;
-    pTop->view = ReportView::kTop;
-    pTop->title = QObject::tr("${BUNDLE}");
-    pTop->sLabel = QObject::tr("Im a, ${UNIT}");
+    // Create the diagram
+    DiagramReportItem* pDiag = new DiagramReportItem;
+    pDiag->name = QObject::tr("Diagram");
+    pDiag->rect = QRect(30, 40, 240, 140);
+    pDiag->unit = Units::skM_S2;
+    pDiag->view = ReportView::kTop;
+    pDiag->title = QObject::tr("${BUNDLE}");
+    pDiag->sLabel = QObject::tr("Im a, ${UNIT}");
 
     // Create title
     TextReportItem* pTitle = new TextReportItem;
     pTitle->name = QObject::tr("Title");
-    pTitle->rect = QRect(30, 10, 155, 20);
+    pTitle->rect = QRect(20, 22, 257, 20);
     pTitle->text = QObject::tr("Mode name\nExcitation");
 
     // Create the caption
     TextReportItem* pCaption = new TextReportItem;
     pCaption->name = QObject::tr("Caption");
-    pCaption->rect = QRect(30, 265, 155, 10);
+    pCaption->rect = QRect(20, 185, 255, 10);
     pCaption->text = QObject::tr("Figure X.YY");
 
     // Combine
-    page.add(pTop);
+    page.add(pDiag);
     page.add(pTitle);
     page.add(pCaption);
 

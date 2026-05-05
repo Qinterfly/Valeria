@@ -51,9 +51,16 @@ private:
 
     // Rendering
     void setView();
-    void drawGeometry();
-    void drawAxes();
+    void drawAll();
+    void drawUndeformedState();
+    void drawDeformedState();
+    void drawElements(vtkSmartPointer<vtkPoints> points, std::vector<std::vector<int>> const& indices, vtkColor3d color, bool isWireframe);
+    void drawSection(Backend::Core::ReportSection const& section, vtkSmartPointer<vtkLookupTable> lookupTable, double scale, double phase);
+    void drawScalarBar(vtkSmartPointer<vtkLookupTable> lookupTable);
     void drawTitle();
+
+    // Helper functions
+    vtkSmartPointer<vtkPoints> createPoints(Testlab::Component const& component);
 
 private:
     Backend::Core::ReportTextEngine& mTextEngine;
@@ -71,7 +78,6 @@ private:
     vtkSmartPointer<vtkRenderer> mOverlayRenderer;
     vtkSmartPointer<vtkAxesActor> mAxes;
     QImage mImage;
-    QString mPathFontFile;
 };
 
 }

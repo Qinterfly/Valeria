@@ -80,6 +80,19 @@ ReportPoint getPoint(std::wstring const& name)
     return ReportPoint(QString::fromStdWString(name));
 }
 
+//! Get signed absolute maximum value
+double getSignedAbsMax(Vector3d const& data)
+{
+    int numData = data.size();
+    double result = 0.0;
+    for (int i = 0; i != numData; ++i)
+    {
+        if (std::abs(data[i]) > std::abs(result))
+            result = data[i];
+    }
+    return result;
+}
+
 //! Multiply real and imaginary parts of response by the specified factor
 Testlab::Response multiplyResponse(Testlab::Response const& response, double factor)
 {
@@ -258,43 +271,6 @@ std::vector<double> getNodeAngles(Testlab::Geometry const& geometry, QString con
     return getNode(geometry, componentName, nodeName).angles;
 }
 
-//! Project response onto the target direction
-Testlab::Response projectResponse(Testlab::Response const& response, Testlab::Geometry const& geometry, Backend::Core::ReportDirection dir)
-{
-    // Get the point angles
-    QString component = QString::fromStdWString(response.header.point.component);
-    QString node = QString::fromStdWString(response.header.point.node);
-    std::vector<double> angles = getNodeAngles(geometry, component, node);
-    if (angles.empty())
-        return response;
-
-    // Slice the directions
-    int iRespDir = (int) response.header.point.direction - 1;
-    int iDir = (int) dir - 1;
-    if (iRespDir < 0 || iDir < 0)
-        return response;
-
-    // Construct the transformation matrix
-    AngleAxisd rotX(angles[2], Vector3d::UnitX()); // YZ
-    AngleAxisd rotY(angles[1], Vector3d::UnitY()); // XZ
-    AngleAxisd rotZ(angles[0], Vector3d::UnitZ()); // XY
-    Quaterniond q = rotX * rotY * rotZ;
-    Matrix3d transform = q.toRotationMatrix();
-    Vector3d proj = transform * Vector3d::Unit(iRespDir);
-    double factor = proj[iDir];
-
-    // Multiply the response
-    Testlab::Response result = response;
-    int numKeys = result.keys.size();
-    for (int i = 0; i != numKeys; ++i)
-    {
-        result.realValues[i] *= factor;
-        result.imagValues[i] *= factor;
-    }
-
-    return result;
-}
-
 //! Project the reponse value onto the global coordinate axes
 Vector3cd projectResponse(Testlab::Response const& response, Testlab::Geometry const& geometry, int iKey)
 {
@@ -458,6 +434,48 @@ void resolveGeometryStateSlaves(Backend::Core::GeometryState& state, Testlab::Ge
         // Store the result
         state[slavePoint] = slaveValues;
     }
+}
+
+//! Get the range of magnitudes
+PairDouble getMagnitudeRange(GeometryState const& state, Testlab::Geometry const& geometry)
+{
+    double min = std::numeric_limits<double>::max();
+    double max = std::numeric_limits<double>::lowest();
+    int numComponents = geometry.components.size();
+    for (int iComponent = 0; iComponent != numComponents; ++iComponent)
+    {
+        Testlab::Component const& component = geometry.components[iComponent];
+        QString componentName = QString::fromStdWString(component.name);
+        int numNodes = component.nodes.size();
+        for (int iNode = 0; iNode != numNodes; ++iNode)
+        {
+            Testlab::Node const& node = component.nodes[iNode];
+            QString nodeName = QString::fromStdWString(node.name);
+            Vector3d values = getNodeValues(state, componentName, nodeName);
+            min = std::min(min, values.minCoeff());
+            max = std::max(max, values.maxCoeff());
+        }
+    }
+    return {min, max};
+}
+
+//! Get the vertex field value related to the node
+Vector3d getNodeValues(GeometryState const& state, QString const& componentName, QString const& nodeName)
+{
+    Vector3d result = Vector3d::Zero();
+    ReportPoint point(componentName, nodeName);
+    if (state.contains(point))
+        result = state[point];
+    return result;
+}
+
+//! Project the vector onto another vector
+Vector3d projectVector(Vector3d const& current, Vector3d const& base)
+{
+    double norm = base.squaredNorm();
+    if (norm < skEps)
+        return Vector3d::Zero();
+    return (current.dot(base) / norm) * base;
 }
 
 //! Find all the response roots

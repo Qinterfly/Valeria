@@ -204,10 +204,6 @@ public:
     double vertexSize;
     double lineWidth;
     bool showUndeformed;
-    bool showVertices;
-    bool showLines;
-    bool showTrias;
-    bool showQuads;
 };
 
 //! Class to define a layout of a diagram element
@@ -220,6 +216,8 @@ public:
 
     Type type() const override;
     ReportItem* clone() const override;
+
+    void addSection(ReportSection const& section);
 
     QJsonObject toJson() const override;
     void fromJson(QJsonObject const& obj) override;
@@ -240,6 +238,9 @@ public:
     QString sLabel;
     PairDouble sRange;
     double quality;
+    QColor undeformedColor;
+    double vertexSize;
+    double lineWidth;
 };
 
 ReportItem* createItem(ReportItem::Type type);

@@ -196,8 +196,8 @@ ReportSection::ReportSection(ReportPoint const& uFirstPoint, ReportPoint const& 
     secondPoint = uSecondPoint;
 }
 
-ReportSection::ReportSection(PairString const& uPointPair, ReportDirection uDir, int uSign, QString const& uName)
-    : ReportSection(ReportPoint(uPointPair.first), ReportPoint(uPointPair.second), uDir, uSign, uName)
+ReportSection::ReportSection(QString const& uFirstPoint, QString const& uSecondPoint, int uSign, QString const& uName)
+    : ReportSection(ReportPoint(uFirstPoint), ReportPoint(uSecondPoint), ReportDirection::kN, uSign, uName)
 {
 }
 

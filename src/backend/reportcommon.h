@@ -124,7 +124,7 @@ public:
     ReportSection();
     ReportSection(ReportPoint const& uFirstPoint, ReportPoint const& uSecondPoint, ReportDirection uDir = ReportDirection::kN, int uSign = 1,
                   QString const& uName = QString());
-    ReportSection(PairString const& uPointPair, ReportDirection uDir = ReportDirection::kN, int uSign = 1, QString const& uName = QString());
+    ReportSection(QString const& uFirstPoint, QString const& uSecondPoint, int uSign = 1, QString const& uName = QString());
     ~ReportSection() = default;
 
     QJsonObject toJson() const override;

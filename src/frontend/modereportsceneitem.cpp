@@ -1,11 +1,9 @@
 #include <QGuiApplication>
 #include <QPainter>
 #include <QScreen>
-#include <QTemporaryFile>
 
 #include <vtkAxesActor.h>
 #include <vtkCamera.h>
-#include <vtkCaptionActor2D.h>
 #include <vtkLookupTable.h>
 #include <vtkNamedColors.h>
 #include <vtkPointData.h>
@@ -16,8 +14,6 @@
 #include <vtkRenderer.h>
 #include <vtkScalarBarActor.h>
 #include <vtkTextActor.h>
-#include <vtkTextProperty.h>
-#include <vtkTransform.h>
 
 #include "mathutility.h"
 #include "modereportsceneitem.h"
@@ -33,7 +29,6 @@ using namespace Eigen;
 // Constants
 vtkNew<vtkNamedColors> const vtkColors;
 static double const skEps = std::numeric_limits<double>::epsilon();
-static vtkColor3d const skTextColor = vtkColors->GetColor3d("Black");
 
 ModeReportSceneItem::ModeReportSceneItem(ModeReportItem* pItem, ReportTextEngine& textEngine, ResponseCollection const& collection,
                                          int iSelectedBundle, Testlab::Geometry const& geometry, QGraphicsItem* pParent)
@@ -128,8 +123,7 @@ void ModeReportSceneItem::replot()
 
     // Draw the content
     clear();
-    drawGeometry();
-    drawTitle();
+    drawAll();
     setView();
     mRenderWindow->Render();
 
@@ -175,7 +169,8 @@ void ModeReportSceneItem::initialize()
     mOverlayRenderer->SetLayer(1);
 
     // Add the axes
-    drawAxes();
+    mAxes = Utility::createAxesActor(mpItem->font.pointSize());
+    mOverlayRenderer->AddActor(mAxes);
     mOverlayRenderer->ResetCamera();
 
     // Create the window
@@ -184,10 +179,6 @@ void ModeReportSceneItem::initialize()
     mRenderWindow->SetNumberOfLayers(2);
     mRenderWindow->AddRenderer(mRenderer);
     mRenderWindow->AddRenderer(mOverlayRenderer);
-
-    // Initialize the font file
-    QTemporaryFile* pFile = QTemporaryFile::createNativeFile(":/fonts/Roboto.ttf");
-    mPathFontFile = pFile->fileName();
 }
 
 //! Set the camera position as well as zoom
@@ -197,8 +188,8 @@ void ModeReportSceneItem::setView()
     Utility::setView(pItem->view, pItem->scale, mRenderer, mOverlayRenderer);
 }
 
-//! Represent geometry
-void ModeReportSceneItem::drawGeometry()
+//! Represent all the elements
+void ModeReportSceneItem::drawAll()
 {
     ModeReportItem* pItem = (ModeReportItem*) mpItem;
     if (!pItem)
@@ -215,6 +206,9 @@ void ModeReportSceneItem::drawGeometry()
 
     // Render the deformed state
     drawDeformedState();
+
+    // Render the title
+    drawTitle();
 }
 
 //! Represent the initial configuration
@@ -239,12 +233,9 @@ void ModeReportSceneItem::drawUndeformedState()
         vtkSmartPointer<vtkPoints> points = createPoints(component);
 
         // Draw the elements
-        if (pItem->showLines)
-            drawElements(points, component.lines, color, 1.0, true, true);
-        if (pItem->showTrias)
-            drawElements(points, component.trias, color, 1.0, true, true);
-        if (pItem->showQuads)
-            drawElements(points, component.quads, color, 1.0, true, true);
+        drawElements(points, component.lines, color, 1.0, true, true);
+        drawElements(points, component.trias, color, 1.0, true, true);
+        drawElements(points, component.quads, color, 1.0, true, true);
     }
 }
 
@@ -258,7 +249,7 @@ void ModeReportSceneItem::drawDeformedState()
     // Check if the state is valid to be rendered
     if (mState.isEmpty())
         return;
-    PairDouble range = getMagnitudeRange();
+    PairDouble range = Backend::Utility::getMagnitudeRange(mState, mGeometry);
     if (std::abs(range.second - range.first) < skEps)
         return;
 
@@ -283,16 +274,12 @@ void ModeReportSceneItem::drawDeformedState()
         vtkSmartPointer<vtkDoubleArray> magnitudes = getMagnitudes(component);
 
         // Draw the vertices
-        if (pItem->showVertices)
-            drawVertices(points, magnitudes, lookupTable);
+        drawVertices(points, magnitudes, lookupTable);
 
         // Draw the elements
-        if (pItem->showLines)
-            drawElements(points, component.lines, magnitudes, lookupTable);
-        if (pItem->showTrias)
-            drawElements(points, component.trias, magnitudes, lookupTable);
-        if (pItem->showQuads)
-            drawElements(points, component.quads, magnitudes, lookupTable);
+        drawElements(points, component.lines, magnitudes, lookupTable);
+        drawElements(points, component.trias, magnitudes, lookupTable);
+        drawElements(points, component.quads, magnitudes, lookupTable);
     }
 
     // Show the scalar bar
@@ -351,7 +338,7 @@ void ModeReportSceneItem::drawElements(vtkSmartPointer<vtkPoints> points, std::v
         return;
 
     // Create polygons
-    vtkSmartPointer<vtkCellArray> polygons = createPolygons(indices);
+    vtkSmartPointer<vtkCellArray> polygons = Utility::createPolygons(indices);
 
     // Group polygons
     bool isPolys = indices.front().size() != 2;
@@ -405,7 +392,7 @@ void ModeReportSceneItem::drawElements(vtkSmartPointer<vtkPoints> points, std::v
         return;
 
     // Create polygons
-    vtkSmartPointer<vtkCellArray> polygons = createPolygons(indices);
+    vtkSmartPointer<vtkCellArray> polygons = Utility::createPolygons(indices);
 
     // Group polygons
     bool isPolys = indices.front().size() != 2;
@@ -448,68 +435,18 @@ void ModeReportSceneItem::drawScalarBar(vtkSmartPointer<vtkLookupTable> lookupTa
     if (!pItem)
         return;
 
-    // Create the scalar bar
-    vtkNew<vtkScalarBarActor> scalarBar;
-
-    // Set the title
+    // Create the title actor
     QString title = mTextEngine.process(pItem->sLabel);
-    vtkNew<vtkTextActor> titleActor;
-    titleActor->SetInput(title.toStdString().c_str());
-    vtkTextProperty* titleProp = titleActor->GetTextProperty();
-    titleProp->SetFontFamily(VTK_FONT_FILE);
-    titleProp->SetFontFile(mPathFontFile.toStdString().data());
-    titleProp->SetColor(skTextColor.GetData());
-    titleProp->SetOrientation(90);
-    titleProp->SetFontSize(pItem->font.pointSize());
-    titleProp->SetJustificationToCentered();
-    titleActor->GetPositionCoordinate()->SetCoordinateSystemToNormalizedViewport();
-    titleActor->GetPosition2Coordinate()->SetCoordinateSystemToNormalizedViewport();
-    titleActor->SetPosition(0.98, 0.35);
-    titleActor->SetPosition2(1.0, 0.55);
-    mRenderer->AddActor(titleActor);
+    vtkSmartPointer<vtkTextActor> titleActor = Utility::createScalarBarTitleActor(title, {0.98, 0.35}, {1.0, 0.55}, pItem->font.pointSize());
 
-    // Set the labels
-    scalarBar->SetLabelFormat("%5.2f");
-    scalarBar->SetNumberOfLabels(2);
-    vtkTextProperty* labelProp = scalarBar->GetLabelTextProperty();
-    labelProp->ShadowOff();
-    labelProp->BoldOff();
-    labelProp->SetColor(skTextColor.GetData());
-    labelProp->SetFontSize(pItem->font.pointSize());
-    scalarBar->UnconstrainedFontSizeOn();
-
-    // Set the geometry
+    // Create the scalar bar
+    vtkSmartPointer<vtkScalarBarActor> scalarBar = Utility::createScalarBarActor(lookupTable, {0.9, 0.05}, {0.95, 0.6}, pItem->font.pointSize());
     int maxWidth = ceil(kRelMaxWidth * mRenderWindow->GetSize()[0]);
-    scalarBar->SetLookupTable(lookupTable);
     scalarBar->SetMaximumWidthInPixels(maxWidth);
-    scalarBar->SetPosition(0.9, 0.05);
-    scalarBar->SetPosition2(0.95, 0.6);
 
-    // Add to the scene
+    // Add the actors to the scene
+    mRenderer->AddActor(titleActor);
     mRenderer->AddViewProp(scalarBar);
-}
-
-//! Render the axes
-void ModeReportSceneItem::drawAxes()
-{
-    mAxes = vtkAxesActor::New();
-
-    // Set the text properties
-    vtkTextProperty* xTextProp = mAxes->GetXAxisCaptionActor2D()->GetCaptionTextProperty();
-    vtkTextProperty* yTextProp = mAxes->GetYAxisCaptionActor2D()->GetCaptionTextProperty();
-    vtkTextProperty* zTextProp = mAxes->GetZAxisCaptionActor2D()->GetCaptionTextProperty();
-    xTextProp->SetColor(vtkColors->GetColor3d("Red").GetData());
-    yTextProp->SetColor(vtkColors->GetColor3d("Green").GetData());
-    zTextProp->SetColor(vtkColors->GetColor3d("Blue").GetData());
-    xTextProp->ShadowOff();
-    yTextProp->ShadowOff();
-    zTextProp->ShadowOff();
-    xTextProp->ItalicOff();
-    yTextProp->ItalicOff();
-    zTextProp->ItalicOff();
-
-    // Add them to the scene
-    mOverlayRenderer->AddActor(mAxes);
 }
 
 //! Render the title
@@ -520,20 +457,11 @@ void ModeReportSceneItem::drawTitle()
     if (!pItem)
         return;
 
-    // Set the text
+    // Create the actor
     QString text = mTextEngine.process(pItem->title);
-    vtkNew<vtkTextActor> actor;
-    actor->SetInput(text.toStdString().c_str());
-    vtkTextProperty* prop = actor->GetTextProperty();
-    prop->SetFontFamily(VTK_FONT_FILE);
-    prop->SetFontFile(mPathFontFile.toStdString().data());
-    prop->SetColor(skTextColor.GetData());
-    prop->SetFontSize(pItem->font.pointSize());
-    prop->SetJustificationToLeft();
-    actor->GetPositionCoordinate()->SetCoordinateSystemToNormalizedViewport();
-    actor->GetPosition2Coordinate()->SetCoordinateSystemToNormalizedViewport();
-    actor->SetPosition(0.0, 0.0);
-    actor->SetPosition2(0.5, 0.2);
+    vtkSmartPointer<vtkTextActor> actor = Utility::createTitleActor(text, {0.0, 0.0}, {0.5, 0.2}, pItem->font.pointSize());
+
+    // Add the actor to the scene
     mRenderer->AddActor(actor);
 }
 
@@ -552,33 +480,13 @@ vtkSmartPointer<vtkPoints> ModeReportSceneItem::createPoints(Testlab::Component 
         Vector3d position = Backend::Utility::convert3d(node.coordinates);
 
         // Apply the values
-        Vector3d values = getNodeValues(componentName, nodeName);
+        Vector3d values = Backend::Utility::getNodeValues(mState, componentName, nodeName);
         position += values * scale * cos(phase);
 
         // Add the point
         points->InsertPoint(iNode, position[0], position[1], position[2]);
     }
     return points;
-}
-
-//! Create polygons using given indices
-vtkSmartPointer<vtkCellArray> ModeReportSceneItem::createPolygons(std::vector<std::vector<int>> const& indices)
-{
-    vtkNew<vtkCellArray> polygons;
-    int numElements = indices.size();
-    for (int i = 0; i != numElements; ++i)
-    {
-        vtkNew<vtkPolygon> polygon;
-        std::vector<int> const& elementIndices = indices[i];
-        int numElementIndices = elementIndices.size();
-        for (int j = 0; j != numElementIndices; ++j)
-        {
-            int iVertex = elementIndices[j];
-            polygon->GetPointIds()->InsertNextId(iVertex);
-        }
-        polygons->InsertNextCell(polygon);
-    }
-    return polygons;
 }
 
 //! Get magnitudes at each node
@@ -597,14 +505,8 @@ vtkSmartPointer<vtkDoubleArray> ModeReportSceneItem::getMagnitudes(Testlab::Comp
         QString nodeName = QString::fromStdWString(node.name);
 
         // Find the maximum absolute node value
-        Vector3d values = getNodeValues(componentName, nodeName);
-        int numValues = values.size();
-        double magnitude = 0.0;
-        for (int iValue = 0; iValue != numValues; ++iValue)
-        {
-            if (std::abs(values[iValue]) > std::abs(magnitude))
-                magnitude = values[iValue];
-        }
+        Vector3d values = Backend::Utility::getNodeValues(mState, componentName, nodeName);
+        double magnitude = Backend::Utility::getSignedAbsMax(values);
 
         // Set the magnitude
         magnitudes->SetValue(iNode, magnitude);
@@ -612,35 +514,3 @@ vtkSmartPointer<vtkDoubleArray> ModeReportSceneItem::getMagnitudes(Testlab::Comp
     return magnitudes;
 }
 
-//! Get the range of magnitudes
-PairDouble ModeReportSceneItem::getMagnitudeRange()
-{
-    double min = std::numeric_limits<double>::max();
-    double max = std::numeric_limits<double>::lowest();
-    int numComponents = mGeometry.components.size();
-    for (int iComponent = 0; iComponent != numComponents; ++iComponent)
-    {
-        Testlab::Component const& component = mGeometry.components[iComponent];
-        QString componentName = QString::fromStdWString(component.name);
-        int numNodes = component.nodes.size();
-        for (int iNode = 0; iNode != numNodes; ++iNode)
-        {
-            Testlab::Node const& node = component.nodes[iNode];
-            QString nodeName = QString::fromStdWString(node.name);
-            Vector3d values = getNodeValues(componentName, nodeName);
-            min = std::min(min, values.minCoeff());
-            max = std::max(max, values.maxCoeff());
-        }
-    }
-    return {min, max};
-}
-
-//! Get the vertex field value related to the node
-Eigen::Vector3d ModeReportSceneItem::getNodeValues(QString const& componentName, QString const& nodeName)
-{
-    Vector3d result = Vector3d::Zero();
-    ReportPoint point(componentName, nodeName);
-    if (mState.contains(point))
-        result = mState[point];
-    return result;
-}

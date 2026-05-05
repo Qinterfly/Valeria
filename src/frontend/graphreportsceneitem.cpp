@@ -391,6 +391,15 @@ void GraphReportSceneItem::processModeshape(ResponseBundle const& bundle)
         qWarning() << tr("Coordinate direction is not specified for a modeshape");
         return;
     }
+    int iCoordDir = (int) pItem->coordDir - 1;
+
+    // Check if the response direction is specified
+    if (pItem->responseDir == ReportDirection::kNone)
+    {
+        qWarning() << tr("Response direction is not specified for a modeshape");
+        return;
+    }
+    int iRespDir = (int) pItem->responseDir - 1;
 
     // Loop through all the curves
     int numCurves = pItem->curves.size();
@@ -421,19 +430,17 @@ void GraphReportSceneItem::processModeshape(ResponseBundle const& bundle)
             if (coords.empty())
                 continue;
 
-            // Project the response
-            Testlab::Response projResponse = Backend::Utility::projectResponse(response, mGeometry, pItem->responseDir);
-            if (projResponse.keys.size() == 0)
-                continue;
-
             // Find the closest frequency to the resonance one
-            int iFound = Backend::Utility::findClosestKey(projResponse, bundle.freq);
+            int iFound = Backend::Utility::findClosestKey(response, bundle.freq);
             if (iFound < 0)
                 continue;
 
+            // Project the response
+            Eigen::Vector3cd projResponse = Backend::Utility::projectResponse(response, mGeometry, iFound);
+
             // Set the data
-            xData[iPoint] = coords[(int) pItem->coordDir - 1];
-            yData[iPoint] = projResponse.imagValues[iFound] * projResponse.header.point.sign;
+            xData[iPoint] = coords[iCoordDir];
+            yData[iPoint] = projResponse[iRespDir].imag();
 
             // Add the variable
             QString varName = QString("%1:%2").arg(point.name(), Backend::Utility::getDirLabel(pItem->responseDir));

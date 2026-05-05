@@ -54,7 +54,7 @@ private:
 
     // Rendering
     void setView();
-    void drawGeometry();
+    void drawAll();
     void drawUndeformedState();
     void drawDeformedState();
     void drawVertices(vtkSmartPointer<vtkPoints> points, vtkSmartPointer<vtkDoubleArray> scalars, vtkSmartPointer<vtkLookupTable> lookupTable);
@@ -63,15 +63,11 @@ private:
     void drawElements(vtkSmartPointer<vtkPoints> points, std::vector<std::vector<int>> const& indices, vtkSmartPointer<vtkDoubleArray> scalars,
                       vtkSmartPointer<vtkLookupTable> lookupTable, bool isWireframe = false);
     void drawScalarBar(vtkSmartPointer<vtkLookupTable> lookupTable);
-    void drawAxes();
     void drawTitle();
 
     // Helper functions
     vtkSmartPointer<vtkPoints> createPoints(Testlab::Component const& component, double scale = 0.0, double phase = 0.0);
-    vtkSmartPointer<vtkCellArray> createPolygons(std::vector<std::vector<int>> const& indices);
     vtkSmartPointer<vtkDoubleArray> getMagnitudes(Testlab::Component const& component);
-    PairDouble getMagnitudeRange();
-    Eigen::Vector3d getNodeValues(QString const& componentName, QString const& nodeName);
 
 private:
     Backend::Core::ReportTextEngine& mTextEngine;
@@ -89,7 +85,6 @@ private:
     vtkSmartPointer<vtkRenderer> mOverlayRenderer;
     vtkSmartPointer<vtkAxesActor> mAxes;
     QImage mImage;
-    QString mPathFontFile;
 };
 
 }

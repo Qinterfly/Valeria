@@ -29,6 +29,7 @@ Eigen::Vector3d convert3d(std::vector<double> const& data);
 int findClosestKey(Testlab::Response const& response, double searchKey);
 QString getDirLabel(Backend::Core::ReportDirection dir);
 Backend::Core::ReportPoint getPoint(std::wstring const& name);
+double getSignedAbsMax(Eigen::Vector3d const& data);
 
 // Response
 Testlab::Response multiplyResponse(Testlab::Response const& response, double factor);
@@ -40,7 +41,6 @@ Testlab::Response convertAcceleration(Backend::Core::ResponseBundle const& bundl
 Testlab::Node getNode(Testlab::Geometry const& geometry, QString const& componentName, QString const& nodeName);
 std::vector<double> getNodeCoords(Testlab::Geometry const& geometry, QString const& componentName, QString const& nodeName);
 std::vector<double> getNodeAngles(Testlab::Geometry const& geometry, QString const& componentName, QString const& nodeName);
-Testlab::Response projectResponse(Testlab::Response const& response, Testlab::Geometry const& geometry, Backend::Core::ReportDirection dir);
 Eigen::Vector3cd projectResponse(Testlab::Response const& response, Testlab::Geometry const& geometry, int iKey);
 
 // Geometry
@@ -48,6 +48,9 @@ double getMaximumDimension(Testlab::Geometry const& geometry);
 Backend::Core::GeometryState getGeometryState(QString const& unit, Backend::Core::ResponseBundle const& bundle,
                                               Testlab::Geometry const& geometry);
 void resolveGeometryStateSlaves(Backend::Core::GeometryState& state, Testlab::Geometry const& geometry);
+PairDouble getMagnitudeRange(Backend::Core::GeometryState const& state, Testlab::Geometry const& geometry);
+Eigen::Vector3d getNodeValues(Backend::Core::GeometryState const& state, QString const& componentName, QString const& nodeName);
+Eigen::Vector3d projectVector(Eigen::Vector3d const& current, Eigen::Vector3d const& base);
 
 // Roots
 struct Root

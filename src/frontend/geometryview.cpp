@@ -465,7 +465,7 @@ void GeometryView::drawElements(vtkSmartPointer<vtkPoints> points, std::vector<s
         return;
 
     // Create polygons
-    vtkSmartPointer<vtkCellArray> polygons = createPolygons(indices);
+    vtkSmartPointer<vtkCellArray> polygons = Utility::createPolygons(indices);
 
     // Group polygons
     bool isPolys = indices.front().size() != 2;
@@ -518,26 +518,6 @@ vtkSmartPointer<vtkPoints> GeometryView::createPoints(std::vector<Testlab::Node>
         points->InsertPoint(i, position[0], position[1], position[2]);
     }
     return points;
-}
-
-//! Create polygons using given indices
-vtkSmartPointer<vtkCellArray> GeometryView::createPolygons(std::vector<std::vector<int>> const& indices)
-{
-    vtkNew<vtkCellArray> polygons;
-    int numElements = indices.size();
-    for (int i = 0; i != numElements; ++i)
-    {
-        vtkNew<vtkPolygon> polygon;
-        std::vector<int> const& elementIndices = indices[i];
-        int numElementIndices = elementIndices.size();
-        for (int j = 0; j != numElementIndices; ++j)
-        {
-            int iVertex = elementIndices[j];
-            polygon->GetPointIds()->InsertNextId(iVertex);
-        }
-        polygons->InsertNextCell(polygon);
-    }
-    return polygons;
 }
 
 //! Show the widget at the center

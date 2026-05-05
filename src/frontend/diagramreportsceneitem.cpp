@@ -1,15 +1,20 @@
 #include <QGuiApplication>
 #include <QPainter>
 #include <QScreen>
-#include <QTemporaryFile>
+
+#include <Eigen/Geometry>
 
 #include <vtkAxesActor.h>
-#include <vtkCaptionActor2D.h>
+#include <vtkLookupTable.h>
 #include <vtkNamedColors.h>
+#include <vtkPointData.h>
+#include <vtkPolyData.h>
+#include <vtkPolygon.h>
+#include <vtkProperty.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
+#include <vtkScalarBarActor.h>
 #include <vtkTextActor.h>
-#include <vtkTextProperty.h>
 
 #include "diagramreportsceneitem.h"
 #include "mathutility.h"
@@ -26,6 +31,9 @@ using namespace Eigen;
 vtkNew<vtkNamedColors> const vtkColors;
 static double const skEps = std::numeric_limits<double>::epsilon();
 static vtkColor3d const skTextColor = vtkColors->GetColor3d("Black");
+
+// Helpers
+Eigen::Vector3d getBinormalVector(ReportView view);
 
 DiagramReportSceneItem::DiagramReportSceneItem(DiagramReportItem* pItem, ReportTextEngine& textEngine, ResponseCollection const& collection,
                                                int iSelectedBundle, Testlab::Geometry const& geometry, QGraphicsItem* pParent)
@@ -84,7 +92,7 @@ void DiagramReportSceneItem::setView()
 }
 
 //! Represent geometry
-void DiagramReportSceneItem::drawGeometry()
+void DiagramReportSceneItem::drawAll()
 {
     DiagramReportItem* pItem = (DiagramReportItem*) mpItem;
     if (!pItem)
@@ -95,30 +103,258 @@ void DiagramReportSceneItem::drawGeometry()
     if (mMaximumDimension < skEps)
         mMaximumDimension = 1.0;
 
-    // TODO
+    // Draw the initial configuration
+    drawUndeformedState();
+
+    // Draw the deformed configuration
+    drawDeformedState();
+
+    // Render the title
+    drawTitle();
 }
 
-//! Render the axes
-void DiagramReportSceneItem::drawAxes()
+//! Represent the initial configuration
+void DiagramReportSceneItem::drawUndeformedState()
 {
-    mAxes = vtkAxesActor::New();
+    DiagramReportItem* pItem = (DiagramReportItem*) mpItem;
+    if (!pItem)
+        return;
 
-    // Set the text properties
-    vtkTextProperty* xTextProp = mAxes->GetXAxisCaptionActor2D()->GetCaptionTextProperty();
-    vtkTextProperty* yTextProp = mAxes->GetYAxisCaptionActor2D()->GetCaptionTextProperty();
-    vtkTextProperty* zTextProp = mAxes->GetZAxisCaptionActor2D()->GetCaptionTextProperty();
-    xTextProp->SetColor(vtkColors->GetColor3d("Red").GetData());
-    yTextProp->SetColor(vtkColors->GetColor3d("Green").GetData());
-    zTextProp->SetColor(vtkColors->GetColor3d("Blue").GetData());
-    xTextProp->ShadowOff();
-    yTextProp->ShadowOff();
-    zTextProp->ShadowOff();
-    xTextProp->ItalicOff();
-    yTextProp->ItalicOff();
-    zTextProp->ItalicOff();
+    // Check if the state is valid to be rendered
+    if (mState.isEmpty())
+        return;
 
-    // Add them to the scene
-    mOverlayRenderer->AddActor(mAxes);
+    // Loop through all the components
+    int numComponents = mGeometry.components.size();
+    vtkColor3d color = Utility::getColor(pItem->undeformedColor);
+    for (int i = 0; i != numComponents; ++i)
+    {
+        Testlab::Component const& component = mGeometry.components[i];
+
+        // Construct the vertices
+        vtkSmartPointer<vtkPoints> points = createPoints(component);
+
+        // Draw the elements
+        drawElements(points, component.lines, color, false);
+        drawElements(points, component.trias, color, false);
+        drawElements(points, component.quads, color, false);
+    }
+}
+
+//! Represent the vertex field
+void DiagramReportSceneItem::drawDeformedState()
+{
+    DiagramReportItem* pItem = (DiagramReportItem*) mpItem;
+    if (!pItem)
+        return;
+
+    // Check if the state is valid to be rendered
+    if (mState.isEmpty())
+        return;
+    PairDouble range = Backend::Utility::getMagnitudeRange(mState, mGeometry);
+    if (std::abs(range.second - range.first) < skEps)
+        return;
+
+    // Create the lookup table
+    double limit = std::max(std::abs(range.first), std::abs(range.second));
+    // vtkSmartPointer<vtkLookupTable> lookupTable = Utility::createLookupTable(pItem->colorMap, -limit, limit);
+    vtkNew<vtkLookupTable> lookupTable;
+    lookupTable->SetNumberOfTableValues(2);
+    lookupTable->SetRange(-limit, limit);
+    lookupTable->SetTableValue(0, 0.0, 0.0, 1.0);
+    lookupTable->SetTableValue(1, 1.0, 0.0, 0.0);
+    lookupTable->Build();
+
+    // Set the mode parametsr
+    double scale = pItem->amplitude * mMaximumDimension / limit;
+    double phase = pItem->phase * M_PI / 180.0;
+
+    // Loop through all the sections
+    int numSections = pItem->sections.size();
+    for (int i = 0; i != numSections; ++i)
+        drawSection(pItem->sections[i], lookupTable, scale, phase);
+
+    // Show the scalar bar
+    drawScalarBar(lookupTable);
+}
+
+//! Render elements using one color
+void DiagramReportSceneItem::drawElements(vtkSmartPointer<vtkPoints> points, std::vector<std::vector<int>> const& indices, vtkColor3d color,
+                                          bool isWireframe)
+{
+    DiagramReportItem* pItem = (DiagramReportItem*) mpItem;
+    if (!pItem)
+        return;
+
+    // Check if there are any elements to render
+    if (indices.empty())
+        return;
+
+    // Create polygons
+    vtkSmartPointer<vtkCellArray> polygons = Utility::createPolygons(indices);
+
+    // Group polygons
+    bool isPolys = indices.front().size() != 2;
+    vtkNew<vtkPolyData> polyData;
+    polyData->SetPoints(points);
+    if (isPolys)
+        polyData->SetPolys(polygons);
+    else
+        polyData->SetLines(polygons);
+
+    // Build the mapper
+    vtkNew<vtkPolyDataMapper> mapper;
+    mapper->SetInputData(polyData);
+
+    // Set the offset
+    mapper->SetResolveCoincidentTopologyToPolygonOffset();
+    if (isPolys)
+        mapper->SetResolveCoincidentTopologyPolygonOffsetParameters(1.0, 1.0);
+    else
+        mapper->SetResolveCoincidentTopologyLineOffsetParameters(1.0, -1.0);
+
+    // Create the actor
+    vtkNew<vtkActor> actor;
+    actor->SetMapper(mapper);
+    actor->GetProperty()->SetColor(color.GetData());
+    actor->GetProperty()->SetLineWidth(pItem->lineWidth);
+    if (isWireframe)
+        actor->GetProperty()->SetRepresentationToWireframe();
+
+    // Add the actor to the scene
+    mRenderer->AddActor(actor);
+}
+
+//! Render the section
+void DiagramReportSceneItem::drawSection(ReportSection const& section, vtkSmartPointer<vtkLookupTable> lookupTable, double scale, double phase)
+{
+    DiagramReportItem* pItem = (DiagramReportItem*) mpItem;
+    if (!pItem)
+        return;
+
+    // Check if the section direction is specified
+    if (section.dir == ReportDirection::kNone)
+        return;
+    int iDir = (int) section.dir - 1;
+
+    // Get the points
+    ReportPoint firstPoint = section.firstPoint;
+    if (firstPoint.isEmpty())
+        return;
+    ReportPoint secondPoint = section.secondPoint;
+    if (secondPoint.isEmpty())
+        secondPoint = firstPoint;
+
+    // Get the coords
+    Vector3d firstCoords = Backend::Utility::convert3d(Backend::Utility::getNodeCoords(mGeometry, firstPoint.component, firstPoint.node));
+    Vector3d secondCoords = Backend::Utility::convert3d(Backend::Utility::getNodeCoords(mGeometry, secondPoint.component, secondPoint.node));
+
+    // Compute the tangent vector
+    Vector3d tangentVec = secondCoords - firstCoords;
+    double distance = tangentVec.norm();
+    bool isOnePoint = distance < skEps;
+
+    // Compute the normal vector
+    Vector3d normalVec = Vector3d::Zero();
+    if (section.dir == ReportDirection::kN)
+    {
+        if (isOnePoint)
+        {
+            qWarning() << tr("Could not process the section consisted of %1:%2 in normal direction").arg(firstPoint.component, firstPoint.node);
+            return;
+        }
+        else
+        {
+            Vector3d binormalVec = getBinormalVector(pItem->view);
+            binormalVec /= binormalVec.norm();
+            tangentVec /= distance;
+            normalVec = tangentVec.cross(binormalVec);
+        }
+    }
+    else
+    {
+        normalVec = Vector3d::Unit(iDir);
+    }
+    normalVec *= section.sign;
+
+    // Get the first state
+    double factor = scale * cos(phase);
+    Vector3d firstState = Backend::Utility::getNodeValues(mState, firstPoint.component, firstPoint.node);
+    firstState = factor * Backend::Utility::projectVector(firstState, normalVec);
+
+    // Get the second state
+    Vector3d secondState = Backend::Utility::getNodeValues(mState, secondPoint.component, secondPoint.node);
+    secondState = factor * Backend::Utility::projectVector(secondState, normalVec);
+
+    // Create the points
+    vtkNew<vtkPoints> points;
+    points->InsertPoint(0, firstCoords[0], firstCoords[1], firstCoords[2]);
+    points->InsertPoint(1, secondCoords[0], secondCoords[1], secondCoords[2]);
+    points->InsertPoint(2, firstCoords[0] + firstState[0], firstCoords[1] + firstState[1], firstCoords[2] + firstState[2]);
+    points->InsertPoint(3, secondCoords[0] + secondState[0], secondCoords[1] + secondState[1], secondCoords[2] + secondState[2]);
+
+    // Create the scalars
+    vtkNew<vtkDoubleArray> scalars;
+    scalars->SetNumberOfTuples(4);
+    double firstScalar = Backend::Utility::getSignedAbsMax(firstState);
+    double secondScalar = Backend::Utility::getSignedAbsMax(secondState);
+    scalars->SetValue(0, firstScalar);
+    scalars->SetValue(1, secondScalar);
+    scalars->SetValue(2, firstScalar);
+    scalars->SetValue(3, secondScalar);
+
+    // Create the polygons
+    vtkNew<vtkPolygon> polygon;
+    polygon->GetPointIds()->InsertNextId(0);
+    polygon->GetPointIds()->InsertNextId(1);
+    polygon->GetPointIds()->InsertNextId(3);
+    polygon->GetPointIds()->InsertNextId(2);
+    vtkNew<vtkCellArray> polygons;
+    polygons->InsertNextCell(polygon);
+
+    // Group the polygons
+    vtkNew<vtkPolyData> polyData;
+    polyData->SetPoints(points);
+    polyData->SetPolys(polygons);
+    polyData->GetPointData()->SetScalars(scalars);
+
+    // Build the mapper
+    vtkNew<vtkPolyDataMapper> mapper;
+    mapper->SetInputData(polyData);
+    mapper->UseLookupTableScalarRangeOn();
+    mapper->SetLookupTable(lookupTable);
+
+    // Create the actor
+    vtkNew<vtkActor> actor;
+    actor->SetMapper(mapper);
+
+    // Add the actor to the scene
+    mRenderer->AddActor(actor);
+}
+
+//! Render the scalar bar
+void DiagramReportSceneItem::drawScalarBar(vtkSmartPointer<vtkLookupTable> lookupTable)
+{
+    // Constants
+    double const kRelMaxWidth = 1.0 / 5.0;
+
+    // Get the report item
+    DiagramReportItem* pItem = (DiagramReportItem*) mpItem;
+    if (!pItem)
+        return;
+
+    // Create the title actor
+    QString title = mTextEngine.process(pItem->sLabel);
+    vtkSmartPointer<vtkTextActor> titleActor = Utility::createScalarBarTitleActor(title, {0.96, 0.35}, {1.0, 0.55}, pItem->font.pointSize());
+
+    // Create the scalar bar
+    vtkSmartPointer<vtkScalarBarActor> scalarBar = Utility::createScalarBarActor(lookupTable, {0.9, 0.05}, {0.95, 0.6}, pItem->font.pointSize());
+    int maxWidth = ceil(kRelMaxWidth * mRenderWindow->GetSize()[0]);
+    scalarBar->SetMaximumWidthInPixels(maxWidth);
+
+    // Add the actors to the scene
+    mRenderer->AddActor(titleActor);
+    mRenderer->AddViewProp(scalarBar);
 }
 
 //! Render the title
@@ -129,21 +365,32 @@ void DiagramReportSceneItem::drawTitle()
     if (!pItem)
         return;
 
-    // Set the text
+    // Create the actor
     QString text = mTextEngine.process(pItem->title);
-    vtkNew<vtkTextActor> actor;
-    actor->SetInput(text.toStdString().c_str());
-    vtkTextProperty* prop = actor->GetTextProperty();
-    prop->SetFontFamily(VTK_FONT_FILE);
-    prop->SetFontFile(mPathFontFile.toStdString().data());
-    prop->SetColor(skTextColor.GetData());
-    prop->SetFontSize(pItem->font.pointSize());
-    prop->SetJustificationToLeft();
-    actor->GetPositionCoordinate()->SetCoordinateSystemToNormalizedViewport();
-    actor->GetPosition2Coordinate()->SetCoordinateSystemToNormalizedViewport();
-    actor->SetPosition(0.0, 0.0);
-    actor->SetPosition2(0.5, 0.2);
+    vtkSmartPointer<vtkTextActor> actor = Utility::createTitleActor(text, {0.0, 0.0}, {0.5, 0.2}, pItem->font.pointSize());
+
+    // Add the actor to the scene
     mRenderer->AddActor(actor);
+}
+
+//! Create points which are associated with the geometry
+vtkSmartPointer<vtkPoints> DiagramReportSceneItem::createPoints(Testlab::Component const& component)
+{
+    vtkNew<vtkPoints> points;
+    QString componentName = QString::fromStdWString(component.name);
+    int numNodes = component.nodes.size();
+    for (int iNode = 0; iNode != numNodes; ++iNode)
+    {
+        Testlab::Node const& node = component.nodes[iNode];
+        QString nodeName = QString::fromStdWString(node.name);
+
+        // Get the nodal position
+        std::vector<double> position = node.coordinates;
+
+        // Add the point
+        points->InsertPoint(iNode, position[0], position[1], position[2]);
+    }
+    return points;
 }
 
 //! Clean up the scene
@@ -190,8 +437,7 @@ void DiagramReportSceneItem::replot()
 
     // Draw the content
     clear();
-    drawGeometry();
-    drawTitle();
+    drawAll();
     setView();
     mRenderWindow->Render();
 
@@ -237,7 +483,8 @@ void DiagramReportSceneItem::initialize()
     mOverlayRenderer->SetLayer(1);
 
     // Add the axes
-    drawAxes();
+    mAxes = Utility::createAxesActor(mpItem->font.pointSize());
+    mOverlayRenderer->AddActor(mAxes);
     mOverlayRenderer->ResetCamera();
 
     // Create the window
@@ -246,8 +493,27 @@ void DiagramReportSceneItem::initialize()
     mRenderWindow->SetNumberOfLayers(2);
     mRenderWindow->AddRenderer(mRenderer);
     mRenderWindow->AddRenderer(mOverlayRenderer);
+}
 
-    // Initialize the font file
-    QTemporaryFile* pFile = QTemporaryFile::createNativeFile(":/fonts/Roboto.ttf");
-    mPathFontFile = pFile->fileName();
+//! Helper function to compute binormal vector for a given view
+Vector3d getBinormalVector(ReportView view)
+{
+    switch (view)
+    {
+    case ReportView::kFront:
+        return Vector3d::UnitX();
+    case ReportView::kRear:
+        return -Vector3d::UnitX();
+    case ReportView::kTop:
+        return Vector3d::UnitY();
+    case ReportView::kBottom:
+        return -Vector3d::UnitY();
+    case ReportView::kLeft:
+        return Vector3d::UnitX();
+    case ReportView::kRight:
+        return -Vector3d::UnitX();
+    default:
+        break;
+    }
+    return Vector3d::Zero();
 }
