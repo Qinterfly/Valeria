@@ -104,6 +104,39 @@ private:
     ReportCurvePropertyEditor* mpCurveEditor;
 };
 
+//! Class to edit mode item data
+class ModeReportDataEditor : public ReportDataEditor
+{
+    Q_OBJECT
+
+public:
+    ModeReportDataEditor(Backend::Core::ReportPage const& page, QWidget* pParent = nullptr);
+    virtual ~ModeReportDataEditor() = default;
+
+    Backend::Core::ReportItem::Type type() const override;
+    void refresh() override;
+
+private:
+    void createContent();
+    void createConnections();
+
+    // Slots
+    Backend::Core::ModeReportItem* getItem();
+    void processChanged();
+
+private:
+    Backend::Core::ReportPage const& mPage;
+
+    // Widgets
+    QComboBox* mpUnitSelector;
+    QComboBox* mpViewSelector;
+    QComboBox* mpColorMapSelector;
+    Edit1d* mpScaleEdit;
+    Edit1d* mpAmplitudeEdit;
+    Edit1d* mpPhaseEdit;
+    QComboBox* mpLinkSelector;
+};
+
 //! Class to edit curve properties
 class ReportCurvePropertyEditor : public QWidget
 {
@@ -145,39 +178,6 @@ private:
     CustomVariantPropertyManager* mpManager;
     QtVariantEditorFactory* mpFactory;
     QtTreePropertyBrowser* mpEditor;
-};
-
-//! Class to edit mode item data
-class ModeReportDataEditor : public ReportDataEditor
-{
-    Q_OBJECT
-
-public:
-    ModeReportDataEditor(Backend::Core::ReportPage const& page, QWidget* pParent = nullptr);
-    virtual ~ModeReportDataEditor() = default;
-
-    Backend::Core::ReportItem::Type type() const override;
-    void refresh() override;
-
-private:
-    void createContent();
-    void createConnections();
-
-    // Slots
-    Backend::Core::ModeReportItem* getItem();
-    void processChanged();
-
-private:
-    Backend::Core::ReportPage const& mPage;
-
-    // Widgets
-    QComboBox* mpUnitSelector;
-    QComboBox* mpViewSelector;
-    QComboBox* mpColorMapSelector;
-    Edit1d* mpScaleEdit;
-    Edit1d* mpAmplitudeEdit;
-    Edit1d* mpPhaseEdit;
-    QComboBox* mpLinkSelector;
 };
 }
 

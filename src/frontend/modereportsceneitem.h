@@ -82,7 +82,7 @@ private:
     // VTK
     vtkSmartPointer<vtkRenderWindow> mRenderWindow;
     vtkSmartPointer<vtkRenderer> mRenderer;
-    vtkSmartPointer<vtkRenderer> mOverlayRenderer;
+    vtkSmartPointer<vtkRenderer> mAxesRenderer;
     vtkSmartPointer<vtkAxesActor> mAxes;
     QImage mImage;
 };

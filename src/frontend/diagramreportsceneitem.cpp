@@ -5,13 +5,19 @@
 #include <Eigen/Geometry>
 
 #include <vtkAxesActor.h>
+#include <vtkCamera.h>
+#include <vtkCoordinate.h>
 #include <vtkLine.h>
 #include <vtkLookupTable.h>
+#include <vtkMatrix4x4.h>
 #include <vtkNamedColors.h>
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkPolyDataMapper2D.h>
 #include <vtkPolygon.h>
 #include <vtkProperty.h>
+#include <vtkProperty2D.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
 #include <vtkScalarBarActor.h>
@@ -35,6 +41,7 @@ static vtkColor3d const skTextColor = vtkColors->GetColor3d("Black");
 
 // Helpers
 Eigen::Vector3d getBinormalVector(ReportView view);
+Vector2d worldToViewport(vtkRenderer* renderer, Vector3d const& world);
 
 DiagramReportSceneItem::DiagramReportSceneItem(DiagramReportItem* pItem, ReportTextEngine& textEngine, ResponseCollection const& collection,
                                                int iSelectedBundle, Testlab::Geometry const& geometry, QGraphicsItem* pParent)
@@ -89,7 +96,7 @@ void DiagramReportSceneItem::setState()
 void DiagramReportSceneItem::setView()
 {
     DiagramReportItem* pItem = (DiagramReportItem*) mpItem;
-    Utility::setView(pItem->view, pItem->scale, mRenderer, mOverlayRenderer);
+    Utility::setView(pItem->view, pItem->scale, mRenderer, mAxesRenderer);
 }
 
 //! Represent geometry
@@ -99,10 +106,11 @@ void DiagramReportSceneItem::drawAll()
     if (!pItem)
         return;
 
-    // Estimate the maximum dimension
+    // Set the rendering parameters
     mMaximumDimension = Backend::Utility::getMaximumDimension(mGeometry);
     if (mMaximumDimension < skEps)
         mMaximumDimension = 1.0;
+    mAmplitudeScale = 0.0;
 
     // Draw the initial configuration
     drawUndeformedState();
@@ -159,19 +167,20 @@ void DiagramReportSceneItem::drawDeformedState()
 
     // Create the lookup table
     double limit = std::max(std::abs(range.first), std::abs(range.second));
-    vtkSmartPointer<vtkLookupTable> lookupTable = Utility::createLookupTable(pItem->colorMap, -limit, limit);
+    mLookupTable = Utility::createLookupTable(pItem->colorMap, -limit, limit);
 
     // Set the mode parametsr
-    double scale = pItem->amplitude * mMaximumDimension / limit;
+    double amplitude = pItem->amplitude * mMaximumDimension / limit;
     double phase = pItem->phase * M_PI / 180.0;
+    mAmplitudeScale = amplitude * cos(phase);
 
     // Loop through all the sections
     int numSections = pItem->sections.size();
     for (int i = 0; i != numSections; ++i)
-        drawSection(pItem->sections[i], lookupTable, scale, phase);
+        drawSection(pItem->sections[i]);
 
     // Show the scalar bar
-    drawScalarBar(lookupTable);
+    drawScalarBar();
 }
 
 //! Render elements using one color
@@ -208,8 +217,6 @@ void DiagramReportSceneItem::drawElements(vtkSmartPointer<vtkPoints> points, std
     actor->GetProperty()->SetColor(color.GetData());
     actor->GetProperty()->SetOpacity(opacity);
     actor->GetProperty()->SetLineWidth(pItem->lineWidth);
-    actor->GetProperty()->SetEdgeColor(color.GetData());
-    actor->GetProperty()->EdgeVisibilityOn();
     if (isWireframe)
         actor->GetProperty()->SetRepresentationToWireframe();
 
@@ -218,7 +225,7 @@ void DiagramReportSceneItem::drawElements(vtkSmartPointer<vtkPoints> points, std
 }
 
 //! Render the section
-void DiagramReportSceneItem::drawSection(ReportSection const& section, vtkSmartPointer<vtkLookupTable> lookupTable, double scale, double phase)
+void DiagramReportSceneItem::drawSection(ReportSection const& section)
 {
     DiagramReportItem* pItem = (DiagramReportItem*) mpItem;
     if (!pItem)
@@ -291,17 +298,16 @@ void DiagramReportSceneItem::drawSection(ReportSection const& section, vtkSmartP
     }
 
     // Get the epure values
-    double factor = scale * cos(phase);
-    double firstValue = factor * Backend::Utility::getNodeValues(mState, firstPoint.component, firstPoint.node)[iResponseDir];
-    double secondValue = factor * Backend::Utility::getNodeValues(mState, secondPoint.component, secondPoint.node)[iResponseDir];
+    double firstValue = mAmplitudeScale * Backend::Utility::getNodeValues(mState, firstPoint.component, firstPoint.node)[iResponseDir];
+    double secondValue = mAmplitudeScale * Backend::Utility::getNodeValues(mState, secondPoint.component, secondPoint.node)[iResponseDir];
 
     // Draw the epure
     drawZeroLine(firstCoords, secondCoords);
-    drawEpure(firstCoords, secondCoords, firstValue, secondValue, normalVec, lookupTable);
+    drawEpure(firstCoords, secondCoords, firstValue, secondValue, normalVec);
 }
 
 //! Render the scalar bar
-void DiagramReportSceneItem::drawScalarBar(vtkSmartPointer<vtkLookupTable> lookupTable)
+void DiagramReportSceneItem::drawScalarBar()
 {
     // Constants
     double const kRelMaxWidth = 1.0 / 5.0;
@@ -316,13 +322,100 @@ void DiagramReportSceneItem::drawScalarBar(vtkSmartPointer<vtkLookupTable> looku
     vtkSmartPointer<vtkTextActor> titleActor = Utility::createScalarBarTitleActor(title, {0.96, 0.35}, {1.0, 0.55}, pItem->font.pointSize());
 
     // Create the scalar bar
-    vtkSmartPointer<vtkScalarBarActor> scalarBar = Utility::createScalarBarActor(lookupTable, {0.9, 0.05}, {0.95, 0.6}, pItem->font.pointSize());
+    vtkSmartPointer<vtkScalarBarActor> scalarBar = Utility::createScalarBarActor(mLookupTable, {0.9, 0.05}, {0.95, 0.6}, pItem->font.pointSize());
     int maxWidth = ceil(kRelMaxWidth * mRenderWindow->GetSize()[0]);
     scalarBar->SetMaximumWidthInPixels(maxWidth);
 
     // Add the actors to the scene
     mRenderer->AddActor(titleActor);
     mRenderer->AddViewProp(scalarBar);
+}
+
+//! Render the scale ruler
+//! * Must be rendered after all the procedures once the transformation matrices are ready
+void DiagramReportSceneItem::drawRuler()
+{
+    // Constants
+    double const kX = 0.05;
+    double const kY = 0.9;
+    double const kT = 0.1;
+
+    // Check if the deformed state is present
+    if (mAmplitudeScale < skEps)
+        return;
+
+    // Compute the ruler length in the viewport coordinates
+    double* range = mLookupTable->GetRange();
+    double maxAbsRange = std::max(std::abs(range[0]), std::abs(range[1]));
+    double limit = mAmplitudeScale * maxAbsRange;
+    Vector2d normStart = worldToViewport(mRenderer, {0, 0, 0});
+    Vector2d normEnd = worldToViewport(mRenderer, {limit, 0.0, limit});
+    double a = (normEnd - normStart).norm() / std::sqrt(2.0);
+    double t = a * kT;
+
+    // Create the points
+    vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+    points->InsertPoint(0, kX, kY, 0.0);
+    points->InsertPoint(1, kX + a, kY, 0.0);
+    points->InsertPoint(2, kX, kY - a, 0.0);
+    points->InsertPoint(3, kX + a, kY + t, 0.0);
+    points->InsertPoint(4, kX + a, kY - t, 0.0);
+    points->InsertPoint(5, kX + t, kY - a, 0.0);
+    points->InsertPoint(6, kX - t, kY - a, 0.0);
+
+    // Create the main lines
+    vtkSmartPointer<vtkCellArray> lines = vtkSmartPointer<vtkCellArray>::New();
+    vtkNew<vtkLine> hMain;
+    vtkNew<vtkLine> vMain;
+    hMain->GetPointIds()->SetId(0, 0);
+    hMain->GetPointIds()->SetId(1, 1);
+    vMain->GetPointIds()->SetId(0, 0);
+    vMain->GetPointIds()->SetId(1, 2);
+    lines->InsertNextCell(hMain);
+    lines->InsertNextCell(vMain);
+
+    // Create the ticks
+    vtkNew<vtkLine> hTick;
+    vtkNew<vtkLine> vTick;
+    hTick->GetPointIds()->SetId(0, 3);
+    hTick->GetPointIds()->SetId(1, 4);
+    vTick->GetPointIds()->SetId(0, 5);
+    vTick->GetPointIds()->SetId(1, 6);
+    lines->InsertNextCell(hTick);
+    lines->InsertNextCell(vTick);
+
+    // Set the polygon data
+    vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
+    polyData->SetPoints(points);
+    polyData->SetLines(lines);
+
+    // Create the transformation
+    vtkSmartPointer<vtkCoordinate> coord = vtkSmartPointer<vtkCoordinate>::New();
+    coord->SetCoordinateSystemToNormalizedViewport();
+
+    // Map the polygons
+    vtkSmartPointer<vtkPolyDataMapper2D> mapper = vtkSmartPointer<vtkPolyDataMapper2D>::New();
+    mapper->SetInputData(polyData);
+    mapper->SetTransformCoordinate(coord);
+
+    // Create the ruler actor
+    vtkSmartPointer<vtkActor2D> actor = vtkSmartPointer<vtkActor2D>::New();
+    actor->SetMapper(mapper);
+    actor->GetProperty()->SetColor(vtkColors->GetColor3d("Black").GetData());
+    actor->GetProperty()->SetLineWidth(3.0);
+
+    // Create the labels
+    int fontSize = mpItem->font.pointSize();
+    QString rangeText = QString::number(maxAbsRange, 'f', 1);
+    vtkSmartPointer<vtkTextActor> zLabel = Utility::createLabelActor("0.0", {kX - t, kY + t}, fontSize);
+    vtkSmartPointer<vtkTextActor> hLabel = Utility::createLabelActor(rangeText, {kX + a, kY + t}, fontSize);
+    vtkSmartPointer<vtkTextActor> vLabel = Utility::createLabelActor(rangeText, {kX - 4 * t, kY - a - 2 * t}, fontSize);
+
+    // Add the actors to the scene
+    mRenderer->AddActor(zLabel);
+    mRenderer->AddActor(hLabel);
+    mRenderer->AddActor(vLabel);
+    mRenderer->AddViewProp(actor);
 }
 
 //! Render the title
@@ -397,7 +490,7 @@ void DiagramReportSceneItem::drawZeroLine(Eigen::Vector3d const& firstCoords, Ei
 
 //! Draw the epure based on two points
 void DiagramReportSceneItem::drawEpure(Vector3d const& firstCoords, Vector3d const& secondCoords, double firstValue, double secondValue,
-                                       Eigen::Vector3d const& normalVec, vtkSmartPointer<vtkLookupTable> lookupTable)
+                                       Eigen::Vector3d const& normalVec)
 {
     // Compute the state vectors
     Vector3d firstState = firstValue * normalVec;
@@ -437,7 +530,7 @@ void DiagramReportSceneItem::drawEpure(Vector3d const& firstCoords, Vector3d con
     vtkNew<vtkPolyDataMapper> mapper;
     mapper->SetInputData(polyData);
     mapper->UseLookupTableScalarRangeOn();
-    mapper->SetLookupTable(lookupTable);
+    mapper->SetLookupTable(mLookupTable);
 
     // Create the actor
     vtkNew<vtkActor> actor;
@@ -494,6 +587,7 @@ void DiagramReportSceneItem::replot()
     drawAll();
     setView();
     mRenderWindow->Render();
+    drawRuler();
 
     // Save as the image
     mImage = Utility::getImage(mRenderWindow, pItem->quality);
@@ -522,6 +616,9 @@ void DiagramReportSceneItem::initialize()
     // Specify the format for the VTK library
     vtkObject::GlobalWarningDisplayOff();
 
+    // Initialize the lookup table
+    mLookupTable = Utility::createCoolToWarmColorMap();
+
     // Create the main renderer
     mRenderer = vtkRenderer::New();
     mRenderer->GradientBackgroundOff();
@@ -529,24 +626,24 @@ void DiagramReportSceneItem::initialize()
     mRenderer->SetBackgroundAlpha(0.0);
     mRenderer->SetLayer(0);
 
-    // Create the overlay renderer
-    mOverlayRenderer = vtkRenderer::New();
-    mOverlayRenderer->GradientBackgroundOff();
-    mOverlayRenderer->SetViewport(0.8, 0.6, 1.0, 1.0);
-    mOverlayRenderer->SetBackgroundAlpha(0.0);
-    mOverlayRenderer->SetLayer(1);
+    // Create the axes renderer
+    mAxesRenderer = vtkRenderer::New();
+    mAxesRenderer->GradientBackgroundOff();
+    mAxesRenderer->SetViewport(0.8, 0.6, 1.0, 1.0);
+    mAxesRenderer->SetBackgroundAlpha(0.0);
+    mAxesRenderer->SetLayer(1);
 
-    // Add the axes
+    // Add the axes actor
     mAxes = Utility::createAxesActor(mpItem->font.pointSize());
-    mOverlayRenderer->AddActor(mAxes);
-    mOverlayRenderer->ResetCamera();
+    mAxesRenderer->AddActor(mAxes);
+    mAxesRenderer->ResetCamera();
 
     // Create the window
     mRenderWindow = vtkRenderWindow::New();
     mRenderWindow->OffScreenRenderingOn();
     mRenderWindow->SetNumberOfLayers(2);
     mRenderWindow->AddRenderer(mRenderer);
-    mRenderWindow->AddRenderer(mOverlayRenderer);
+    mRenderWindow->AddRenderer(mAxesRenderer);
 }
 
 //! Helper function to compute binormal vector for a given view
@@ -570,4 +667,28 @@ Vector3d getBinormalVector(ReportView view)
         break;
     }
     return Vector3d::Zero();
+}
+
+//! Helper function to convert world coordinated to the viewport ones
+Vector2d worldToViewport(vtkRenderer* renderer, Vector3d const& world)
+{
+    Vector2d result;
+
+    // Get the transformation matrix
+    vtkCamera* cam = renderer->GetActiveCamera();
+    vtkMatrix4x4* M = cam->GetCompositeProjectionTransformMatrix(renderer->GetTiledAspectRatio(), -1, 1);
+
+    // Clip to the world space
+    double clip[4];
+    double p[4] = {world[0], world[1], world[2], 1.0};
+    M->MultiplyPoint(p, clip);
+
+    // Convert to normalized view coordinates
+    double ndc[3];
+    ndc[0] = clip[0] / clip[3];
+    ndc[1] = clip[1] / clip[3];
+    result[0] = (ndc[0] + 1.0) * 0.5;
+    result[1] = (ndc[1] + 1.0) * 0.5;
+
+    return result;
 }

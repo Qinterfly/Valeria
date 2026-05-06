@@ -604,6 +604,138 @@ ReportCurveGetter GraphReportDataEditor::createCurveGetter(int iCurve)
     };
 }
 
+ModeReportDataEditor::ModeReportDataEditor(ReportPage const& page, QWidget* pParent)
+    : ReportDataEditor(pParent)
+    , mPage(page)
+{
+    setFont(Utility::getFont());
+    createContent();
+    createConnections();
+}
+
+//! Get the editor type
+ReportItem::Type ModeReportDataEditor::type() const
+{
+    return ReportItem::kMode;
+}
+
+//! Update the widgets content
+void ModeReportDataEditor::refresh()
+{
+    // Get the item
+    ModeReportItem* pItem = getItem();
+    if (!pItem)
+        return;
+
+    // Set the unit
+    QSignalBlocker blockerUnit(mpUnitSelector);
+    refreshUnitSelector(mpUnitSelector, pItem->unit);
+
+    // Set the view
+    QSignalBlocker blockerView(mpViewSelector);
+    Utility::setIndexByKey(mpViewSelector, (int) pItem->view);
+
+    // Set the color map
+    QSignalBlocker blockerColorMap(mpColorMapSelector);
+    Utility::setIndexByKey(mpColorMapSelector, (int) pItem->colorMap);
+
+    // Set the scale
+    QSignalBlocker blockerScale(mpScaleEdit);
+    mpScaleEdit->setValue(pItem->scale);
+
+    // Set the amplitude
+    QSignalBlocker blockerAmplitude(mpAmplitudeEdit);
+    mpAmplitudeEdit->setValue(pItem->amplitude);
+
+    // Set the phase
+    QSignalBlocker blockerPhase(mpPhaseEdit);
+    mpPhaseEdit->setValue(pItem->phase);
+
+    // Set the link
+    QSignalBlocker blockerLink(mpLinkSelector);
+    refreshLinkSelector(mpLinkSelector, mPage, pItem);
+}
+
+//! Create all the widgets
+void ModeReportDataEditor::createContent()
+{
+    // Create the widgets
+    mpUnitSelector = createUnitSelector();
+    mpViewSelector = createViewSelector();
+    mpColorMapSelector = createColorMapSelector();
+    mpScaleEdit = new Edit1d;
+    mpAmplitudeEdit = new Edit1d;
+    mpPhaseEdit = new Edit1d;
+    mpLinkSelector = new QComboBox;
+
+    // Initialize the widgets
+    mpScaleEdit->setMinimum(0.0);
+
+    // Combine the widgets
+    QGridLayout* pLayout = new QGridLayout;
+    pLayout->addWidget(new QLabel(tr("Unit: ")), 0, 0);
+    pLayout->addWidget(mpUnitSelector, 0, 1);
+    pLayout->addWidget(new QLabel(tr("View: ")), 1, 0);
+    pLayout->addWidget(mpViewSelector, 1, 1);
+    pLayout->addWidget(new QLabel(tr("Color map: ")), 2, 0);
+    pLayout->addWidget(mpColorMapSelector, 2, 1);
+    pLayout->addWidget(new QLabel(tr("Scale: ")), 3, 0);
+    pLayout->addWidget(mpScaleEdit, 3, 1);
+    pLayout->addWidget(new QLabel(tr("Amplitude: ")), 4, 0);
+    pLayout->addWidget(mpAmplitudeEdit, 4, 1);
+    pLayout->addWidget(new QLabel(tr("Phase: ")), 5, 0);
+    pLayout->addWidget(mpPhaseEdit, 5, 1);
+    pLayout->addWidget(new QLabel(tr("Link: ")), 6, 0);
+    pLayout->addWidget(mpLinkSelector, 6, 1);
+    pLayout->addItem(new QSpacerItem(1, 1, QSizePolicy::Expanding, QSizePolicy::Preferred), 0, 2);
+    pLayout->addItem(new QSpacerItem(1, 1, QSizePolicy::Preferred, QSizePolicy::Expanding), 7, 0);
+    setLayout(pLayout);
+}
+
+//! Set the widget connections
+void ModeReportDataEditor::createConnections()
+{
+    connect(mpUnitSelector, &QComboBox::currentIndexChanged, this, &ModeReportDataEditor::processChanged);
+    connect(mpViewSelector, &QComboBox::currentIndexChanged, this, &ModeReportDataEditor::processChanged);
+    connect(mpColorMapSelector, &QComboBox::currentIndexChanged, this, &ModeReportDataEditor::processChanged);
+    connect(mpScaleEdit, &Edit1d::valueChanged, this, &ModeReportDataEditor::processChanged);
+    connect(mpAmplitudeEdit, &Edit1d::valueChanged, this, &ModeReportDataEditor::processChanged);
+    connect(mpPhaseEdit, &Edit1d::valueChanged, this, &ModeReportDataEditor::processChanged);
+    connect(mpLinkSelector, &QComboBox::currentIndexChanged, this, &ModeReportDataEditor::processChanged);
+}
+
+//! Get the item of the requested type
+ModeReportItem* ModeReportDataEditor::getItem()
+{
+    if (!mItemGetter)
+        return nullptr;
+    return (ModeReportItem*) mItemGetter();
+}
+
+//! Process item data changing
+void ModeReportDataEditor::processChanged()
+{
+    // Get the item
+    ModeReportItem* pItem = getItem();
+    if (!pItem)
+        return;
+
+    // Set the item data
+    pItem->unit = mpUnitSelector->currentData().toString();
+    pItem->view = (ReportView) mpViewSelector->currentData().toInt();
+    pItem->colorMap = (ReportColorMap) mpColorMapSelector->currentData().toInt();
+    pItem->scale = mpScaleEdit->value();
+    pItem->amplitude = mpAmplitudeEdit->value();
+    pItem->phase = mpPhaseEdit->value();
+    pItem->link = mpLinkSelector->currentData().toUuid();
+
+    // Update the content
+    refresh();
+
+    // Finish up the editing
+    emit edited();
+}
+
 ReportCurvePropertyEditor::ReportCurvePropertyEditor(QWidget* pParent)
 {
     setWindowTitle(tr("Curve Editor"));
@@ -769,138 +901,6 @@ void ReportCurvePropertyEditor::setValue(QtProperty* pProperty, QVariant value)
         pCurve->markerSkip = value.toInt();
         break;
     }
-    emit edited();
-}
-
-ModeReportDataEditor::ModeReportDataEditor(ReportPage const& page, QWidget* pParent)
-    : ReportDataEditor(pParent)
-    , mPage(page)
-{
-    setFont(Utility::getFont());
-    createContent();
-    createConnections();
-}
-
-//! Get the editor type
-ReportItem::Type ModeReportDataEditor::type() const
-{
-    return ReportItem::kMode;
-}
-
-//! Update the widgets content
-void ModeReportDataEditor::refresh()
-{
-    // Get the item
-    ModeReportItem* pItem = getItem();
-    if (!pItem)
-        return;
-
-    // Set the unit
-    QSignalBlocker blockerUnit(mpUnitSelector);
-    refreshUnitSelector(mpUnitSelector, pItem->unit);
-
-    // Set the view
-    QSignalBlocker blockerView(mpViewSelector);
-    Utility::setIndexByKey(mpViewSelector, (int) pItem->view);
-
-    // Set the color map
-    QSignalBlocker blockerColorMap(mpColorMapSelector);
-    Utility::setIndexByKey(mpColorMapSelector, (int) pItem->colorMap);
-
-    // Set the scale
-    QSignalBlocker blockerScale(mpScaleEdit);
-    mpScaleEdit->setValue(pItem->scale);
-
-    // Set the amplitude
-    QSignalBlocker blockerAmplitude(mpAmplitudeEdit);
-    mpAmplitudeEdit->setValue(pItem->amplitude);
-
-    // Set the phase
-    QSignalBlocker blockerPhase(mpPhaseEdit);
-    mpPhaseEdit->setValue(pItem->phase);
-
-    // Set the link
-    QSignalBlocker blockerLink(mpLinkSelector);
-    refreshLinkSelector(mpLinkSelector, mPage, pItem);
-}
-
-//! Create all the widgets
-void ModeReportDataEditor::createContent()
-{
-    // Create the widgets
-    mpUnitSelector = createUnitSelector();
-    mpViewSelector = createViewSelector();
-    mpColorMapSelector = createColorMapSelector();
-    mpScaleEdit = new Edit1d;
-    mpAmplitudeEdit = new Edit1d;
-    mpPhaseEdit = new Edit1d;
-    mpLinkSelector = new QComboBox;
-
-    // Initialize the widgets
-    mpScaleEdit->setMinimum(0.0);
-
-    // Combine the widgets
-    QGridLayout* pLayout = new QGridLayout;
-    pLayout->addWidget(new QLabel(tr("Unit: ")), 0, 0);
-    pLayout->addWidget(mpUnitSelector, 0, 1);
-    pLayout->addWidget(new QLabel(tr("View: ")), 1, 0);
-    pLayout->addWidget(mpViewSelector, 1, 1);
-    pLayout->addWidget(new QLabel(tr("Color map: ")), 2, 0);
-    pLayout->addWidget(mpColorMapSelector, 2, 1);
-    pLayout->addWidget(new QLabel(tr("Scale: ")), 3, 0);
-    pLayout->addWidget(mpScaleEdit, 3, 1);
-    pLayout->addWidget(new QLabel(tr("Amplitude: ")), 4, 0);
-    pLayout->addWidget(mpAmplitudeEdit, 4, 1);
-    pLayout->addWidget(new QLabel(tr("Phase: ")), 5, 0);
-    pLayout->addWidget(mpPhaseEdit, 5, 1);
-    pLayout->addWidget(new QLabel(tr("Link: ")), 6, 0);
-    pLayout->addWidget(mpLinkSelector, 6, 1);
-    pLayout->addItem(new QSpacerItem(1, 1, QSizePolicy::Expanding, QSizePolicy::Preferred), 0, 2);
-    pLayout->addItem(new QSpacerItem(1, 1, QSizePolicy::Preferred, QSizePolicy::Expanding), 7, 0);
-    setLayout(pLayout);
-}
-
-//! Set the widget connections
-void ModeReportDataEditor::createConnections()
-{
-    connect(mpUnitSelector, &QComboBox::currentIndexChanged, this, &ModeReportDataEditor::processChanged);
-    connect(mpViewSelector, &QComboBox::currentIndexChanged, this, &ModeReportDataEditor::processChanged);
-    connect(mpColorMapSelector, &QComboBox::currentIndexChanged, this, &ModeReportDataEditor::processChanged);
-    connect(mpScaleEdit, &Edit1d::valueChanged, this, &ModeReportDataEditor::processChanged);
-    connect(mpAmplitudeEdit, &Edit1d::valueChanged, this, &ModeReportDataEditor::processChanged);
-    connect(mpPhaseEdit, &Edit1d::valueChanged, this, &ModeReportDataEditor::processChanged);
-    connect(mpLinkSelector, &QComboBox::currentIndexChanged, this, &ModeReportDataEditor::processChanged);
-}
-
-//! Get the item of the requested type
-ModeReportItem* ModeReportDataEditor::getItem()
-{
-    if (!mItemGetter)
-        return nullptr;
-    return (ModeReportItem*) mItemGetter();
-}
-
-//! Process item data changing
-void ModeReportDataEditor::processChanged()
-{
-    // Get the item
-    ModeReportItem* pItem = getItem();
-    if (!pItem)
-        return;
-
-    // Set the item data
-    pItem->unit = mpUnitSelector->currentData().toString();
-    pItem->view = (ReportView) mpViewSelector->currentData().toInt();
-    pItem->colorMap = (ReportColorMap) mpColorMapSelector->currentData().toInt();
-    pItem->scale = mpScaleEdit->value();
-    pItem->amplitude = mpAmplitudeEdit->value();
-    pItem->phase = mpPhaseEdit->value();
-    pItem->link = mpLinkSelector->currentData().toUuid();
-
-    // Update the content
-    refresh();
-
-    // Finish up the editing
     emit edited();
 }
 

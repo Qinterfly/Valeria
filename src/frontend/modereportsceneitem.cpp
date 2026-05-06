@@ -161,31 +161,31 @@ void ModeReportSceneItem::initialize()
     mRenderer->SetBackgroundAlpha(0.0);
     mRenderer->SetLayer(0);
 
-    // Create the overlay renderer
-    mOverlayRenderer = vtkRenderer::New();
-    mOverlayRenderer->GradientBackgroundOff();
-    mOverlayRenderer->SetViewport(0.8, 0.6, 1.0, 1.0);
-    mOverlayRenderer->SetBackgroundAlpha(0.0);
-    mOverlayRenderer->SetLayer(1);
+    // Create the axes renderer
+    mAxesRenderer = vtkRenderer::New();
+    mAxesRenderer->GradientBackgroundOff();
+    mAxesRenderer->SetViewport(0.8, 0.6, 1.0, 1.0);
+    mAxesRenderer->SetBackgroundAlpha(0.0);
+    mAxesRenderer->SetLayer(1);
 
-    // Add the axes
+    // Add the axes actor
     mAxes = Utility::createAxesActor(mpItem->font.pointSize());
-    mOverlayRenderer->AddActor(mAxes);
-    mOverlayRenderer->ResetCamera();
+    mAxesRenderer->AddActor(mAxes);
+    mAxesRenderer->ResetCamera();
 
     // Create the window
     mRenderWindow = vtkRenderWindow::New();
     mRenderWindow->OffScreenRenderingOn();
     mRenderWindow->SetNumberOfLayers(2);
     mRenderWindow->AddRenderer(mRenderer);
-    mRenderWindow->AddRenderer(mOverlayRenderer);
+    mRenderWindow->AddRenderer(mAxesRenderer);
 }
 
 //! Set the camera position as well as zoom
 void ModeReportSceneItem::setView()
 {
     ModeReportItem* pItem = (ModeReportItem*) mpItem;
-    Utility::setView(pItem->view, pItem->scale, mRenderer, mOverlayRenderer);
+    Utility::setView(pItem->view, pItem->scale, mRenderer, mAxesRenderer);
 }
 
 //! Represent all the elements

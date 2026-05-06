@@ -349,7 +349,7 @@ vtkSmartPointer<vtkLookupTable> createPlasmaColorMap()
 }
 
 //! Set the camera position as well as zoom
-void setView(ReportView view, double scale, vtkSmartPointer<vtkRenderer> renderer, vtkSmartPointer<vtkRenderer> overlayRenderer)
+void setView(ReportView view, double scale, vtkSmartPointer<vtkRenderer> renderer, vtkSmartPointer<vtkRenderer> axesRenderer)
 {
     // Set the camera position
     switch (view)
@@ -384,14 +384,14 @@ void setView(ReportView view, double scale, vtkSmartPointer<vtkRenderer> rendere
     double viewUp[3];
     renderer->GetActiveCamera()->GetPosition(position);
     renderer->GetActiveCamera()->GetViewUp(viewUp);
-    overlayRenderer->GetActiveCamera()->ParallelProjectionOn();
-    overlayRenderer->GetActiveCamera()->SetPosition(position[0], position[1], position[2]);
-    overlayRenderer->GetActiveCamera()->SetFocalPoint(0, 0, 0);
-    overlayRenderer->GetActiveCamera()->SetViewUp(viewUp);
-    overlayRenderer->ResetCamera();
+    axesRenderer->GetActiveCamera()->ParallelProjectionOn();
+    axesRenderer->GetActiveCamera()->SetPosition(position[0], position[1], position[2]);
+    axesRenderer->GetActiveCamera()->SetFocalPoint(0, 0, 0);
+    axesRenderer->GetActiveCamera()->SetViewUp(viewUp);
+    axesRenderer->ResetCamera();
 
     // Fit the camera view
-    overlayRenderer->GetActiveCamera()->Zoom(1.5);
+    axesRenderer->GetActiveCamera()->Zoom(1.5);
 
     // Set the zoom
     renderer->GetActiveCamera()->Zoom(scale);
@@ -514,6 +514,24 @@ vtkSmartPointer<vtkAxesActor> createAxesActor(int fontSize)
         yCaption->GetTextActor()->SetTextScaleModeToNone();
         zCaption->GetTextActor()->SetTextScaleModeToNone();
     }
+
+    return actor;
+}
+
+//! Create the label actor
+vtkSmartPointer<vtkTextActor> createLabelActor(QString const& text, Eigen::Vector2d const& pos, int fontSize)
+{
+    vtkNew<vtkTextActor> actor;
+
+    actor->SetInput(text.toStdString().c_str());
+    vtkTextProperty* prop = actor->GetTextProperty();
+    prop->SetFontFamily(VTK_FONT_FILE);
+    prop->SetFontFile(spFontFile->fileName().toStdString().data());
+    prop->SetColor(vtkColors->GetColor3d("Black").GetData());
+    prop->SetFontSize(fontSize);
+    prop->SetJustificationToCentered();
+    actor->GetPositionCoordinate()->SetCoordinateSystemToNormalizedViewport();
+    actor->SetPosition(pos[0], pos[1]);
 
     return actor;
 }

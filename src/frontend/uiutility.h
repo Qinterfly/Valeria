@@ -69,7 +69,7 @@ vtkSmartPointer<vtkLookupTable> createJetColorMap();
 vtkSmartPointer<vtkLookupTable> createPlasmaColorMap();
 
 // Render: view
-void setView(Backend::Core::ReportView view, double scale, vtkSmartPointer<vtkRenderer> renderer, vtkSmartPointer<vtkRenderer> overlayRenderer);
+void setView(Backend::Core::ReportView view, double scale, vtkSmartPointer<vtkRenderer> renderer, vtkSmartPointer<vtkRenderer> axesRenderer);
 void setIsometricView(vtkSmartPointer<vtkRenderer> renderer);
 void setPlaneView(vtkSmartPointer<vtkRenderer> renderer, int dir, int sign);
 QImage getImage(vtkSmartPointer<vtkRenderWindow> renderWindow, double quality = 2.0);
@@ -78,6 +78,7 @@ QImage getImage(vtkSmartPointer<vtkRenderWindow> renderWindow, double quality = 
 vtkSmartPointer<vtkCellArray> createPolygons(std::vector<std::vector<int>> const& indices);
 vtkSmartPointer<vtkActor> createCubeActor(Eigen::Vector3d const& position, double length);
 vtkSmartPointer<vtkAxesActor> createAxesActor(int fontSize);
+vtkSmartPointer<vtkTextActor> createLabelActor(QString const& text, Eigen::Vector2d const& pos, int fontSize);
 vtkSmartPointer<vtkTextActor> createTitleActor(QString const& text, Eigen::Vector2d const& pos1, Eigen::Vector2d const& pos2, int fontSize);
 vtkSmartPointer<vtkTextActor> createScalarBarTitleActor(QString const& title, Eigen::Vector2d const& pos1, Eigen::Vector2d const& pos2,
                                                         int fontSize);

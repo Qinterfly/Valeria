@@ -56,15 +56,16 @@ private:
     void drawDeformedState();
     void drawElements(vtkSmartPointer<vtkPoints> points, std::vector<std::vector<int>> const& indices, vtkColor3d color, double opacity,
                       bool isWireframe);
-    void drawSection(Backend::Core::ReportSection const& section, vtkSmartPointer<vtkLookupTable> lookupTable, double scale, double phase);
-    void drawScalarBar(vtkSmartPointer<vtkLookupTable> lookupTable);
+    void drawSection(Backend::Core::ReportSection const& section);
+    void drawScalarBar();
+    void drawRuler();
     void drawTitle();
 
     // Helper functions
     vtkSmartPointer<vtkPoints> createPoints(Testlab::Component const& component);
     void drawZeroLine(Eigen::Vector3d const& firstCoords, Eigen::Vector3d const& secondCoords);
     void drawEpure(Eigen::Vector3d const& firstCoords, Eigen::Vector3d const& secondCoords, double firstValue, double secondValue,
-                   Eigen::Vector3d const& normalVec, vtkSmartPointer<vtkLookupTable> lookupTable);
+                   Eigen::Vector3d const& normalVec);
 
 private:
     Backend::Core::ReportTextEngine& mTextEngine;
@@ -75,12 +76,14 @@ private:
     // Data
     Backend::Core::GeometryState mState;
     double mMaximumDimension;
+    double mAmplitudeScale;
 
     // VTK
     vtkSmartPointer<vtkRenderWindow> mRenderWindow;
     vtkSmartPointer<vtkRenderer> mRenderer;
-    vtkSmartPointer<vtkRenderer> mOverlayRenderer;
+    vtkSmartPointer<vtkRenderer> mAxesRenderer;
     vtkSmartPointer<vtkAxesActor> mAxes;
+    vtkSmartPointer<vtkLookupTable> mLookupTable;
     QImage mImage;
 };
 
