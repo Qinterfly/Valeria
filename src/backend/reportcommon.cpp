@@ -33,7 +33,7 @@ ReportPoint::ReportPoint(QString const& uComponent, QString const& uNode)
 
 bool ReportPoint::isEmpty() const
 {
-    return name().isEmpty();
+    return component.isEmpty() && node.isEmpty();
 }
 
 QString ReportPoint::name() const
@@ -186,16 +186,26 @@ ReportSection::ReportSection()
     sign = 1;
 }
 
-ReportSection::ReportSection(QString const& uFirstPoint, QString const& uSecondPoint, ReportDirection uResponseDir, int uSign,
-                             QString const& uName)
-    : ReportSection()
+ReportSection::ReportSection(QString const& uFirstPoint, QString const& uSecondPoint, ReportDirection uCoordDir, ReportDirection uResponseDir,
+                             int uSign, QString const& uName)
 {
     name = uName;
-    coordDir = ReportDirection::kN;
+    coordDir = uCoordDir;
     responseDir = uResponseDir;
     sign = uSign;
     firstPoint = ReportPoint(uFirstPoint);
     secondPoint = ReportPoint(uSecondPoint);
+}
+
+ReportSection::ReportSection(QString const& uFirstPoint, QString const& uSecondPoint, ReportDirection uResponseDir, int uSign,
+                             QString const& uName)
+    : ReportSection(uFirstPoint, uSecondPoint, ReportDirection::kN, uResponseDir, uSign, uName)
+{
+}
+
+ReportSection::ReportSection(QString const& uFirstPoint, ReportDirection uCoordDir, ReportDirection uResponseDir, int uSign, QString const& uName)
+    : ReportSection(uFirstPoint, QString(), uCoordDir, uResponseDir, uSign, uName)
+{
 }
 
 QJsonObject ReportSection::toJson() const

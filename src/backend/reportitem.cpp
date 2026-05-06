@@ -484,7 +484,6 @@ void ModeReportItem::fromJson(QJsonObject const& obj)
     scale = obj["scale"].toDouble();
     amplitude = obj["amplitude"].toDouble();
     phase = obj["phase"].toDouble();
-    Utility::fromJson(link, obj["link"]);
 
     // Settings
     title = obj["title"].toString();
@@ -503,15 +502,17 @@ DiagramReportItem::DiagramReportItem()
 {
     // View
     view = ReportView::kTop;
-    colorMap = ReportColorMap::kJet;
+    colorMap = ReportColorMap::kBlueToRed3;
     scale = 1.5;
     amplitude = 0.05;
     phase = 0.0;
+    barWidth = 0.01;
 
     // Settings
     sRange = {0.0, 0.0};
     quality = 2.0;
     undeformedColor = QColor(175, 238, 238);
+    undeformedOpacity = 1.0;
     vertexSize = 5.0;
     lineWidth = 2.0;
 }
@@ -538,6 +539,7 @@ ReportItem* DiagramReportItem::clone() const
     pResult->scale = scale;
     pResult->amplitude = amplitude;
     pResult->phase = phase;
+    pResult->barWidth = barWidth;
 
     // Settings
     pResult->title = title;
@@ -545,6 +547,7 @@ ReportItem* DiagramReportItem::clone() const
     pResult->sRange = sRange;
     pResult->quality = quality;
     pResult->undeformedColor = undeformedColor;
+    pResult->undeformedOpacity = undeformedOpacity;
     pResult->vertexSize = vertexSize;
     pResult->lineWidth = lineWidth;
 
@@ -572,6 +575,7 @@ QJsonObject DiagramReportItem::toJson() const
     obj["scale"] = scale;
     obj["amplitude"] = amplitude;
     obj["phase"] = phase;
+    obj["barWidth"] = barWidth;
 
     // Settings
     obj["title"] = title;
@@ -579,6 +583,7 @@ QJsonObject DiagramReportItem::toJson() const
     obj["sRange"] = Utility::toJson(sRange);
     obj["quality"] = quality;
     obj["undeformedColor"] = Utility::toJson(undeformedColor);
+    obj["undeformedOpacity"] = undeformedOpacity;
     obj["vertexSize"] = vertexSize;
     obj["lineWidth"] = lineWidth;
 
@@ -602,7 +607,7 @@ void DiagramReportItem::fromJson(QJsonObject const& obj)
     scale = obj["scale"].toDouble();
     amplitude = obj["amplitude"].toDouble();
     phase = obj["phase"].toDouble();
-    Utility::fromJson(link, obj["link"]);
+    barWidth = obj["barWidth"].toDouble();
 
     // Settings
     title = obj["title"].toString();
@@ -610,6 +615,7 @@ void DiagramReportItem::fromJson(QJsonObject const& obj)
     Utility::fromJson(sRange, obj["sRange"]);
     quality = obj["quality"].toDouble();
     Utility::fromJson(undeformedColor, obj["undeformedColor"]);
+    undeformedOpacity = obj["undeformedOpacity"].toDouble();
     vertexSize = obj["vertexSize"].toDouble();
     lineWidth = obj["lineWidth"].toDouble();
 }

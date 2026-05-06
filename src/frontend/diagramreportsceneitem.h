@@ -54,7 +54,8 @@ private:
     void drawAll();
     void drawUndeformedState();
     void drawDeformedState();
-    void drawElements(vtkSmartPointer<vtkPoints> points, std::vector<std::vector<int>> const& indices, vtkColor3d color, bool isWireframe);
+    void drawElements(vtkSmartPointer<vtkPoints> points, std::vector<std::vector<int>> const& indices, vtkColor3d color, double opacity,
+                      bool isWireframe);
     void drawSection(Backend::Core::ReportSection const& section, vtkSmartPointer<vtkLookupTable> lookupTable, double scale, double phase);
     void drawScalarBar(vtkSmartPointer<vtkLookupTable> lookupTable);
     void drawTitle();

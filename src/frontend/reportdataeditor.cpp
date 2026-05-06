@@ -951,7 +951,9 @@ QComboBox* createColorMapSelector()
     QComboBox* pResult = new QComboBox;
     pResult->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     pResult->addItem(QObject::tr("Cool-warm"), (int) ReportColorMap::kCoolToWarm);
-    pResult->addItem(QObject::tr("Blue-red"), (int) ReportColorMap::kBlueToRed);
+    pResult->addItem(QObject::tr("Blue-red 1"), (int) ReportColorMap::kBlueToRed1);
+    pResult->addItem(QObject::tr("Blue-red 2"), (int) ReportColorMap::kBlueToRed2);
+    pResult->addItem(QObject::tr("Blue-red 3"), (int) ReportColorMap::kBlueToRed3);
     pResult->addItem(QObject::tr("Varadis"), (int) ReportColorMap::kVaradis);
     pResult->addItem(QObject::tr("Jet"), (int) ReportColorMap::kJet);
     pResult->addItem(QObject::tr("Plasma"), (int) ReportColorMap::kPlasma);

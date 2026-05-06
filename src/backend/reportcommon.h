@@ -52,11 +52,12 @@ enum class ReportView
 enum class ReportColorMap
 {
     kCoolToWarm,
-    kBlueToRed,
+    kBlueToRed1,
+    kBlueToRed2,
+    kBlueToRed3,
     kVaradis,
     kJet,
     kPlasma,
-    kTwoBlueRed
 };
 
 //! Class to a define a layout of a point
@@ -123,7 +124,11 @@ class ReportSection : public ISerializable
 {
 public:
     ReportSection();
+    ReportSection(QString const& uFirstPoint, QString const& uSecondPoint, ReportDirection uCoordDir, ReportDirection uResponseDir,
+                  int uSign = 1, QString const& uName = QString());
     ReportSection(QString const& uFirstPoint, QString const& uSecondPoint, ReportDirection uResponseDir, int uSign = 1,
+                  QString const& uName = QString());
+    ReportSection(QString const& uFirstPoint, ReportDirection uCoordDir, ReportDirection uResponseDir, int uSign = 1,
                   QString const& uName = QString());
     ~ReportSection() = default;
 

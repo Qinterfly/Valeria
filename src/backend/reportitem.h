@@ -232,6 +232,7 @@ public:
     double scale;
     double amplitude;
     double phase;
+    double barWidth;
 
     // Settings
     QString title;
@@ -239,6 +240,7 @@ public:
     PairDouble sRange;
     double quality;
     QColor undeformedColor;
+    double undeformedOpacity;
     double vertexSize;
     double lineWidth;
 };

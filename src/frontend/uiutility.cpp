@@ -213,8 +213,14 @@ vtkSmartPointer<vtkLookupTable> createLookupTable(ReportColorMap colorMap, doubl
     case ReportColorMap::kCoolToWarm:
         result = Utility::createCoolToWarmColorMap();
         break;
-    case ReportColorMap::kBlueToRed:
-        result = Utility::createBlueToRedColorMap();
+    case ReportColorMap::kBlueToRed1:
+        result = Utility::createBlueToRedColorMap1();
+        break;
+    case ReportColorMap::kBlueToRed2:
+        result = Utility::createBlueToRedColorMap2();
+        break;
+    case ReportColorMap::kBlueToRed3:
+        result = Utility::createBlueToRedColorMap3();
         break;
     case ReportColorMap::kVaradis:
         result = Utility::createVaradisColorMap();
@@ -224,9 +230,6 @@ vtkSmartPointer<vtkLookupTable> createLookupTable(ReportColorMap colorMap, doubl
         break;
     case ReportColorMap::kPlasma:
         result = Utility::createPlasmaColorMap();
-        break;
-    case ReportColorMap::kTwoBlueRed:
-        result = Utility::createTwoBlueRedMap();
         break;
     default:
         result = Utility::createCoolToWarmColorMap();
@@ -274,7 +277,7 @@ vtkSmartPointer<vtkLookupTable> createCoolToWarmColorMap()
 }
 
 //! Create the diverging color map from blue to red colors
-vtkSmartPointer<vtkLookupTable> createBlueToRedColorMap()
+vtkSmartPointer<vtkLookupTable> createBlueToRedColorMap1()
 {
     vtkNew<vtkColorTransferFunction> ctf;
     ctf->SetColorSpaceToRGB();
@@ -284,6 +287,27 @@ vtkSmartPointer<vtkLookupTable> createBlueToRedColorMap()
     ctf->AddRGBPoint(0.75, 1.0, 1.0, 0.0); // Yellow
     ctf->AddRGBPoint(1.0, 1.0, 0.0, 0.0);  // Red
     return buildLookupTable(ctf);
+}
+
+//! Create the diverging color map from blue to red colors
+vtkSmartPointer<vtkLookupTable> createBlueToRedColorMap2()
+{
+    vtkNew<vtkColorTransferFunction> ctf;
+    ctf->SetColorSpaceToRGB();
+    ctf->AddRGBPoint(0.0, 0.0, 0.0, 1.0); // Blue
+    ctf->AddRGBPoint(1.0, 1.0, 0.0, 0.0); // Red
+    return buildLookupTable(ctf);
+}
+
+//! Create the diverging color map from blue to red colors
+vtkSmartPointer<vtkLookupTable> createBlueToRedColorMap3()
+{
+    vtkNew<vtkLookupTable> result;
+    result->SetNumberOfTableValues(2);
+    result->SetTableValue(0.0, 0.0, 0.0, 1.0);
+    result->SetTableValue(1.0, 1.0, 0.0, 0.0);
+    result->Build();
+    return result;
 }
 
 //! Create the Varadis color map
@@ -322,17 +346,6 @@ vtkSmartPointer<vtkLookupTable> createPlasmaColorMap()
     ctf->AddRGBPoint(0.75, 0.93, 0.57, 0.14);
     ctf->AddRGBPoint(1.0, 0.99, 0.94, 0.20); // Yellow
     return buildLookupTable(ctf);
-}
-
-//! Create the color map consisted of two colors: blue and red
-vtkSmartPointer<vtkLookupTable> createTwoBlueRedMap()
-{
-    vtkNew<vtkLookupTable> result;
-    result->SetNumberOfTableValues(2);
-    result->SetTableValue(0.0, 0.0, 0.0, 1.0);
-    result->SetTableValue(1.0, 1.0, 0.0, 0.0);
-    result->Build();
-    return result;
 }
 
 //! Set the camera position as well as zoom

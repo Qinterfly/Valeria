@@ -128,6 +128,7 @@ void DiagramReportSceneItem::drawUndeformedState()
     // Loop through all the components
     int numComponents = mGeometry.components.size();
     vtkColor3d color = Utility::getColor(pItem->undeformedColor);
+    double opacity = pItem->undeformedOpacity;
     for (int i = 0; i != numComponents; ++i)
     {
         Testlab::Component const& component = mGeometry.components[i];
@@ -136,9 +137,9 @@ void DiagramReportSceneItem::drawUndeformedState()
         vtkSmartPointer<vtkPoints> points = createPoints(component);
 
         // Draw the elements
-        drawElements(points, component.lines, color, false);
-        drawElements(points, component.trias, color, false);
-        drawElements(points, component.quads, color, false);
+        drawElements(points, component.lines, color, opacity, false);
+        drawElements(points, component.trias, color, opacity, false);
+        drawElements(points, component.quads, color, opacity, false);
     }
 }
 
@@ -175,7 +176,7 @@ void DiagramReportSceneItem::drawDeformedState()
 
 //! Render elements using one color
 void DiagramReportSceneItem::drawElements(vtkSmartPointer<vtkPoints> points, std::vector<std::vector<int>> const& indices, vtkColor3d color,
-                                          bool isWireframe)
+                                          double opacity, bool isWireframe)
 {
     DiagramReportItem* pItem = (DiagramReportItem*) mpItem;
     if (!pItem)
@@ -205,6 +206,7 @@ void DiagramReportSceneItem::drawElements(vtkSmartPointer<vtkPoints> points, std
     vtkNew<vtkActor> actor;
     actor->SetMapper(mapper);
     actor->GetProperty()->SetColor(color.GetData());
+    actor->GetProperty()->SetOpacity(opacity);
     actor->GetProperty()->SetLineWidth(pItem->lineWidth);
     actor->GetProperty()->SetEdgeColor(color.GetData());
     actor->GetProperty()->EdgeVisibilityOn();
@@ -253,6 +255,10 @@ void DiagramReportSceneItem::drawSection(ReportSection const& section, vtkSmartP
     double distance = tangentVec.norm();
     bool isOnePoint = distance < skEps;
 
+    // Get the binormal vector
+    Vector3d binormalVec = getBinormalVector(pItem->view);
+    binormalVec /= binormalVec.norm();
+
     // Compute the normal vector
     Vector3d normalVec = Vector3d::Zero();
     if (section.coordDir == ReportDirection::kN)
@@ -264,8 +270,6 @@ void DiagramReportSceneItem::drawSection(ReportSection const& section, vtkSmartP
         }
         else
         {
-            Vector3d binormalVec = getBinormalVector(pItem->view);
-            binormalVec /= binormalVec.norm();
             tangentVec /= distance;
             normalVec = tangentVec.cross(binormalVec);
         }
@@ -275,6 +279,16 @@ void DiagramReportSceneItem::drawSection(ReportSection const& section, vtkSmartP
         normalVec = Vector3d::Unit(iCoordDir);
     }
     normalVec *= section.sign;
+
+    // Process the degenerate section
+    if (isOnePoint)
+    {
+        tangentVec = normalVec.cross(binormalVec);
+        tangentVec /= tangentVec.norm();
+        double shift = pItem->barWidth * mMaximumDimension;
+        firstCoords -= shift * tangentVec;
+        secondCoords += shift * tangentVec;
+    }
 
     // Get the epure values
     double factor = scale * cos(phase);
@@ -428,9 +442,6 @@ void DiagramReportSceneItem::drawEpure(Vector3d const& firstCoords, Vector3d con
     // Create the actor
     vtkNew<vtkActor> actor;
     actor->SetMapper(mapper);
-    // actor->GetProperty()->SetEdgeColor(Utility::getColor(pItem->edgeColor).GetData());
-    // actor->GetProperty()->SetEdgeOpacity(pItem->edgeOpacity);
-    // actor->GetProperty()->EdgeVisibilityOn();
 
     // Add the actor to the scene
     mRenderer->AddActor(actor);
