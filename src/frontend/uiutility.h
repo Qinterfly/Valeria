@@ -65,6 +65,7 @@ vtkSmartPointer<vtkLookupTable> createBlueToRedColorMap();
 vtkSmartPointer<vtkLookupTable> createVaradisColorMap();
 vtkSmartPointer<vtkLookupTable> createJetColorMap();
 vtkSmartPointer<vtkLookupTable> createPlasmaColorMap();
+vtkSmartPointer<vtkLookupTable> createTwoBlueRedMap();
 
 // Render: view
 void setView(Backend::Core::ReportView view, double scale, vtkSmartPointer<vtkRenderer> renderer, vtkSmartPointer<vtkRenderer> overlayRenderer);

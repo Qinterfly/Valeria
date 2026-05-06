@@ -277,19 +277,40 @@ void TestFrontend::setDiagramPage()
     ReportPage& page = pDesigner->page();
     DiagramReportItem* pDiag = (DiagramReportItem*) page.get(0);
 
+    // Add the fuselage
+    pDiag->addSection(ReportSection("F:5p2", "F:5p1", ReportDirection::kY));
+    pDiag->addSection(ReportSection("F:5p5", "F:5p4", ReportDirection::kY));
+    pDiag->addSection(ReportSection("F:5p8", "F:5p7", ReportDirection::kY));
+    pDiag->addSection(ReportSection("F:5p15", "F:5p14", ReportDirection::kY));
+    pDiag->addSection(ReportSection("F:4p26", "F:4p25", ReportDirection::kY));
+    pDiag->addSection(ReportSection("F:4p23", "F:4p22", ReportDirection::kY));
+    pDiag->addSection(ReportSection("F:4p20", "F:4p19", ReportDirection::kY));
+
     // Add the wing
-    pDiag->addSection(ReportSection("W:1p2", "W:1p3"));
-    pDiag->addSection(ReportSection("W:1p6", "W:1p7"));
-    pDiag->addSection(ReportSection("W:1p11", "W:1p12"));
-    pDiag->addSection(ReportSection("W:1p14", "W:1p15"));
-    pDiag->addSection(ReportSection("W:1p17", "W:1p18"));
-    pDiag->addSection(ReportSection("W:1p22", "W:1p23"));
-    // pDiag->addSection(ReportSection("W:2p2", "W:2p3"));
-    // pDiag->addSection(ReportSection("W:2p6", "W:2p7"));
-    // pDiag->addSection(ReportSection("W:2p11", "W:2p12"));
-    // pDiag->addSection(ReportSection("W:2p14", "W:2p15"));
-    // pDiag->addSection(ReportSection("W:2p17", "W:2p18"));
-    // pDiag->addSection(ReportSection("W:2p22", "W:2p23"));
+    pDiag->addSection(ReportSection("W:1p2", "W:1p3", ReportDirection::kY));
+    pDiag->addSection(ReportSection("W:1p6", "W:1p7", ReportDirection::kY));
+    pDiag->addSection(ReportSection("W:1p11", "W:1p12", ReportDirection::kY));
+    pDiag->addSection(ReportSection("W:1p14", "W:1p15", ReportDirection::kY));
+    pDiag->addSection(ReportSection("W:1p17", "W:1p18", ReportDirection::kY));
+    pDiag->addSection(ReportSection("W:1p22", "W:1p23", ReportDirection::kY));
+    pDiag->addSection(ReportSection("W:2p2", "W:2p3", ReportDirection::kY, -1));
+    pDiag->addSection(ReportSection("W:2p6", "W:2p7", ReportDirection::kY, -1));
+    pDiag->addSection(ReportSection("W:2p11", "W:2p12", ReportDirection::kY, -1));
+    pDiag->addSection(ReportSection("W:2p14", "W:2p15", ReportDirection::kY, -1));
+    pDiag->addSection(ReportSection("W:2p17", "W:2p18", ReportDirection::kY, -1));
+    pDiag->addSection(ReportSection("W:2p22", "W:2p23", ReportDirection::kY, -1));
+
+    // Add the engine
+    pDiag->addSection(ReportSection("En:3p7", "En:3p2", ReportDirection::kY));
+    pDiag->addSection(ReportSection("En:3p8", "En:3p4", ReportDirection::kY));
+    pDiag->addSection(ReportSection("En:3p15", "En:3p10", ReportDirection::kY, -1));
+    pDiag->addSection(ReportSection("En:3p16", "En:3p12", ReportDirection::kY, -1));
+
+    // Add the stabilizer
+    pDiag->addSection(ReportSection("GO:4p29", "GO:4p10", ReportDirection::kY));
+    pDiag->addSection(ReportSection("GO:4p10", "GO:4p11", ReportDirection::kY));
+    pDiag->addSection(ReportSection("GO:4p30", "GO:4p16", ReportDirection::kY, -1));
+    pDiag->addSection(ReportSection("GO:4p16", "GO:4p17", ReportDirection::kY, -1));
 
     // Select the first item
     pDesigner->selectItem(0);

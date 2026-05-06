@@ -225,6 +225,9 @@ vtkSmartPointer<vtkLookupTable> createLookupTable(ReportColorMap colorMap, doubl
     case ReportColorMap::kPlasma:
         result = Utility::createPlasmaColorMap();
         break;
+    case ReportColorMap::kTwoBlueRed:
+        result = Utility::createTwoBlueRedMap();
+        break;
     default:
         result = Utility::createCoolToWarmColorMap();
         break;
@@ -319,6 +322,17 @@ vtkSmartPointer<vtkLookupTable> createPlasmaColorMap()
     ctf->AddRGBPoint(0.75, 0.93, 0.57, 0.14);
     ctf->AddRGBPoint(1.0, 0.99, 0.94, 0.20); // Yellow
     return buildLookupTable(ctf);
+}
+
+//! Create the color map consisted of two colors: blue and red
+vtkSmartPointer<vtkLookupTable> createTwoBlueRedMap()
+{
+    vtkNew<vtkLookupTable> result;
+    result->SetNumberOfTableValues(2);
+    result->SetTableValue(0.0, 0.0, 0.0, 1.0);
+    result->SetTableValue(1.0, 1.0, 0.0, 0.0);
+    result->Build();
+    return result;
 }
 
 //! Set the camera position as well as zoom

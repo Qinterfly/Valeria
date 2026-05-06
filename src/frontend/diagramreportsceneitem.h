@@ -61,6 +61,9 @@ private:
 
     // Helper functions
     vtkSmartPointer<vtkPoints> createPoints(Testlab::Component const& component);
+    void drawZeroLine(Eigen::Vector3d const& firstCoords, Eigen::Vector3d const& secondCoords);
+    void drawEpure(Eigen::Vector3d const& firstCoords, Eigen::Vector3d const& secondCoords, double firstValue, double secondValue,
+                   Eigen::Vector3d const& normalVec, vtkSmartPointer<vtkLookupTable> lookupTable);
 
 private:
     Backend::Core::ReportTextEngine& mTextEngine;

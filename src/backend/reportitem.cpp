@@ -505,7 +505,7 @@ DiagramReportItem::DiagramReportItem()
     view = ReportView::kTop;
     colorMap = ReportColorMap::kJet;
     scale = 1.5;
-    amplitude = 1.0;
+    amplitude = 0.05;
     phase = 0.0;
 
     // Settings

@@ -333,7 +333,7 @@ ReportPage ReportDefaults::diagramPage()
     pDiag->unit = Units::skM_S2;
     pDiag->view = ReportView::kTop;
     pDiag->title = QObject::tr("${BUNDLE}");
-    pDiag->sLabel = QObject::tr("Im a, ${UNIT}");
+    pDiag->sLabel = QObject::tr("${RDIR}; Im a, ${UNIT}");
 
     // Create title
     TextReportItem* pTitle = new TextReportItem;

@@ -55,7 +55,8 @@ enum class ReportColorMap
     kBlueToRed,
     kVaradis,
     kJet,
-    kPlasma
+    kPlasma,
+    kTwoBlueRed
 };
 
 //! Class to a define a layout of a point
@@ -122,9 +123,8 @@ class ReportSection : public ISerializable
 {
 public:
     ReportSection();
-    ReportSection(ReportPoint const& uFirstPoint, ReportPoint const& uSecondPoint, ReportDirection uDir = ReportDirection::kN, int uSign = 1,
+    ReportSection(QString const& uFirstPoint, QString const& uSecondPoint, ReportDirection uResponseDir, int uSign = 1,
                   QString const& uName = QString());
-    ReportSection(QString const& uFirstPoint, QString const& uSecondPoint, int uSign = 1, QString const& uName = QString());
     ~ReportSection() = default;
 
     QJsonObject toJson() const override;
@@ -132,7 +132,8 @@ public:
 
 public:
     QString name;
-    ReportDirection dir;
+    ReportDirection coordDir;
+    ReportDirection responseDir;
     int sign;
     ReportPoint firstPoint;
     ReportPoint secondPoint;

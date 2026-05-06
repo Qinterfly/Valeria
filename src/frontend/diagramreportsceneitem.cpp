@@ -5,6 +5,7 @@
 #include <Eigen/Geometry>
 
 #include <vtkAxesActor.h>
+#include <vtkLine.h>
 #include <vtkLookupTable.h>
 #include <vtkNamedColors.h>
 #include <vtkPointData.h>
@@ -157,13 +158,7 @@ void DiagramReportSceneItem::drawDeformedState()
 
     // Create the lookup table
     double limit = std::max(std::abs(range.first), std::abs(range.second));
-    // vtkSmartPointer<vtkLookupTable> lookupTable = Utility::createLookupTable(pItem->colorMap, -limit, limit);
-    vtkNew<vtkLookupTable> lookupTable;
-    lookupTable->SetNumberOfTableValues(2);
-    lookupTable->SetRange(-limit, limit);
-    lookupTable->SetTableValue(0, 0.0, 0.0, 1.0);
-    lookupTable->SetTableValue(1, 1.0, 0.0, 0.0);
-    lookupTable->Build();
+    vtkSmartPointer<vtkLookupTable> lookupTable = Utility::createLookupTable(pItem->colorMap, -limit, limit);
 
     // Set the mode parametsr
     double scale = pItem->amplitude * mMaximumDimension / limit;
@@ -206,18 +201,13 @@ void DiagramReportSceneItem::drawElements(vtkSmartPointer<vtkPoints> points, std
     vtkNew<vtkPolyDataMapper> mapper;
     mapper->SetInputData(polyData);
 
-    // Set the offset
-    mapper->SetResolveCoincidentTopologyToPolygonOffset();
-    if (isPolys)
-        mapper->SetResolveCoincidentTopologyPolygonOffsetParameters(1.0, 1.0);
-    else
-        mapper->SetResolveCoincidentTopologyLineOffsetParameters(1.0, -1.0);
-
     // Create the actor
     vtkNew<vtkActor> actor;
     actor->SetMapper(mapper);
     actor->GetProperty()->SetColor(color.GetData());
     actor->GetProperty()->SetLineWidth(pItem->lineWidth);
+    actor->GetProperty()->SetEdgeColor(color.GetData());
+    actor->GetProperty()->EdgeVisibilityOn();
     if (isWireframe)
         actor->GetProperty()->SetRepresentationToWireframe();
 
@@ -232,10 +222,19 @@ void DiagramReportSceneItem::drawSection(ReportSection const& section, vtkSmartP
     if (!pItem)
         return;
 
-    // Check if the section direction is specified
-    if (section.dir == ReportDirection::kNone)
+    // Check if the coordinate direction is specified
+    if (section.coordDir == ReportDirection::kNone)
         return;
-    int iDir = (int) section.dir - 1;
+    int iCoordDir = (int) section.coordDir - 1;
+
+    // Check if the response direction is specified
+    if (section.responseDir == ReportDirection::kNone)
+        return;
+    int iResponseDir = (int) section.responseDir - 1;
+
+    // Update the parser
+    mTextEngine.setVariable("cdir", Backend::Utility::getDirLabel(section.coordDir));
+    mTextEngine.setVariable("rdir", Backend::Utility::getDirLabel(section.responseDir));
 
     // Get the points
     ReportPoint firstPoint = section.firstPoint;
@@ -256,7 +255,7 @@ void DiagramReportSceneItem::drawSection(ReportSection const& section, vtkSmartP
 
     // Compute the normal vector
     Vector3d normalVec = Vector3d::Zero();
-    if (section.dir == ReportDirection::kN)
+    if (section.coordDir == ReportDirection::kN)
     {
         if (isOnePoint)
         {
@@ -273,63 +272,18 @@ void DiagramReportSceneItem::drawSection(ReportSection const& section, vtkSmartP
     }
     else
     {
-        normalVec = Vector3d::Unit(iDir);
+        normalVec = Vector3d::Unit(iCoordDir);
     }
     normalVec *= section.sign;
 
-    // Get the first state
+    // Get the epure values
     double factor = scale * cos(phase);
-    Vector3d firstState = Backend::Utility::getNodeValues(mState, firstPoint.component, firstPoint.node);
-    firstState = factor * Backend::Utility::projectVector(firstState, normalVec);
+    double firstValue = factor * Backend::Utility::getNodeValues(mState, firstPoint.component, firstPoint.node)[iResponseDir];
+    double secondValue = factor * Backend::Utility::getNodeValues(mState, secondPoint.component, secondPoint.node)[iResponseDir];
 
-    // Get the second state
-    Vector3d secondState = Backend::Utility::getNodeValues(mState, secondPoint.component, secondPoint.node);
-    secondState = factor * Backend::Utility::projectVector(secondState, normalVec);
-
-    // Create the points
-    vtkNew<vtkPoints> points;
-    points->InsertPoint(0, firstCoords[0], firstCoords[1], firstCoords[2]);
-    points->InsertPoint(1, secondCoords[0], secondCoords[1], secondCoords[2]);
-    points->InsertPoint(2, firstCoords[0] + firstState[0], firstCoords[1] + firstState[1], firstCoords[2] + firstState[2]);
-    points->InsertPoint(3, secondCoords[0] + secondState[0], secondCoords[1] + secondState[1], secondCoords[2] + secondState[2]);
-
-    // Create the scalars
-    vtkNew<vtkDoubleArray> scalars;
-    scalars->SetNumberOfTuples(4);
-    double firstScalar = Backend::Utility::getSignedAbsMax(firstState);
-    double secondScalar = Backend::Utility::getSignedAbsMax(secondState);
-    scalars->SetValue(0, firstScalar);
-    scalars->SetValue(1, secondScalar);
-    scalars->SetValue(2, firstScalar);
-    scalars->SetValue(3, secondScalar);
-
-    // Create the polygons
-    vtkNew<vtkPolygon> polygon;
-    polygon->GetPointIds()->InsertNextId(0);
-    polygon->GetPointIds()->InsertNextId(1);
-    polygon->GetPointIds()->InsertNextId(3);
-    polygon->GetPointIds()->InsertNextId(2);
-    vtkNew<vtkCellArray> polygons;
-    polygons->InsertNextCell(polygon);
-
-    // Group the polygons
-    vtkNew<vtkPolyData> polyData;
-    polyData->SetPoints(points);
-    polyData->SetPolys(polygons);
-    polyData->GetPointData()->SetScalars(scalars);
-
-    // Build the mapper
-    vtkNew<vtkPolyDataMapper> mapper;
-    mapper->SetInputData(polyData);
-    mapper->UseLookupTableScalarRangeOn();
-    mapper->SetLookupTable(lookupTable);
-
-    // Create the actor
-    vtkNew<vtkActor> actor;
-    actor->SetMapper(mapper);
-
-    // Add the actor to the scene
-    mRenderer->AddActor(actor);
+    // Draw the epure
+    drawZeroLine(firstCoords, secondCoords);
+    drawEpure(firstCoords, secondCoords, firstValue, secondValue, normalVec, lookupTable);
 }
 
 //! Render the scalar bar
@@ -391,6 +345,95 @@ vtkSmartPointer<vtkPoints> DiagramReportSceneItem::createPoints(Testlab::Compone
         points->InsertPoint(iNode, position[0], position[1], position[2]);
     }
     return points;
+}
+
+//! Draw the line connecting two points
+void DiagramReportSceneItem::drawZeroLine(Eigen::Vector3d const& firstCoords, Eigen::Vector3d const& secondCoords)
+{
+    // Create the points
+    vtkNew<vtkPoints> points;
+    points->InsertPoint(0, firstCoords[0], firstCoords[1], firstCoords[2]);
+    points->InsertPoint(1, secondCoords[0], secondCoords[1], secondCoords[2]);
+
+    // Create the line
+    vtkNew<vtkLine> line;
+    line->GetPointIds()->InsertNextId(0);
+    line->GetPointIds()->InsertNextId(1);
+    vtkNew<vtkCellArray> lines;
+    lines->InsertNextCell(line);
+
+    // Group the polygons
+    vtkNew<vtkPolyData> polyData;
+    polyData->SetPoints(points);
+    polyData->SetLines(lines);
+
+    // Build the mapper
+    vtkNew<vtkPolyDataMapper> mapper;
+    mapper->SetInputData(polyData);
+
+    // Create the actor
+    vtkNew<vtkActor> actor;
+    actor->SetMapper(mapper);
+    actor->GetProperty()->SetColor(vtkColors->GetColor3d("Black").GetData());
+    actor->GetProperty()->SetLineWidth(4.0);
+
+    // Add the actor to the scene
+    mRenderer->AddActor(actor);
+}
+
+//! Draw the epure based on two points
+void DiagramReportSceneItem::drawEpure(Vector3d const& firstCoords, Vector3d const& secondCoords, double firstValue, double secondValue,
+                                       Eigen::Vector3d const& normalVec, vtkSmartPointer<vtkLookupTable> lookupTable)
+{
+    // Compute the state vectors
+    Vector3d firstState = firstValue * normalVec;
+    Vector3d secondState = secondValue * normalVec;
+
+    // Create the points
+    vtkNew<vtkPoints> points;
+    points->InsertPoint(0, firstCoords[0], firstCoords[1], firstCoords[2]);
+    points->InsertPoint(1, secondCoords[0], secondCoords[1], secondCoords[2]);
+    points->InsertPoint(2, firstCoords[0] + firstState[0], firstCoords[1] + firstState[1], firstCoords[2] + firstState[2]);
+    points->InsertPoint(3, secondCoords[0] + secondState[0], secondCoords[1] + secondState[1], secondCoords[2] + secondState[2]);
+
+    // Create the scalars
+    vtkNew<vtkDoubleArray> scalars;
+    scalars->SetNumberOfTuples(4);
+    scalars->SetValue(0, firstValue);
+    scalars->SetValue(1, secondValue);
+    scalars->SetValue(2, firstValue);
+    scalars->SetValue(3, secondValue);
+
+    // Create the polygon
+    vtkNew<vtkPolygon> polygon;
+    polygon->GetPointIds()->InsertNextId(0);
+    polygon->GetPointIds()->InsertNextId(1);
+    polygon->GetPointIds()->InsertNextId(3);
+    polygon->GetPointIds()->InsertNextId(2);
+    vtkNew<vtkCellArray> polygons;
+    polygons->InsertNextCell(polygon);
+
+    // Group the polygons
+    vtkNew<vtkPolyData> polyData;
+    polyData->SetPoints(points);
+    polyData->SetPolys(polygons);
+    polyData->GetPointData()->SetScalars(scalars);
+
+    // Build the mapper
+    vtkNew<vtkPolyDataMapper> mapper;
+    mapper->SetInputData(polyData);
+    mapper->UseLookupTableScalarRangeOn();
+    mapper->SetLookupTable(lookupTable);
+
+    // Create the actor
+    vtkNew<vtkActor> actor;
+    actor->SetMapper(mapper);
+    // actor->GetProperty()->SetEdgeColor(Utility::getColor(pItem->edgeColor).GetData());
+    // actor->GetProperty()->SetEdgeOpacity(pItem->edgeOpacity);
+    // actor->GetProperty()->EdgeVisibilityOn();
+
+    // Add the actor to the scene
+    mRenderer->AddActor(actor);
 }
 
 //! Clean up the scene

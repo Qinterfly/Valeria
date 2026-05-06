@@ -181,31 +181,29 @@ void ReportCurve::fromJson(QJsonObject const& obj)
 
 ReportSection::ReportSection()
 {
-    dir = ReportDirection::kN;
+    coordDir = ReportDirection::kN;
+    responseDir = ReportDirection::kNone;
     sign = 1;
 }
 
-ReportSection::ReportSection(ReportPoint const& uFirstPoint, ReportPoint const& uSecondPoint, ReportDirection uDir, int uSign,
+ReportSection::ReportSection(QString const& uFirstPoint, QString const& uSecondPoint, ReportDirection uResponseDir, int uSign,
                              QString const& uName)
     : ReportSection()
 {
     name = uName;
-    dir = uDir;
+    coordDir = ReportDirection::kN;
+    responseDir = uResponseDir;
     sign = uSign;
-    firstPoint = uFirstPoint;
-    secondPoint = uSecondPoint;
-}
-
-ReportSection::ReportSection(QString const& uFirstPoint, QString const& uSecondPoint, int uSign, QString const& uName)
-    : ReportSection(ReportPoint(uFirstPoint), ReportPoint(uSecondPoint), ReportDirection::kN, uSign, uName)
-{
+    firstPoint = ReportPoint(uFirstPoint);
+    secondPoint = ReportPoint(uSecondPoint);
 }
 
 QJsonObject ReportSection::toJson() const
 {
     QJsonObject obj;
     obj["name"] = name;
-    obj["dir"] = (int) dir;
+    obj["coordDir"] = (int) coordDir;
+    obj["responseDir"] = (int) responseDir;
     obj["sign"] = sign;
     obj["firstPoint"] = firstPoint.toJson();
     obj["secondPoint"] = secondPoint.toJson();
@@ -215,7 +213,8 @@ QJsonObject ReportSection::toJson() const
 void ReportSection::fromJson(QJsonObject const& obj)
 {
     name = obj["name"].toString();
-    dir = (ReportDirection) obj["dir"].toInt();
+    coordDir = (ReportDirection) obj["coordDir"].toInt();
+    responseDir = (ReportDirection) obj["responseDir"].toInt();
     sign = obj["sign"].toInt();
     firstPoint.fromJson(obj["firstPoint"].toObject());
     secondPoint.fromJson(obj["secondPoint"].toObject());
