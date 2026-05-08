@@ -78,7 +78,7 @@ QImage getImage(vtkSmartPointer<vtkRenderWindow> renderWindow, double quality = 
 vtkSmartPointer<vtkCellArray> createPolygons(std::vector<std::vector<int>> const& indices);
 vtkSmartPointer<vtkActor> createCubeActor(Eigen::Vector3d const& position, double length);
 vtkSmartPointer<vtkAxesActor> createAxesActor(int fontSize);
-vtkSmartPointer<vtkTextActor> createLabelActor(QString const& text, Eigen::Vector2d const& pos, int fontSize);
+vtkSmartPointer<vtkTextActor> createLabelActor(QString const& text, Eigen::Vector2d const& pos, int fontSize, int justification);
 vtkSmartPointer<vtkTextActor> createTitleActor(QString const& text, Eigen::Vector2d const& pos1, Eigen::Vector2d const& pos2, int fontSize);
 vtkSmartPointer<vtkTextActor> createScalarBarTitleActor(QString const& title, Eigen::Vector2d const& pos1, Eigen::Vector2d const& pos2,
                                                         int fontSize);

@@ -9,6 +9,7 @@
 
 QT_FORWARD_DECLARE_CLASS(QComboBox)
 QT_FORWARD_DECLARE_CLASS(QTreeWidget)
+QT_FORWARD_DECLARE_CLASS(QListWidget)
 
 class QtTreePropertyBrowser;
 class CustomVariantPropertyManager;
@@ -63,7 +64,6 @@ public:
     void replaceSelectedCurve();
     void removeSelected();
     void removeAllCurves();
-    QList<Backend::Core::ReportPoint> getSelectedPoints();
 
 private:
     void createContent();
@@ -135,6 +135,56 @@ private:
     Edit1d* mpAmplitudeEdit;
     Edit1d* mpPhaseEdit;
     QComboBox* mpLinkSelector;
+};
+
+//! Class to edit diagram item data
+class DiagramReportDataEditor : public ReportDataEditor
+{
+    Q_OBJECT
+
+public:
+    DiagramReportDataEditor(GeometryView* pGeometryView, Backend::Core::ReportPage const& page, QWidget* pParent = nullptr);
+    virtual ~DiagramReportDataEditor() = default;
+
+    Backend::Core::ReportItem::Type type() const override;
+    void refresh() override;
+
+    void addSection();
+    void editSection();
+    void reverseSection();
+    void removeSection();
+    void removeAllSections();
+
+private:
+    void createContent();
+    void createConnections();
+    QLayout* createHeaderLayout();
+    QWidget* createToolBar();
+    QLayout* createSectionLayout();
+
+    // Widgets
+    void refreshHeader();
+    void refreshList();
+
+    // Slots
+    Backend::Core::DiagramReportItem* getItem();
+    void processChanged();
+
+private:
+    GeometryView* mpGeometryView;
+    Backend::Core::ReportPage const& mPage;
+
+    // Widgets
+    QComboBox* mpUnitSelector;
+    QComboBox* mpViewSelector;
+    QComboBox* mpColorMapSelector;
+    Edit1d* mpScaleEdit;
+    Edit1d* mpAmplitudeEdit;
+    Edit1d* mpPhaseEdit;
+    QComboBox* mpLinkSelector;
+
+    // Sections
+    QListWidget* mpSectionList;
 };
 
 //! Class to edit curve properties

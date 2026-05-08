@@ -132,6 +132,9 @@ public:
                   QString const& uName = QString());
     ~ReportSection() = default;
 
+    bool isEmpty() const;
+    int numPoints() const;
+
     QJsonObject toJson() const override;
     void fromJson(QJsonObject const& obj) override;
 

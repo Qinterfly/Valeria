@@ -384,6 +384,7 @@ void setView(ReportView view, double scale, vtkSmartPointer<vtkRenderer> rendere
     double viewUp[3];
     renderer->GetActiveCamera()->GetPosition(position);
     renderer->GetActiveCamera()->GetViewUp(viewUp);
+    renderer->GetActiveCamera()->ParallelProjectionOn();
     axesRenderer->GetActiveCamera()->ParallelProjectionOn();
     axesRenderer->GetActiveCamera()->SetPosition(position[0], position[1], position[2]);
     axesRenderer->GetActiveCamera()->SetFocalPoint(0, 0, 0);
@@ -519,7 +520,7 @@ vtkSmartPointer<vtkAxesActor> createAxesActor(int fontSize)
 }
 
 //! Create the label actor
-vtkSmartPointer<vtkTextActor> createLabelActor(QString const& text, Eigen::Vector2d const& pos, int fontSize)
+vtkSmartPointer<vtkTextActor> createLabelActor(QString const& text, Eigen::Vector2d const& pos, int fontSize, int justification)
 {
     vtkNew<vtkTextActor> actor;
 
@@ -529,10 +530,9 @@ vtkSmartPointer<vtkTextActor> createLabelActor(QString const& text, Eigen::Vecto
     prop->SetFontFile(spFontFile->fileName().toStdString().data());
     prop->SetColor(vtkColors->GetColor3d("Black").GetData());
     prop->SetFontSize(fontSize);
-    prop->SetJustificationToCentered();
+    prop->SetJustification(justification);
     actor->GetPositionCoordinate()->SetCoordinateSystemToNormalizedViewport();
     actor->SetPosition(pos[0], pos[1]);
-
     return actor;
 }
 

@@ -525,6 +525,9 @@ void ReportDesigner::setDataEditor(ReportItem* pItem)
         case ReportItem::kMode:
             mpDataEditor = new ModeReportDataEditor(mScenePage);
             break;
+        case ReportItem::kDiagram:
+            mpDataEditor = new DiagramReportDataEditor(mpGeometryView, mScenePage);
+            break;
         default:
             break;
         }
@@ -851,6 +854,17 @@ void ReportDesigner::resolveItemLinks()
                     pModeSlaveItem->amplitude = pModeMasterItem->amplitude;
                     pModeSlaveItem->phase = pModeMasterItem->phase;
                     pModeSlaveItem->showUndeformed = pModeMasterItem->showUndeformed;
+                }
+                else if (pMasterItem->type() == ReportItem::kDiagram)
+                {
+                    DiagramReportItem* pModeSlaveItem = (DiagramReportItem*) pSlaveItem;
+                    DiagramReportItem* pModeMasterItem = (DiagramReportItem*) pMasterItem;
+                    pModeSlaveItem->font = pModeMasterItem->font;
+                    pModeSlaveItem->unit = pModeMasterItem->unit;
+                    pModeSlaveItem->colorMap = pModeMasterItem->colorMap;
+                    pModeSlaveItem->scale = pModeMasterItem->scale;
+                    pModeSlaveItem->amplitude = pModeMasterItem->amplitude;
+                    pModeSlaveItem->phase = pModeMasterItem->phase;
                 }
             }
         }

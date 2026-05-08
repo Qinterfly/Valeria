@@ -208,6 +208,16 @@ ReportSection::ReportSection(QString const& uFirstPoint, ReportDirection uCoordD
 {
 }
 
+bool ReportSection::isEmpty() const
+{
+    return firstPoint.isEmpty() && secondPoint.isEmpty();
+}
+
+int ReportSection::numPoints() const
+{
+    return (int) !firstPoint.isEmpty() + (int) !secondPoint.isEmpty();
+}
+
 QJsonObject ReportSection::toJson() const
 {
     QJsonObject obj;

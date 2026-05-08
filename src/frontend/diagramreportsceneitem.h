@@ -30,6 +30,8 @@ namespace Frontend
 //! Class to render report diagram items
 class DiagramReportSceneItem : public ReportSceneItem
 {
+    Q_OBJECT
+
 public:
     DiagramReportSceneItem(Backend::Core::DiagramReportItem* pItem, Backend::Core::ReportTextEngine& textEngine,
                            Backend::Core::ResponseCollection const& collection, int iSelectedBundle, Testlab::Geometry const& geometry,

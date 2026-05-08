@@ -341,7 +341,7 @@ void DiagramReportSceneItem::drawRuler()
     double const kT = 0.1;
 
     // Check if the deformed state is present
-    if (mAmplitudeScale < skEps)
+    if (std::abs(mAmplitudeScale) < skEps)
         return;
 
     // Compute the ruler length in the viewport coordinates
@@ -349,8 +349,8 @@ void DiagramReportSceneItem::drawRuler()
     double maxAbsRange = std::max(std::abs(range[0]), std::abs(range[1]));
     double limit = mAmplitudeScale * maxAbsRange;
     Vector2d normStart = worldToViewport(mRenderer, {0, 0, 0});
-    Vector2d normEnd = worldToViewport(mRenderer, {limit, 0.0, limit});
-    double a = (normEnd - normStart).norm() / std::sqrt(2.0);
+    Vector2d normEnd = worldToViewport(mRenderer, {limit, limit, limit});
+    double a = (normEnd - normStart).norm() / std::sqrt(3.0);
     double t = a * kT;
 
     // Create the points
@@ -406,15 +406,18 @@ void DiagramReportSceneItem::drawRuler()
 
     // Create the labels
     int fontSize = mpItem->font.pointSize();
-    QString rangeText = QString::number(maxAbsRange, 'f', 1);
-    vtkSmartPointer<vtkTextActor> zLabel = Utility::createLabelActor("0.0", {kX - t, kY + t}, fontSize);
-    vtkSmartPointer<vtkTextActor> hLabel = Utility::createLabelActor(rangeText, {kX + a, kY + t}, fontSize);
-    vtkSmartPointer<vtkTextActor> vLabel = Utility::createLabelActor(rangeText, {kX - 4 * t, kY - a - 2 * t}, fontSize);
+    QString rangeText = QString::number(maxAbsRange, 'g', 1);
+    QString unitText = mTextEngine.getValue("unit");
+    vtkSmartPointer<vtkTextActor> zLabel = Utility::createLabelActor("0", {kX - t, kY + t}, fontSize, VTK_TEXT_LEFT);
+    vtkSmartPointer<vtkTextActor> hLabel = Utility::createLabelActor(rangeText, {kX + a, kY + t}, fontSize, VTK_TEXT_CENTERED);
+    vtkSmartPointer<vtkTextActor> vLabel = Utility::createLabelActor(rangeText, {kX - 2 * t, kY - a - 3 * t}, fontSize, VTK_TEXT_RIGHT);
+    vtkSmartPointer<vtkTextActor> uLabel = Utility::createLabelActor(unitText, {kX + 2 * t, kY - a}, fontSize, VTK_TEXT_LEFT);
 
     // Add the actors to the scene
     mRenderer->AddActor(zLabel);
     mRenderer->AddActor(hLabel);
     mRenderer->AddActor(vLabel);
+    mRenderer->AddActor(uLabel);
     mRenderer->AddViewProp(actor);
 }
 
@@ -660,8 +663,10 @@ Vector3d getBinormalVector(ReportView view)
     case ReportView::kBottom:
         return -Vector3d::UnitY();
     case ReportView::kLeft:
-        return Vector3d::UnitX();
+        return Vector3d::UnitZ();
     case ReportView::kRight:
+        return -Vector3d::UnitZ();
+    case ReportView::kIsometric:
         return -Vector3d::UnitX();
     default:
         break;
