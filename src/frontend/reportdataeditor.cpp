@@ -822,7 +822,10 @@ void DiagramReportDataEditor::reverseSection()
     // Reverse the currently selected section
     ReportSection& section = pItem->sections[iSection];
     if (section.numPoints() == 1)
+    {
+        section.sign *= -1;
         return;
+    }
     std::swap(section.firstPoint, section.secondPoint);
 
     // Update the widgets content
