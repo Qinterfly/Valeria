@@ -86,6 +86,9 @@ void ReportPropertyEditor::refresh()
     case ReportItem::kMode:
         addModeProperties((ModeReportItem*) pItem);
         break;
+    case ReportItem::kDiagram:
+        addDiagramProperties((DiagramReportItem*) pItem);
+        break;
     default:
         break;
     }
@@ -114,51 +117,51 @@ void ReportPropertyEditor::addGraphProperties(GraphReportItem* pItem)
     QStringList const kAlignmentNames = {tr("Top right"), tr("Top left"), tr("Bottom right"), tr("Bottom left"),
                                          tr("Right"),     tr("Left"),     tr("Top"),          tr("Bottom")};
 
-    QtVariantProperty* pXRangeProperty = mpManager->addProperty(kXRange, QMetaType::QString, tr("X range"));
+    QtVariantProperty* pXRangeProperty = mpManager->addProperty(kGraphXRange, QMetaType::QString, tr("X range"));
     pXRangeProperty->setValue(convert(pItem->xRange));
     mpEditor->addProperty(pXRangeProperty);
 
-    QtVariantProperty* pYRangeProperty = mpManager->addProperty(kYRange, QMetaType::QString, tr("Y range"));
+    QtVariantProperty* pYRangeProperty = mpManager->addProperty(kGraphYRange, QMetaType::QString, tr("Y range"));
     pYRangeProperty->setValue(convert(pItem->yRange));
     mpEditor->addProperty(pYRangeProperty);
 
-    QtVariantProperty* pXLabelProperty = mpManager->addProperty(kXLabel, QMetaType::QString, tr("X label"));
+    QtVariantProperty* pXLabelProperty = mpManager->addProperty(kGraphXLabel, QMetaType::QString, tr("X label"));
     pXLabelProperty->setValue(pItem->xLabel);
     mpEditor->addProperty(pXLabelProperty);
 
-    QtVariantProperty* pYLabelProperty = mpManager->addProperty(kYLabel, QMetaType::QString, tr("Y label"));
+    QtVariantProperty* pYLabelProperty = mpManager->addProperty(kGraphYLabel, QMetaType::QString, tr("Y label"));
     pYLabelProperty->setValue(pItem->yLabel);
     mpEditor->addProperty(pYLabelProperty);
 
-    QtVariantProperty* pScaleRangeProperty = mpManager->addProperty(kScaleRange, QMetaType::Double, tr("Scale range"));
+    QtVariantProperty* pScaleRangeProperty = mpManager->addProperty(kGraphScaleRange, QMetaType::Double, tr("Scale range"));
     pScaleRangeProperty->setValue(pItem->scaleRange);
     mpEditor->addProperty(pScaleRangeProperty);
 
-    QtVariantProperty* pNumTicksProperty = mpManager->addProperty(kNumTicks, QMetaType::Int, tr("Ticks number"));
+    QtVariantProperty* pNumTicksProperty = mpManager->addProperty(kGraphNumTicks, QMetaType::Int, tr("Ticks number"));
     pNumTicksProperty->setValue(pItem->numTicks);
     mpEditor->addProperty(pNumTicksProperty);
 
-    QtVariantProperty* pGridWidthProperty = mpManager->addProperty(kGridWidth, QMetaType::Double, tr("Grid width"));
+    QtVariantProperty* pGridWidthProperty = mpManager->addProperty(kGraphGridWidth, QMetaType::Double, tr("Grid width"));
     pGridWidthProperty->setValue(pItem->gridWidth);
     mpEditor->addProperty(pGridWidthProperty);
 
-    QtVariantProperty* pGridZeroWidthProperty = mpManager->addProperty(kGridZeroWidth, QMetaType::Double, tr("Grid zero width"));
+    QtVariantProperty* pGridZeroWidthProperty = mpManager->addProperty(kGraphGridZeroWidth, QMetaType::Double, tr("Grid zero width"));
     pGridZeroWidthProperty->setValue(pItem->gridZeroWidth);
     mpEditor->addProperty(pGridZeroWidthProperty);
 
-    QtVariantProperty* pSwapAxesProperty = mpManager->addProperty(kSwapAxes, QMetaType::Bool, tr("Swap axes"));
+    QtVariantProperty* pSwapAxesProperty = mpManager->addProperty(kGraphSwapAxes, QMetaType::Bool, tr("Swap axes"));
     pSwapAxesProperty->setValue(pItem->swapAxes);
     mpEditor->addProperty(pSwapAxesProperty);
 
-    QtVariantProperty* pReverseXProperty = mpManager->addProperty(kReverseX, QMetaType::Bool, tr("Reverse X axis"));
+    QtVariantProperty* pReverseXProperty = mpManager->addProperty(kGraphReverseX, QMetaType::Bool, tr("Reverse X axis"));
     pReverseXProperty->setValue(pItem->reverseX);
     mpEditor->addProperty(pReverseXProperty);
 
-    QtVariantProperty* pReverseYProperty = mpManager->addProperty(kReverseY, QMetaType::Bool, tr("Reverse Y axis"));
+    QtVariantProperty* pReverseYProperty = mpManager->addProperty(kGraphReverseY, QMetaType::Bool, tr("Reverse Y axis"));
     pReverseYProperty->setValue(pItem->reverseY);
     mpEditor->addProperty(pReverseYProperty);
 
-    QtVariantProperty* pLegendAlignProperty = mpManager->addProperty(kLegendAlign, QtVariantPropertyManager::enumTypeId(),
+    QtVariantProperty* pLegendAlignProperty = mpManager->addProperty(kGraphLegendAlign, QtVariantPropertyManager::enumTypeId(),
                                                                      tr("Legend alignment"));
     pLegendAlignProperty->setAttribute("enumNames", kAlignmentNames);
     auto aligns = magic_enum::enum_values<Align>();
@@ -173,11 +176,11 @@ void ReportPropertyEditor::addGraphProperties(GraphReportItem* pItem)
     }
     mpEditor->addProperty(pLegendAlignProperty);
 
-    QtVariantProperty* pShowLegendProperty = mpManager->addProperty(kShowLegend, QMetaType::Bool, tr("Legend"));
+    QtVariantProperty* pShowLegendProperty = mpManager->addProperty(kGraphShowLegend, QMetaType::Bool, tr("Legend"));
     pShowLegendProperty->setValue(pItem->showLegend);
     mpEditor->addProperty(pShowLegendProperty);
 
-    QtVariantProperty* pShowBundleFreqProperty = mpManager->addProperty(kShowBundleFreq, QMetaType::Bool, tr("Bundle freq."));
+    QtVariantProperty* pShowBundleFreqProperty = mpManager->addProperty(kGraphShowBundleFreq, QMetaType::Bool, tr("Bundle freq."));
     pShowBundleFreqProperty->setValue(pItem->showBundleFreq);
     mpEditor->addProperty(pShowBundleFreqProperty);
 }
@@ -185,15 +188,15 @@ void ReportPropertyEditor::addGraphProperties(GraphReportItem* pItem)
 //! Create properties specific for table items
 void ReportPropertyEditor::addTableProperties(TableReportItem* pItem)
 {
-    QtVariantProperty* pNumRowsProperty = mpManager->addProperty(kNumRows, QMetaType::Int, tr("Number of rows"));
+    QtVariantProperty* pNumRowsProperty = mpManager->addProperty(kTableNumRows, QMetaType::Int, tr("Number of rows"));
     pNumRowsProperty->setValue(pItem->numRows());
     mpEditor->addProperty(pNumRowsProperty);
 
-    QtVariantProperty* pNumColsProperty = mpManager->addProperty(kNumCols, QMetaType::Int, tr("Number of columns"));
+    QtVariantProperty* pNumColsProperty = mpManager->addProperty(kTableNumCols, QMetaType::Int, tr("Number of columns"));
     pNumColsProperty->setValue(pItem->numCols());
     mpEditor->addProperty(pNumColsProperty);
 
-    QtVariantProperty* pShowLabelsProperty = mpManager->addProperty(kShowLabels, QMetaType::Bool, tr("Header"));
+    QtVariantProperty* pShowLabelsProperty = mpManager->addProperty(kTableShowLabels, QMetaType::Bool, tr("Header"));
     pShowLabelsProperty->setValue(pItem->showLabels);
     mpEditor->addProperty(pShowLabelsProperty);
 }
@@ -201,29 +204,53 @@ void ReportPropertyEditor::addTableProperties(TableReportItem* pItem)
 //! Create properties specific for mode items
 void ReportPropertyEditor::addModeProperties(ModeReportItem* pItem)
 {
-    QtVariantProperty* pTitleProperty = mpManager->addProperty(kTitle, QMetaType::QString, tr("Title"));
+    QtVariantProperty* pTitleProperty = mpManager->addProperty(kModeTitle, QMetaType::QString, tr("Title"));
     pTitleProperty->setValue(pItem->title);
     mpEditor->addProperty(pTitleProperty);
 
-    QtVariantProperty* pSLabelProperty = mpManager->addProperty(kSLabel, QMetaType::QString, tr("Label"));
+    QtVariantProperty* pSLabelProperty = mpManager->addProperty(kModeSLabel, QMetaType::QString, tr("Label"));
     pSLabelProperty->setValue(pItem->sLabel);
     mpEditor->addProperty(pSLabelProperty);
 
-    QtVariantProperty* pQualityProperty = mpManager->addProperty(kQuality, QMetaType::Double, tr("Quality"));
+    QtVariantProperty* pQualityProperty = mpManager->addProperty(kModeQuality, QMetaType::Double, tr("Quality"));
     pQualityProperty->setValue(pItem->quality);
     mpEditor->addProperty(pQualityProperty);
 
-    QtVariantProperty* pVertexSizeProperty = mpManager->addProperty(kVertexSize, QMetaType::Double, tr("Vertex size"));
+    QtVariantProperty* pVertexSizeProperty = mpManager->addProperty(kModeVertexSize, QMetaType::Double, tr("Vertex size"));
     pVertexSizeProperty->setValue(pItem->vertexSize);
     mpEditor->addProperty(pVertexSizeProperty);
 
-    QtVariantProperty* pLineWidthProperty = mpManager->addProperty(kLineWidth, QMetaType::Double, tr("Line width"));
+    QtVariantProperty* pLineWidthProperty = mpManager->addProperty(kModeLineWidth, QMetaType::Double, tr("Line width"));
     pLineWidthProperty->setValue(pItem->lineWidth);
     mpEditor->addProperty(pLineWidthProperty);
 
-    QtVariantProperty* pShowUndeformedProperty = mpManager->addProperty(kShowUndeformed, QMetaType::Bool, tr("Show undeformed"));
+    QtVariantProperty* pShowUndeformedProperty = mpManager->addProperty(kModeShowUndeformed, QMetaType::Bool, tr("Show undeformed"));
     pShowUndeformedProperty->setValue(pItem->showUndeformed);
     mpEditor->addProperty(pShowUndeformedProperty);
+}
+
+//! Create properties specific for diagram items
+void ReportPropertyEditor::addDiagramProperties(DiagramReportItem* pItem)
+{
+    QtVariantProperty* pTitleProperty = mpManager->addProperty(kDiagramTitle, QMetaType::QString, tr("Title"));
+    pTitleProperty->setValue(pItem->title);
+    mpEditor->addProperty(pTitleProperty);
+
+    QtVariantProperty* pSLabelProperty = mpManager->addProperty(kDiagramSLabel, QMetaType::QString, tr("Label"));
+    pSLabelProperty->setValue(pItem->sLabel);
+    mpEditor->addProperty(pSLabelProperty);
+
+    QtVariantProperty* pQualityProperty = mpManager->addProperty(kDiagramQuality, QMetaType::Double, tr("Quality"));
+    pQualityProperty->setValue(pItem->quality);
+    mpEditor->addProperty(pQualityProperty);
+
+    QtVariantProperty* pLineWidthProperty = mpManager->addProperty(kDiagramLineWidth, QMetaType::Double, tr("Line width"));
+    pLineWidthProperty->setValue(pItem->lineWidth);
+    mpEditor->addProperty(pLineWidthProperty);
+
+    QtVariantProperty* pBarWidthProperty = mpManager->addProperty(kDiagramBarWidth, QMetaType::Double, tr("Bar width"));
+    pBarWidthProperty->setValue(pItem->barWidth);
+    mpEditor->addProperty(pBarWidthProperty);
 }
 
 //! Change the item property value
@@ -254,83 +281,100 @@ void ReportPropertyEditor::setValue(QtProperty* pProperty, QVariant value)
         break;
 
     // Text
-    case kText:
+    case kTextText:
         static_cast<TextReportItem*>(pItem)->text = value.toString();
         break;
 
     // Graph
-    case kXRange:
+    case kGraphXRange:
         static_cast<GraphReportItem*>(pItem)->xRange = convert(value.toString());
         break;
-    case kYRange:
+    case kGraphYRange:
         static_cast<GraphReportItem*>(pItem)->yRange = convert(value.toString());
         break;
-    case kXLabel:
+    case kGraphXLabel:
         static_cast<GraphReportItem*>(pItem)->xLabel = value.toString();
         break;
-    case kYLabel:
+    case kGraphYLabel:
         static_cast<GraphReportItem*>(pItem)->yLabel = value.toString();
         break;
-    case kScaleRange:
+    case kGraphScaleRange:
         static_cast<GraphReportItem*>(pItem)->scaleRange = value.toDouble();
         break;
-    case kNumTicks:
+    case kGraphNumTicks:
         static_cast<GraphReportItem*>(pItem)->numTicks = value.toInt();
         break;
-    case kGridWidth:
+    case kGraphGridWidth:
         static_cast<GraphReportItem*>(pItem)->gridWidth = value.toDouble();
         break;
-    case kGridZeroWidth:
+    case kGraphGridZeroWidth:
         static_cast<GraphReportItem*>(pItem)->gridZeroWidth = value.toDouble();
         break;
-    case kSwapAxes:
+    case kGraphSwapAxes:
         static_cast<GraphReportItem*>(pItem)->swapAxes = value.toBool();
         break;
-    case kReverseX:
+    case kGraphReverseX:
         static_cast<GraphReportItem*>(pItem)->reverseX = value.toBool();
         break;
-    case kReverseY:
+    case kGraphReverseY:
         static_cast<GraphReportItem*>(pItem)->reverseY = value.toBool();
         break;
-    case kLegendAlign:
+    case kGraphLegendAlign:
         static_cast<GraphReportItem*>(pItem)->legendAlign = getAlignValue((Align) value.toInt());
         break;
-    case kShowLegend:
+    case kGraphShowLegend:
         static_cast<GraphReportItem*>(pItem)->showLegend = value.toBool();
         break;
-    case kShowBundleFreq:
+    case kGraphShowBundleFreq:
         static_cast<GraphReportItem*>(pItem)->showBundleFreq = value.toBool();
         break;
 
     // Table
-    case kNumRows:
+    case kTableNumRows:
         static_cast<TableReportItem*>(pItem)->setNumRows(value.toInt());
         break;
-    case kNumCols:
+    case kTableNumCols:
         static_cast<TableReportItem*>(pItem)->setNumCols(value.toInt());
         break;
-    case kShowLabels:
+    case kTableShowLabels:
         static_cast<TableReportItem*>(pItem)->showLabels = value.toBool();
         break;
 
     // Mode
-    case kTitle:
+    case kModeTitle:
         static_cast<ModeReportItem*>(pItem)->title = value.toString();
         break;
-    case kSLabel:
+    case kModeSLabel:
         static_cast<ModeReportItem*>(pItem)->sLabel = value.toString();
         break;
-    case kQuality:
+    case kModeQuality:
         static_cast<ModeReportItem*>(pItem)->quality = value.toDouble();
         break;
-    case kVertexSize:
+    case kModeVertexSize:
         static_cast<ModeReportItem*>(pItem)->vertexSize = value.toDouble();
         break;
-    case kLineWidth:
+    case kModeLineWidth:
         static_cast<ModeReportItem*>(pItem)->lineWidth = value.toDouble();
         break;
-    case kShowUndeformed:
+    case kModeShowUndeformed:
         static_cast<ModeReportItem*>(pItem)->showUndeformed = value.toBool();
+        break;
+
+    // Diagram
+    case kDiagramTitle:
+        static_cast<DiagramReportItem*>(pItem)->title = value.toString();
+        break;
+    case kDiagramSLabel:
+        static_cast<DiagramReportItem*>(pItem)->sLabel = value.toString();
+        break;
+    case kDiagramQuality:
+        static_cast<DiagramReportItem*>(pItem)->quality = value.toDouble();
+        break;
+    case kDiagramLineWidth:
+        static_cast<DiagramReportItem*>(pItem)->lineWidth = value.toDouble();
+        break;
+    case kDiagramBarWidth:
+        static_cast<DiagramReportItem*>(pItem)->barWidth = value.toDouble();
         break;
 
     default:

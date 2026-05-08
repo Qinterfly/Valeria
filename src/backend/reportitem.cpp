@@ -506,15 +506,14 @@ DiagramReportItem::DiagramReportItem()
     scale = 1.5;
     amplitude = 0.05;
     phase = 0.0;
-    barWidth = 0.01;
 
     // Settings
     sRange = {0.0, 0.0};
     quality = 2.0;
     undeformedColor = QColor(175, 238, 238);
     undeformedOpacity = 1.0;
-    vertexSize = 5.0;
     lineWidth = 2.0;
+    barWidth = 0.01;
 }
 
 DiagramReportItem::DiagramReportItem(ReportItem const* pAnother)
@@ -539,7 +538,6 @@ ReportItem* DiagramReportItem::clone() const
     pResult->scale = scale;
     pResult->amplitude = amplitude;
     pResult->phase = phase;
-    pResult->barWidth = barWidth;
 
     // Settings
     pResult->title = title;
@@ -548,8 +546,8 @@ ReportItem* DiagramReportItem::clone() const
     pResult->quality = quality;
     pResult->undeformedColor = undeformedColor;
     pResult->undeformedOpacity = undeformedOpacity;
-    pResult->vertexSize = vertexSize;
     pResult->lineWidth = lineWidth;
+    pResult->barWidth = barWidth;
 
     return pResult;
 }
@@ -575,7 +573,6 @@ QJsonObject DiagramReportItem::toJson() const
     obj["scale"] = scale;
     obj["amplitude"] = amplitude;
     obj["phase"] = phase;
-    obj["barWidth"] = barWidth;
 
     // Settings
     obj["title"] = title;
@@ -584,8 +581,8 @@ QJsonObject DiagramReportItem::toJson() const
     obj["quality"] = quality;
     obj["undeformedColor"] = Utility::toJson(undeformedColor);
     obj["undeformedOpacity"] = undeformedOpacity;
-    obj["vertexSize"] = vertexSize;
     obj["lineWidth"] = lineWidth;
+    obj["barWidth"] = barWidth;
 
     return obj;
 }
@@ -607,7 +604,6 @@ void DiagramReportItem::fromJson(QJsonObject const& obj)
     scale = obj["scale"].toDouble();
     amplitude = obj["amplitude"].toDouble();
     phase = obj["phase"].toDouble();
-    barWidth = obj["barWidth"].toDouble();
 
     // Settings
     title = obj["title"].toString();
@@ -616,8 +612,8 @@ void DiagramReportItem::fromJson(QJsonObject const& obj)
     quality = obj["quality"].toDouble();
     Utility::fromJson(undeformedColor, obj["undeformedColor"]);
     undeformedOpacity = obj["undeformedOpacity"].toDouble();
-    vertexSize = obj["vertexSize"].toDouble();
     lineWidth = obj["lineWidth"].toDouble();
+    barWidth = obj["barWidth"].toDouble();
 }
 
 ReportItem* Backend::Core::createItem(ReportItem::Type type)

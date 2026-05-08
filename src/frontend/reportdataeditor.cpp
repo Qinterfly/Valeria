@@ -763,6 +763,9 @@ void DiagramReportDataEditor::addSection()
         section.firstPoint = selectedPoints[0];
         if (selectedPoints.size() > 1)
             section.secondPoint = selectedPoints[1];
+        section.coordDir = ReportDirection::kN;
+        section.responseDir = ReportDirection::kY;
+        section.sign = 1;
         pItem->sections.push_back(section);
         qInfo() << tr("Section consisted of %1 points is added").arg(selectedPoints.size());
     }
@@ -785,7 +788,16 @@ void DiagramReportDataEditor::addSection()
 //! Edit the currently selected section
 void DiagramReportDataEditor::editSection()
 {
-    // TODO
+    // Retrieve the selected section
+    int iSection = mpSectionList->currentRow();
+    if (iSection < 0)
+        return;
+
+    // Show the editor
+    ReportSectionGetter sectionGetter = createSectionGetter(iSection);
+    ReportSection* pSection = sectionGetter();
+    mpSectionEditor->setSectionGetter(sectionGetter);
+    mpSectionEditor->show();
 }
 
 //! Reverse the order of the points in the section
@@ -910,7 +922,7 @@ QWidget* DiagramReportDataEditor::createToolBar()
     QToolBar* pToolBar = new QToolBar;
     pToolBar->setIconSize(Constants::Size::skToolBarIcon);
     pToolBar->addAction(QIcon(":/icons/data-add.svg"), tr("Add section"), Qt::SHIFT | Qt::Key_A, this, &DiagramReportDataEditor::addSection);
-    pToolBar->addAction(QIcon(":/icons/data-edit.svg"), tr("Edit object"), Qt::SHIFT | Qt::Key_E, this, &DiagramReportDataEditor::editSection);
+    pToolBar->addAction(QIcon(":/icons/data-edit.svg"), tr("Edit section"), Qt::SHIFT | Qt::Key_E, this, &DiagramReportDataEditor::editSection);
     pToolBar->addAction(QIcon(":/icons/data-reverse.svg"), tr("Reverse section"), Qt::SHIFT | Qt::Key_Q, this,
                         &DiagramReportDataEditor::reverseSection);
     pToolBar->addAction(QIcon(":/icons/data-remove.svg"), tr("Remove section"), Qt::SHIFT | Qt::Key_D, this,
@@ -928,11 +940,15 @@ QLayout* DiagramReportDataEditor::createSectionLayout()
 
     // Create the widgets
     mpSectionList = new QListWidget;
+    mpSectionEditor = new ReportSectionPropertyEditor(this);
 
     // Initialize the list
     mpSectionList->setFont(font());
     mpSectionList->setSelectionMode(QListWidget::SingleSelection);
     mpSectionList->setIconSize(kIconSize);
+
+    // Initialize the editor
+    mpSectionEditor->hide();
 
     // Combine the widgets
     QVBoxLayout* pLayout = new QVBoxLayout;
@@ -952,6 +968,11 @@ void DiagramReportDataEditor::createConnections()
     connect(mpAmplitudeEdit, &Edit1d::valueChanged, this, &DiagramReportDataEditor::processChanged);
     connect(mpPhaseEdit, &Edit1d::valueChanged, this, &DiagramReportDataEditor::processChanged);
     connect(mpLinkSelector, &QComboBox::currentIndexChanged, this, &DiagramReportDataEditor::processChanged);
+
+    // Section
+    connect(mpSectionList, &QListWidget::itemSelectionChanged, this, &DiagramReportDataEditor::processSectionSelected);
+    connect(mpSectionList, &QListWidget::itemDoubleClicked, this, &DiagramReportDataEditor::editSection);
+    connect(mpSectionEditor, &ReportSectionPropertyEditor::edited, this, &DiagramReportDataEditor::processSectionEdited);
 }
 
 //! Update the header widgets
@@ -1033,6 +1054,34 @@ DiagramReportItem* DiagramReportDataEditor::getItem()
     return (DiagramReportItem*) mItemGetter();
 }
 
+//! Process changing a section list selection
+void DiagramReportDataEditor::processSectionSelected()
+{
+    // Get the item
+    DiagramReportItem* pItem = getItem();
+    if (!pItem)
+        return;
+
+    // Highlight the selected section
+    int iSection = mpSectionList->currentRow();
+    if (iSection < 0)
+        return;
+    ReportSection const& section = pItem->sections[iSection];
+    if (section.isEmpty())
+        return;
+    mpGeometryView->clearSelection();
+    mpGeometryView->addSelection(section.firstPoint.component, section.firstPoint.node);
+    mpGeometryView->addSelection(section.secondPoint.component, section.secondPoint.node);
+    mpGeometryView->refresh();
+}
+
+//! Process changing section
+void DiagramReportDataEditor::processSectionEdited()
+{
+    refreshList();
+    emit edited();
+}
+
 //! Process item data changing
 void DiagramReportDataEditor::processChanged()
 {
@@ -1055,6 +1104,18 @@ void DiagramReportDataEditor::processChanged()
 
     // Finish up the editing
     emit edited();
+}
+
+//! Create the functor to obtain sections of the specified index
+ReportSectionGetter DiagramReportDataEditor::createSectionGetter(int iSection)
+{
+    return [this, iSection]()
+    {
+        DiagramReportItem* pItem = getItem();
+        if (pItem && iSection >= 0 && iSection < pItem->sections.size())
+            return &pItem->sections[iSection];
+        return (ReportSection*) nullptr;
+    };
 }
 
 ReportCurvePropertyEditor::ReportCurvePropertyEditor(QWidget* pParent)
@@ -1220,6 +1281,134 @@ void ReportCurvePropertyEditor::setValue(QtProperty* pProperty, QVariant value)
         break;
     case kMarkerSkip:
         pCurve->markerSkip = value.toInt();
+        break;
+    }
+    emit edited();
+}
+
+ReportSectionPropertyEditor::ReportSectionPropertyEditor(QWidget* pParent)
+{
+    setWindowTitle(tr("Section Editor"));
+    setFont(Utility::getFont());
+    createContent();
+    createConnections();
+}
+
+//! Set the section for editing
+void ReportSectionPropertyEditor::setSectionGetter(ReportSectionGetter sectionGetter)
+{
+    mSectionGetter = std::move(sectionGetter);
+    createProperties();
+}
+
+QSize ReportSectionPropertyEditor::sizeHint() const
+{
+    return QSize(500, 300);
+}
+
+//! Create all the widgets
+void ReportSectionPropertyEditor::createContent()
+{
+    // Create the widgets
+    mpManager = new CustomVariantPropertyManager;
+    mpFactory = new QtVariantEditorFactory;
+    mpEditor = new QtTreePropertyBrowser;
+
+    // Initialize the widgets
+    mpEditor->setFactoryForManager((QtVariantPropertyManager*) mpManager, mpFactory);
+    mpEditor->setFont(font());
+    mpEditor->setTreeWidgetFont(font());
+
+    // Combine the widgets
+    QVBoxLayout* pLayout = new QVBoxLayout;
+    pLayout->addWidget(mpEditor);
+    setLayout(pLayout);
+}
+
+//! Create the plottable properties
+void ReportSectionPropertyEditor::createProperties()
+{
+    QStringList const kCoordDirNames = {QString(), "X", "Y", "Z", "N"};
+    QStringList const kResponseDirNames = {QString(), "X", "Y", "Z"};
+
+    // Remove the previous properties
+    QSignalBlocker blockerEditor(mpEditor);
+    QSignalBlocker blockerManager(mpManager);
+    mpEditor->clear();
+    mpManager->clear();
+
+    // Get the section
+    if (!mSectionGetter)
+        return;
+    ReportSection* pSection = mSectionGetter();
+    if (!pSection)
+        return;
+
+    // Create the properties
+    QtVariantProperty* pFirstPointProperty = mpManager->addProperty(kFirstPoint, QMetaType::QString, tr("First point"));
+    pFirstPointProperty->setValue(pSection->firstPoint.name());
+    mpEditor->addProperty(pFirstPointProperty);
+
+    QtVariantProperty* pSecondPointProperty = mpManager->addProperty(kSecondPoint, QMetaType::QString, tr("Second point"));
+    pSecondPointProperty->setValue(pSection->secondPoint.name());
+    mpEditor->addProperty(pSecondPointProperty);
+
+    QtVariantProperty* pCoordDirProperty = mpManager->addProperty(kCoordDir, QtVariantPropertyManager::enumTypeId(), tr("Coordinate direction"));
+    pCoordDirProperty->setAttribute("enumNames", kCoordDirNames);
+    pCoordDirProperty->setValue((int) pSection->coordDir);
+    mpEditor->addProperty(pCoordDirProperty);
+
+    QtVariantProperty* pResponseDirProperty = mpManager->addProperty(kResponseDir, QtVariantPropertyManager::enumTypeId(),
+                                                                     tr("Response direction"));
+    pResponseDirProperty->setAttribute("enumNames", kResponseDirNames);
+    pResponseDirProperty->setValue((int) pSection->responseDir);
+    mpEditor->addProperty(pResponseDirProperty);
+
+    QtVariantProperty* pSignProperty = mpManager->addProperty(kSign, QMetaType::Int, tr("Coordinate sign"));
+    pSignProperty->setValue(pSection->sign);
+    pSignProperty->setAttribute("minimum", -1);
+    pSignProperty->setAttribute("maximum", 1);
+    mpEditor->addProperty(pSignProperty);
+}
+
+//! Specify connections
+void ReportSectionPropertyEditor::createConnections()
+{
+    connect(mpManager, &CustomVariantPropertyManager::valueChanged, this, &ReportSectionPropertyEditor::setValue);
+}
+
+//! Change the plottable property value
+void ReportSectionPropertyEditor::setValue(QtProperty* pProperty, QVariant value)
+{
+    // Get the section
+    if (!mSectionGetter)
+        return;
+    ReportSection* pSection = mSectionGetter();
+    if (!pSection)
+        return;
+
+    // Get the property id
+    if (!mpManager->contains(pProperty))
+        return;
+    int id = mpManager->id(pProperty);
+
+    // Set property value
+    switch (id)
+    {
+    case kFirstPoint:
+        pSection->firstPoint = ReportPoint(value.toString());
+        break;
+    case kSecondPoint:
+        pSection->secondPoint = ReportPoint(value.toString());
+        break;
+    case kCoordDir:
+        pSection->coordDir = (ReportDirection) value.toInt();
+        break;
+    case kResponseDir:
+        pSection->responseDir = (ReportDirection) value.toInt();
+        break;
+    case kSign:
+        pSection->sign = value.toInt();
         break;
     }
     emit edited();

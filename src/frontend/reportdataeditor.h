@@ -26,6 +26,7 @@ namespace Frontend
 
 class GeometryView;
 class ReportCurvePropertyEditor;
+class ReportSectionPropertyEditor;
 
 //! General class to edit report item data
 class ReportDataEditor : public QWidget
@@ -168,7 +169,12 @@ private:
 
     // Slots
     Backend::Core::DiagramReportItem* getItem();
+    void processSectionSelected();
+    void processSectionEdited();
     void processChanged();
+
+    // Help
+    Backend::Core::ReportSectionGetter createSectionGetter(int iSection);
 
 private:
     GeometryView* mpGeometryView;
@@ -185,6 +191,7 @@ private:
 
     // Sections
     QListWidget* mpSectionList;
+    ReportSectionPropertyEditor* mpSectionEditor;
 };
 
 //! Class to edit curve properties
@@ -225,6 +232,46 @@ private:
 
 private:
     Backend::Core::ReportCurveGetter mCurveGetter;
+    CustomVariantPropertyManager* mpManager;
+    QtVariantEditorFactory* mpFactory;
+    QtTreePropertyBrowser* mpEditor;
+};
+
+//! Class to edit section properties
+class ReportSectionPropertyEditor : public QWidget
+{
+    Q_OBJECT
+
+public:
+    enum Type
+    {
+        kFirstPoint,
+        kSecondPoint,
+        kCoordDir,
+        kResponseDir,
+        kSign
+    };
+
+    ReportSectionPropertyEditor(QWidget* pParent = nullptr);
+    virtual ~ReportSectionPropertyEditor() = default;
+
+    void setSectionGetter(Backend::Core::ReportSectionGetter sectionGetter);
+
+signals:
+    void edited();
+
+protected:
+    QSize sizeHint() const override;
+
+private:
+    void createContent();
+    void createProperties();
+    void createConnections();
+
+    void setValue(QtProperty* pProperty, QVariant value);
+
+private:
+    Backend::Core::ReportSectionGetter mSectionGetter;
     CustomVariantPropertyManager* mpManager;
     QtVariantEditorFactory* mpFactory;
     QtTreePropertyBrowser* mpEditor;

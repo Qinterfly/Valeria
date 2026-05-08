@@ -18,6 +18,7 @@ class TextReportItem;
 class GraphReportItem;
 class TableReportItem;
 class ModeReportItem;
+class DiagramReportItem;
 }
 
 namespace Frontend
@@ -47,36 +48,43 @@ public:
         kFont,
 
         // Text
-        kText,
+        kTextText,
 
         // Graph
-        kXRange,
-        kYRange,
-        kXLabel,
-        kYLabel,
-        kScaleRange,
-        kNumTicks,
-        kGridWidth,
-        kGridZeroWidth,
-        kSwapAxes,
-        kReverseX,
-        kReverseY,
-        kLegendAlign,
-        kShowLegend,
-        kShowBundleFreq,
+        kGraphXRange,
+        kGraphYRange,
+        kGraphXLabel,
+        kGraphYLabel,
+        kGraphScaleRange,
+        kGraphNumTicks,
+        kGraphGridWidth,
+        kGraphGridZeroWidth,
+        kGraphSwapAxes,
+        kGraphReverseX,
+        kGraphReverseY,
+        kGraphLegendAlign,
+        kGraphShowLegend,
+        kGraphShowBundleFreq,
 
         // Table
-        kNumRows,
-        kNumCols,
-        kShowLabels,
+        kTableNumRows,
+        kTableNumCols,
+        kTableShowLabels,
 
         // Mode
-        kTitle,
-        kSLabel,
-        kQuality,
-        kVertexSize,
-        kLineWidth,
-        kShowUndeformed
+        kModeTitle,
+        kModeSLabel,
+        kModeQuality,
+        kModeVertexSize,
+        kModeLineWidth,
+        kModeShowUndeformed,
+
+        // Diagram
+        kDiagramTitle,
+        kDiagramSLabel,
+        kDiagramQuality,
+        kDiagramLineWidth,
+        kDiagramBarWidth
     };
 
     ReportPropertyEditor(QWidget* pParent = nullptr);
@@ -95,6 +103,7 @@ private:
     void addGraphProperties(Backend::Core::GraphReportItem* pItem);
     void addTableProperties(Backend::Core::TableReportItem* pItem);
     void addModeProperties(Backend::Core::ModeReportItem* pItem);
+    void addDiagramProperties(Backend::Core::DiagramReportItem* pItem);
     void setValue(QtProperty* pProperty, QVariant value);
     Qt::Alignment getAlignValue(Align key);
 

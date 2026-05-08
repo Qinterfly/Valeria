@@ -16,9 +16,11 @@ namespace Backend::Core
 
 class ReportItem;
 class ReportCurve;
+class ReportSection;
 
 using ReportItemGetter = std::function<ReportItem*()>;
 using ReportCurveGetter = std::function<ReportCurve*()>;
+using ReportSectionGetter = std::function<ReportSection*()>;
 
 class ISerializable
 {
