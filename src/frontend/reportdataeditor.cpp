@@ -762,8 +762,14 @@ void DiagramReportDataEditor::addSection()
         ReportSection section;
         section.firstPoint = selectedPoints[0];
         if (selectedPoints.size() > 1)
+        {
             section.secondPoint = selectedPoints[1];
-        section.coordDir = ReportDirection::kN;
+            section.coordDir = ReportDirection::kN;
+        }
+        else
+        {
+            section.coordDir = ReportDirection::kX;
+        }
         section.responseDir = ReportDirection::kY;
         section.sign = 1;
         pItem->sections.push_back(section);
@@ -815,6 +821,8 @@ void DiagramReportDataEditor::reverseSection()
 
     // Reverse the currently selected section
     ReportSection& section = pItem->sections[iSection];
+    if (section.numPoints() == 1)
+        return;
     std::swap(section.firstPoint, section.secondPoint);
 
     // Update the widgets content

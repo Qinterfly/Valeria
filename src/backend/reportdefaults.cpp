@@ -33,11 +33,11 @@ QList<ReportCurve> ReportDefaults::curves()
 ReportDocument ReportDefaults::document()
 {
     ReportDocument result;
-    // result.add(ReportDefaults::imRePage());
-    // result.add(ReportDefaults::multiImRePage());
-    // result.add(ReportDefaults::freqAmpPage());
-    // result.add(ReportDefaults::projModeYPage());
-    // result.add(ReportDefaults::mode3DPage());
+    result.add(ReportDefaults::imRePage());
+    result.add(ReportDefaults::multiImRePage());
+    result.add(ReportDefaults::freqAmpPage());
+    result.add(ReportDefaults::projModeYPage());
+    result.add(ReportDefaults::mode3DPage());
     result.add(ReportDefaults::diagramPage());
     return result;
 }
