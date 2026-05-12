@@ -83,8 +83,10 @@ public:
         kDiagramTitle,
         kDiagramSLabel,
         kDiagramQuality,
+        kDiagramUndeformedOpacity,
         kDiagramLineWidth,
-        kDiagramBarWidth
+        kDiagramBarWidth,
+        kDiagramShowRuler
     };
 
     ReportPropertyEditor(QWidget* pParent = nullptr);

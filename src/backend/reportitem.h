@@ -242,6 +242,7 @@ public:
     double undeformedOpacity;
     double lineWidth;
     double barWidth;
+    bool showRuler;
 };
 
 ReportItem* createItem(ReportItem::Type type);

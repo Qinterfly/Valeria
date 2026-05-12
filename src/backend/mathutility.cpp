@@ -478,6 +478,25 @@ Vector3d projectVector(Vector3d const& current, Vector3d const& base)
     return (current.dot(base) / norm) * base;
 }
 
+//! Find intersection of two lines given by four points: a1->a2, b1->b2
+bool findLineIntersect(Vector2d const& a1, Vector2d const& a2, Vector2d const& b1, Vector2d const& b2, Vector2d& x)
+{
+    // Build the directional vectors
+    Eigen::Vector2d r = a2 - a1;
+    Eigen::Vector2d s = b2 - b1;
+
+    // Check if the lines are parallel
+    double denom = r.cross(s);
+    if (std::abs(denom) < skEps)
+        return false;
+
+    // Compute the intersection
+    double t = (b1 - a1).cross(s) / denom;
+    x = a1 + t * r;
+
+    return true;
+}
+
 //! Find all the response roots
 std::vector<Root> findRoots(QList<double> const& keys, QList<double> const& values)
 {

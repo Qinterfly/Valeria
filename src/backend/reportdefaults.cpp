@@ -331,7 +331,7 @@ ReportPage ReportDefaults::diagramPage()
     pDiag->name = QObject::tr("Diagram");
     pDiag->rect = QRect(30, 40, 240, 140);
     pDiag->unit = Units::skM_S2;
-    pDiag->view = ReportView::kTop;
+    pDiag->view = ReportView::kIsometric;
     pDiag->title = QObject::tr("${BUNDLE}");
     pDiag->sLabel = QObject::tr("${RDIR}; Im a, ${UNIT}");
 

@@ -244,6 +244,11 @@ void ReportPropertyEditor::addDiagramProperties(DiagramReportItem* pItem)
     pQualityProperty->setValue(pItem->quality);
     mpEditor->addProperty(pQualityProperty);
 
+    QtVariantProperty* pUndeformedOpacityProperty = mpManager->addProperty(kDiagramUndeformedOpacity, QMetaType::Double,
+                                                                           tr("Undeformed opacity"));
+    pUndeformedOpacityProperty->setValue(pItem->undeformedOpacity);
+    mpEditor->addProperty(pUndeformedOpacityProperty);
+
     QtVariantProperty* pLineWidthProperty = mpManager->addProperty(kDiagramLineWidth, QMetaType::Double, tr("Line width"));
     pLineWidthProperty->setValue(pItem->lineWidth);
     mpEditor->addProperty(pLineWidthProperty);
@@ -251,6 +256,10 @@ void ReportPropertyEditor::addDiagramProperties(DiagramReportItem* pItem)
     QtVariantProperty* pBarWidthProperty = mpManager->addProperty(kDiagramBarWidth, QMetaType::Double, tr("Bar width"));
     pBarWidthProperty->setValue(pItem->barWidth);
     mpEditor->addProperty(pBarWidthProperty);
+
+    QtVariantProperty* pShowRulerProperty = mpManager->addProperty(kDiagramShowRuler, QMetaType::Bool, tr("Show ruler"));
+    pShowRulerProperty->setValue(pItem->showRuler);
+    mpEditor->addProperty(pShowRulerProperty);
 }
 
 //! Change the item property value
@@ -370,11 +379,17 @@ void ReportPropertyEditor::setValue(QtProperty* pProperty, QVariant value)
     case kDiagramQuality:
         static_cast<DiagramReportItem*>(pItem)->quality = value.toDouble();
         break;
+    case kDiagramUndeformedOpacity:
+        static_cast<DiagramReportItem*>(pItem)->undeformedOpacity = value.toDouble();
+        break;
     case kDiagramLineWidth:
         static_cast<DiagramReportItem*>(pItem)->lineWidth = value.toDouble();
         break;
     case kDiagramBarWidth:
         static_cast<DiagramReportItem*>(pItem)->barWidth = value.toDouble();
+        break;
+    case kDiagramShowRuler:
+        static_cast<DiagramReportItem*>(pItem)->showRuler = value.toBool();
         break;
 
     default:

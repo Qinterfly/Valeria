@@ -175,6 +175,9 @@ void GraphReportSceneItem::setState()
     pXAxis->setRangeReversed(pItem->reverseX);
     pYAxis->setRangeReversed(pItem->reverseY);
 
+    // Show the auxiliary axes
+    mpPlot->axisRect()->setupFullAxesBox(false);
+
     // Render the plot
     mpPlot->replot();
 }

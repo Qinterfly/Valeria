@@ -217,6 +217,7 @@ void DiagramReportSceneItem::drawElements(vtkSmartPointer<vtkPoints> points, std
     actor->GetProperty()->SetColor(color.GetData());
     actor->GetProperty()->SetOpacity(opacity);
     actor->GetProperty()->SetLineWidth(pItem->lineWidth);
+    actor->GetProperty()->LightingOff();
     if (isWireframe)
         actor->GetProperty()->SetRepresentationToWireframe();
 
@@ -303,7 +304,10 @@ void DiagramReportSceneItem::drawSection(ReportSection const& section)
 
     // Draw the epure
     drawZeroLine(firstCoords, secondCoords);
-    drawEpure(firstCoords, secondCoords, firstValue, secondValue, normalVec);
+    if (firstValue * secondValue < 0)
+        drawTriEpure(firstCoords, secondCoords, firstValue, secondValue, normalVec);
+    else
+        drawQuadEpure(firstCoords, secondCoords, firstValue, secondValue, normalVec);
 }
 
 //! Render the scalar bar
@@ -485,15 +489,102 @@ void DiagramReportSceneItem::drawZeroLine(Eigen::Vector3d const& firstCoords, Ei
     vtkNew<vtkActor> actor;
     actor->SetMapper(mapper);
     actor->GetProperty()->SetColor(vtkColors->GetColor3d("Black").GetData());
-    actor->GetProperty()->SetLineWidth(4.0);
+    actor->GetProperty()->SetLineWidth(2.0);
+    actor->GetProperty()->LightingOff();
 
     // Add the actor to the scene
     mRenderer->AddActor(actor);
 }
 
-//! Draw the epure based on two points
-void DiagramReportSceneItem::drawEpure(Vector3d const& firstCoords, Vector3d const& secondCoords, double firstValue, double secondValue,
-                                       Eigen::Vector3d const& normalVec)
+//! Draw the epure based on two points with zero intersection
+void DiagramReportSceneItem::drawTriEpure(Vector3d const& firstCoords, Vector3d const& secondCoords, double firstValue, double secondValue,
+                                          Eigen::Vector3d const& normalVec)
+{
+    // Compute the directional vectors
+    Vector3d e1 = (secondCoords - firstCoords).normalized();
+    Vector3d e2 = normalVec;
+
+    // Build the projection functions
+    Vector3d a1 = firstCoords;
+    Vector3d a2 = secondCoords;
+    auto to2D = [&](Vector3d const& p)
+    {
+        Vector3d v = p - a1;
+        return Vector2d(v.dot(e1), v.dot(e2));
+    };
+    auto to3D = [&](Vector2d const& p2) { return a1 + p2.x() * e1 + p2.y() * e2; };
+
+    // Compute the state vectors
+    Vector3d firstState = firstValue * normalVec;
+    Vector3d secondState = secondValue * normalVec;
+    Vector3d b1 = firstCoords + firstState;
+    Vector3d b2 = secondCoords + secondState;
+
+    // Find the intersection
+    Vector2d xp;
+    if (!Backend::Utility::findLineIntersect(to2D(a1), to2D(a2), to2D(b1), to2D(b2), xp))
+    {
+        drawQuadEpure(firstCoords, secondCoords, firstValue, secondValue, normalVec);
+        return;
+    }
+    Vector3d x = to3D(xp);
+
+    // Create the points
+    vtkNew<vtkPoints> points;
+    points->InsertPoint(0, a1[0], a1[1], a1[2]);
+    points->InsertPoint(1, a2[0], a2[1], a2[2]);
+    points->InsertPoint(2, b1[0], b1[1], b1[2]);
+    points->InsertPoint(3, b2[0], b2[1], b2[2]);
+    points->InsertPoint(4, x[0], x[1], x[2]);
+    points->InsertPoint(5, x[0], x[1], x[2]);
+
+    // Create the scalars
+    vtkNew<vtkDoubleArray> scalars;
+    scalars->SetNumberOfTuples(6);
+    scalars->SetValue(0, firstValue);
+    scalars->SetValue(1, secondValue);
+    scalars->SetValue(2, firstValue);
+    scalars->SetValue(3, secondValue);
+    scalars->SetValue(4, firstValue);
+    scalars->SetValue(5, secondValue);
+
+    // Create the polygon
+    vtkNew<vtkPolygon> firstPoly;
+    firstPoly->GetPointIds()->InsertNextId(0);
+    firstPoly->GetPointIds()->InsertNextId(2);
+    firstPoly->GetPointIds()->InsertNextId(4);
+    vtkNew<vtkPolygon> secondPoly;
+    secondPoly->GetPointIds()->InsertNextId(5);
+    secondPoly->GetPointIds()->InsertNextId(1);
+    secondPoly->GetPointIds()->InsertNextId(3);
+    vtkNew<vtkCellArray> polygons;
+    polygons->InsertNextCell(firstPoly);
+    polygons->InsertNextCell(secondPoly);
+
+    // Group the polygons
+    vtkNew<vtkPolyData> polyData;
+    polyData->SetPoints(points);
+    polyData->SetPolys(polygons);
+    polyData->GetPointData()->SetScalars(scalars);
+
+    // Build the mapper
+    vtkNew<vtkPolyDataMapper> mapper;
+    mapper->SetInputData(polyData);
+    mapper->UseLookupTableScalarRangeOn();
+    mapper->SetLookupTable(mLookupTable);
+
+    // Create the actor
+    vtkNew<vtkActor> actor;
+    actor->SetMapper(mapper);
+    actor->GetProperty()->LightingOff();
+
+    // Add the actor to the scene
+    mRenderer->AddActor(actor);
+}
+
+//! Draw the epure based on two points without zero intersection
+void DiagramReportSceneItem::drawQuadEpure(Vector3d const& firstCoords, Vector3d const& secondCoords, double firstValue, double secondValue,
+                                           Eigen::Vector3d const& normalVec)
 {
     // Compute the state vectors
     Vector3d firstState = firstValue * normalVec;
@@ -538,6 +629,7 @@ void DiagramReportSceneItem::drawEpure(Vector3d const& firstCoords, Vector3d con
     // Create the actor
     vtkNew<vtkActor> actor;
     actor->SetMapper(mapper);
+    actor->GetProperty()->LightingOff();
 
     // Add the actor to the scene
     mRenderer->AddActor(actor);
@@ -590,7 +682,10 @@ void DiagramReportSceneItem::replot()
     drawAll();
     setView();
     mRenderWindow->Render();
-    drawRuler();
+
+    // Draw the ruler
+    if (pItem->showRuler)
+        drawRuler();
 
     // Save as the image
     mImage = Utility::getImage(mRenderWindow, pItem->quality);

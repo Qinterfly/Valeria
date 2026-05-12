@@ -501,19 +501,20 @@ void ModeReportItem::fromJson(QJsonObject const& obj)
 DiagramReportItem::DiagramReportItem()
 {
     // View
-    view = ReportView::kTop;
-    colorMap = ReportColorMap::kBlueToRed3;
-    scale = 1.5;
-    amplitude = 0.05;
+    view = ReportView::kIsometric;
+    colorMap = ReportColorMap::kJet;
+    scale = 2.0;
+    amplitude = 0.1;
     phase = 0.0;
 
     // Settings
     sRange = {0.0, 0.0};
     quality = 2.0;
     undeformedColor = QColor(175, 238, 238);
-    undeformedOpacity = 1.0;
+    undeformedOpacity = 0.2;
     lineWidth = 2.0;
     barWidth = 0.01;
+    showRuler = false;
 }
 
 DiagramReportItem::DiagramReportItem(ReportItem const* pAnother)
@@ -548,6 +549,7 @@ ReportItem* DiagramReportItem::clone() const
     pResult->undeformedOpacity = undeformedOpacity;
     pResult->lineWidth = lineWidth;
     pResult->barWidth = barWidth;
+    pResult->showRuler = showRuler;
 
     return pResult;
 }
@@ -583,6 +585,7 @@ QJsonObject DiagramReportItem::toJson() const
     obj["undeformedOpacity"] = undeformedOpacity;
     obj["lineWidth"] = lineWidth;
     obj["barWidth"] = barWidth;
+    obj["showRuler"] = showRuler;
 
     return obj;
 }
@@ -614,6 +617,7 @@ void DiagramReportItem::fromJson(QJsonObject const& obj)
     undeformedOpacity = obj["undeformedOpacity"].toDouble();
     lineWidth = obj["lineWidth"].toDouble();
     barWidth = obj["barWidth"].toDouble();
+    showRuler = obj["showRuler"].toBool();
 }
 
 ReportItem* Backend::Core::createItem(ReportItem::Type type)
