@@ -384,7 +384,6 @@ void setView(ReportView view, double scale, vtkSmartPointer<vtkRenderer> rendere
     double viewUp[3];
     renderer->GetActiveCamera()->GetPosition(position);
     renderer->GetActiveCamera()->GetViewUp(viewUp);
-    renderer->GetActiveCamera()->ParallelProjectionOn();
     axesRenderer->GetActiveCamera()->ParallelProjectionOn();
     axesRenderer->GetActiveCamera()->SetPosition(position[0], position[1], position[2]);
     axesRenderer->GetActiveCamera()->SetFocalPoint(0, 0, 0);
@@ -402,6 +401,7 @@ void setView(ReportView view, double scale, vtkSmartPointer<vtkRenderer> rendere
 void setIsometricView(vtkSmartPointer<vtkRenderer> renderer)
 {
     vtkCamera* camera = renderer->GetActiveCamera();
+    camera->ParallelProjectionOn();
     camera->SetPosition(1, 1, -1);
     camera->SetFocalPoint(0, 0, 0);
     camera->SetViewUp(0, 1, 0);
@@ -417,6 +417,7 @@ void setPlaneView(vtkSmartPointer<vtkRenderer> renderer, int dir, int sign)
     for (int i = 0; i != kNumDirections; ++i)
         position[i] = 0.0;
     position[dir] = 1.0 * sign;
+    camera->ParallelProjectionOn();
     camera->SetPosition(position);
     camera->SetFocalPoint(0, 0, 0);
     camera->SetViewUp(0, 1, 0);

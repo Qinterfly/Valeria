@@ -35,7 +35,7 @@ class DiagramReportSceneItem : public ReportSceneItem
 public:
     DiagramReportSceneItem(Backend::Core::DiagramReportItem* pItem, Backend::Core::ReportTextEngine& textEngine,
                            Backend::Core::ResponseCollection const& collection, int iSelectedBundle, Testlab::Geometry const& geometry,
-                           QGraphicsItem* pParent = nullptr);
+                           vtkRenderWindow* renderWindow, QGraphicsItem* pParent = nullptr);
     virtual ~DiagramReportSceneItem();
 
     void clear();
@@ -83,9 +83,9 @@ private:
     double mAmplitudeScale;
 
     // VTK
-    vtkSmartPointer<vtkRenderWindow> mRenderWindow;
-    vtkSmartPointer<vtkRenderer> mRenderer;
-    vtkSmartPointer<vtkRenderer> mAxesRenderer;
+    vtkRenderWindow* mRenderWindow;
+    vtkRenderer* mRenderer;
+    vtkRenderer* mAxesRenderer;
     vtkSmartPointer<vtkAxesActor> mAxes;
     vtkSmartPointer<vtkLookupTable> mLookupTable;
     QImage mImage;

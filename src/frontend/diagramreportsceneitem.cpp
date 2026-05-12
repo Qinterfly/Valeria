@@ -20,6 +20,7 @@
 #include <vtkProperty2D.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
+#include <vtkRendererCollection.h>
 #include <vtkScalarBarActor.h>
 #include <vtkTextActor.h>
 
@@ -44,12 +45,14 @@ Eigen::Vector3d getBinormalVector(ReportView view);
 Vector2d worldToViewport(vtkRenderer* renderer, Vector3d const& world);
 
 DiagramReportSceneItem::DiagramReportSceneItem(DiagramReportItem* pItem, ReportTextEngine& textEngine, ResponseCollection const& collection,
-                                               int iSelectedBundle, Testlab::Geometry const& geometry, QGraphicsItem* pParent)
+                                               int iSelectedBundle, Testlab::Geometry const& geometry, vtkRenderWindow* renderWindow,
+                                               QGraphicsItem* pParent)
     : ReportSceneItem(pItem, pParent)
     , mTextEngine(textEngine)
     , mCollection(collection)
     , mISelectedBundle(iSelectedBundle)
     , mGeometry(geometry)
+    , mRenderWindow(renderWindow)
 {
     initialize();
     setState();
@@ -58,6 +61,14 @@ DiagramReportSceneItem::DiagramReportSceneItem(DiagramReportItem* pItem, ReportT
 
 DiagramReportSceneItem::~DiagramReportSceneItem()
 {
+    // Remove the rendereres from the window
+    mRenderWindow->RemoveRenderer(mRenderer);
+    mRenderWindow->RemoveRenderer(mAxesRenderer);
+    mRenderWindow->SetNumberOfLayers(0);
+
+    // Free up the renderers
+    mRenderer->Delete();
+    mAxesRenderer->Delete();
 }
 
 //! Set the item state
@@ -286,6 +297,14 @@ void DiagramReportSceneItem::drawSection(ReportSection const& section)
     {
         normalVec = Vector3d::Unit(iCoordDir);
     }
+
+    // Check if the normal vector is valid
+    if (normalVec.norm() < skEps)
+    {
+        qWarning() << tr("The normal for %1 → %2 is singular. The Y direction is chosen automatically. Change the direction manually")
+                          .arg(section.firstPoint.name(), section.secondPoint.name());
+        normalVec = Vector3d::Unit(1);
+    }
     normalVec *= section.sign;
 
     // Process the degenerate section
@@ -304,7 +323,7 @@ void DiagramReportSceneItem::drawSection(ReportSection const& section)
 
     // Draw the epure
     drawZeroLine(firstCoords, secondCoords);
-    if (firstValue * secondValue < 0)
+    if (firstValue * secondValue < 0.0)
         drawTriEpure(firstCoords, secondCoords, firstValue, secondValue, normalVec);
     else
         drawQuadEpure(firstCoords, secondCoords, firstValue, secondValue, normalVec);
@@ -737,8 +756,6 @@ void DiagramReportSceneItem::initialize()
     mAxesRenderer->ResetCamera();
 
     // Create the window
-    mRenderWindow = vtkRenderWindow::New();
-    mRenderWindow->OffScreenRenderingOn();
     mRenderWindow->SetNumberOfLayers(2);
     mRenderWindow->AddRenderer(mRenderer);
     mRenderWindow->AddRenderer(mAxesRenderer);

@@ -1,6 +1,7 @@
 
 #include <config.h>
 #include <QApplication>
+#include <QMessageBox>
 
 #include "mainwindow.h"
 
@@ -18,5 +19,15 @@ int main(int argc, char* argv[])
     Frontend::MainWindow window;
     window.show();
 
-    return application.exec();
+    // Run the application
+    int code = 0;
+    try
+    {
+        code = application.exec();
+    }
+    catch (std::exception const& exc)
+    {
+        QMessageBox::warning(nullptr, QObject::tr("Runtime Error"), exc.what());
+    }
+    return code;
 }

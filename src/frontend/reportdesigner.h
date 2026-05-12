@@ -17,6 +17,8 @@ QT_FORWARD_DECLARE_CLASS(QListWidgetItem)
 QT_FORWARD_DECLARE_CLASS(QComboBox)
 QT_FORWARD_DECLARE_CLASS(QSettings)
 
+class vtkRenderWindow;
+
 namespace Frontend
 {
 
@@ -51,7 +53,7 @@ public:
     ReportDesigner(QSettings& settings, GeometryView* pGeometryView, ResponseEditor* pResponseEditor, Backend::Core::ReportPage& page,
                    Backend::Core::ReportTextEngine const& textEngine, ReportDesignerOptions const& options = ReportDesignerOptions(),
                    QWidget* pParent = nullptr);
-    virtual ~ReportDesigner() = default;
+    virtual ~ReportDesigner();
 
     QGraphicsScene* scene();
     Backend::Core::ReportPage& page();
@@ -101,6 +103,7 @@ private:
 
     // Helper
     Backend::Core::ReportItemGetter createItemGetter(QUuid const& id);
+    vtkRenderWindow* createRenderWindow(QUuid const& id);
     void updateTextEngine();
     void resolveItemLinks();
 
@@ -122,6 +125,7 @@ private:
     ReportTableEditor* mpTableEditor;
     QComboBox* mpScaleSelector;
     bool mIsPrinting;
+    QMap<QUuid, vtkRenderWindow*> mRenderWindows;
 
     // Item
     QListWidget* mpItemList;

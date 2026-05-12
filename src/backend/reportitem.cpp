@@ -502,7 +502,7 @@ DiagramReportItem::DiagramReportItem()
 {
     // View
     view = ReportView::kIsometric;
-    colorMap = ReportColorMap::kJet;
+    colorMap = ReportColorMap::kBlueToRed3;
     scale = 2.0;
     amplitude = 0.1;
     phase = 0.0;

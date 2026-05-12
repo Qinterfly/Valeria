@@ -31,12 +31,14 @@ vtkNew<vtkNamedColors> const vtkColors;
 static double const skEps = std::numeric_limits<double>::epsilon();
 
 ModeReportSceneItem::ModeReportSceneItem(ModeReportItem* pItem, ReportTextEngine& textEngine, ResponseCollection const& collection,
-                                         int iSelectedBundle, Testlab::Geometry const& geometry, QGraphicsItem* pParent)
+                                         int iSelectedBundle, Testlab::Geometry const& geometry, vtkRenderWindow* renderWindow,
+                                         QGraphicsItem* pParent)
     : ReportSceneItem(pItem, pParent)
     , mTextEngine(textEngine)
     , mCollection(collection)
     , mISelectedBundle(iSelectedBundle)
     , mGeometry(geometry)
+    , mRenderWindow(renderWindow)
 {
     initialize();
     setState();
@@ -45,6 +47,14 @@ ModeReportSceneItem::ModeReportSceneItem(ModeReportItem* pItem, ReportTextEngine
 
 ModeReportSceneItem::~ModeReportSceneItem()
 {
+    // Remove the rendereres from the window
+    mRenderWindow->RemoveRenderer(mRenderer);
+    mRenderWindow->RemoveRenderer(mAxesRenderer);
+    mRenderWindow->SetNumberOfLayers(0);
+
+    // Free up the renderers
+    mRenderer->Delete();
+    mAxesRenderer->Delete();
 }
 
 //! Set the item state
@@ -154,6 +164,9 @@ void ModeReportSceneItem::initialize()
     // Specify the format for the VTK library
     vtkObject::GlobalWarningDisplayOff();
 
+    // Initialize the lookup table
+    mLookupTable = Utility::createCoolToWarmColorMap();
+
     // Create the main renderer
     mRenderer = vtkRenderer::New();
     mRenderer->GradientBackgroundOff();
@@ -174,8 +187,6 @@ void ModeReportSceneItem::initialize()
     mAxesRenderer->ResetCamera();
 
     // Create the window
-    mRenderWindow = vtkRenderWindow::New();
-    mRenderWindow->OffScreenRenderingOn();
     mRenderWindow->SetNumberOfLayers(2);
     mRenderWindow->AddRenderer(mRenderer);
     mRenderWindow->AddRenderer(mAxesRenderer);
@@ -255,7 +266,7 @@ void ModeReportSceneItem::drawDeformedState()
 
     // Create the lookup table
     double limit = std::max(std::abs(range.first), std::abs(range.second));
-    vtkSmartPointer<vtkLookupTable> lookupTable = Utility::createLookupTable(pItem->colorMap, -limit, limit);
+    mLookupTable = Utility::createLookupTable(pItem->colorMap, -limit, limit);
 
     // Set the mode parametsr
     double scale = pItem->amplitude * mMaximumDimension / limit;
@@ -274,21 +285,20 @@ void ModeReportSceneItem::drawDeformedState()
         vtkSmartPointer<vtkDoubleArray> magnitudes = getMagnitudes(component);
 
         // Draw the vertices
-        drawVertices(points, magnitudes, lookupTable);
+        drawVertices(points, magnitudes);
 
         // Draw the elements
-        drawElements(points, component.lines, magnitudes, lookupTable);
-        drawElements(points, component.trias, magnitudes, lookupTable);
-        drawElements(points, component.quads, magnitudes, lookupTable);
+        drawElements(points, component.lines, magnitudes);
+        drawElements(points, component.trias, magnitudes);
+        drawElements(points, component.quads, magnitudes);
     }
 
     // Show the scalar bar
-    drawScalarBar(lookupTable);
+    drawScalarBar();
 }
 
 //! Render color interpolated vertices
-void ModeReportSceneItem::drawVertices(vtkSmartPointer<vtkPoints> points, vtkSmartPointer<vtkDoubleArray> scalars,
-                                       vtkSmartPointer<vtkLookupTable> lookupTable)
+void ModeReportSceneItem::drawVertices(vtkSmartPointer<vtkPoints> points, vtkSmartPointer<vtkDoubleArray> scalars)
 {
     // Get the report item
     ModeReportItem* pItem = (ModeReportItem*) mpItem;
@@ -314,7 +324,7 @@ void ModeReportSceneItem::drawVertices(vtkSmartPointer<vtkPoints> points, vtkSma
     vtkNew<vtkPolyDataMapper> mapper;
     mapper->SetInputData(polyData);
     mapper->UseLookupTableScalarRangeOn();
-    mapper->SetLookupTable(lookupTable);
+    mapper->SetLookupTable(mLookupTable);
 
     // Create the actor
     vtkNew<vtkActor> actor;
@@ -381,7 +391,7 @@ void ModeReportSceneItem::drawElements(vtkSmartPointer<vtkPoints> points, std::v
 
 //! Render color interpolated elements
 void ModeReportSceneItem::drawElements(vtkSmartPointer<vtkPoints> points, std::vector<std::vector<int>> const& indices,
-                                       vtkSmartPointer<vtkDoubleArray> scalars, vtkSmartPointer<vtkLookupTable> lookupTable, bool isWireframe)
+                                       vtkSmartPointer<vtkDoubleArray> scalars, bool isWireframe)
 {
     ModeReportItem* pItem = (ModeReportItem*) mpItem;
     if (!pItem)
@@ -408,7 +418,7 @@ void ModeReportSceneItem::drawElements(vtkSmartPointer<vtkPoints> points, std::v
     vtkNew<vtkPolyDataMapper> mapper;
     mapper->SetInputData(polyData);
     mapper->UseLookupTableScalarRangeOn();
-    mapper->SetLookupTable(lookupTable);
+    mapper->SetLookupTable(mLookupTable);
 
     // Create the actor and add to the scene
     vtkNew<vtkActor> actor;
@@ -425,7 +435,7 @@ void ModeReportSceneItem::drawElements(vtkSmartPointer<vtkPoints> points, std::v
 }
 
 //! Render the scalar bar
-void ModeReportSceneItem::drawScalarBar(vtkSmartPointer<vtkLookupTable> lookupTable)
+void ModeReportSceneItem::drawScalarBar()
 {
     // Constants
     double const kRelMaxWidth = 1.0 / 5.0;
@@ -440,7 +450,7 @@ void ModeReportSceneItem::drawScalarBar(vtkSmartPointer<vtkLookupTable> lookupTa
     vtkSmartPointer<vtkTextActor> titleActor = Utility::createScalarBarTitleActor(title, {0.98, 0.35}, {1.0, 0.55}, pItem->font.pointSize());
 
     // Create the scalar bar
-    vtkSmartPointer<vtkScalarBarActor> scalarBar = Utility::createScalarBarActor(lookupTable, {0.9, 0.05}, {0.95, 0.6}, pItem->font.pointSize());
+    vtkSmartPointer<vtkScalarBarActor> scalarBar = Utility::createScalarBarActor(mLookupTable, {0.9, 0.05}, {0.95, 0.6}, pItem->font.pointSize());
     int maxWidth = ceil(kRelMaxWidth * mRenderWindow->GetSize()[0]);
     scalarBar->SetMaximumWidthInPixels(maxWidth);
 

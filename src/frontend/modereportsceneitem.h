@@ -36,7 +36,7 @@ class ModeReportSceneItem : public ReportSceneItem
 public:
     ModeReportSceneItem(Backend::Core::ModeReportItem* pItem, Backend::Core::ReportTextEngine& textEngine,
                         Backend::Core::ResponseCollection const& collection, int iSelectedBundle, Testlab::Geometry const& geometry,
-                        QGraphicsItem* pParent = nullptr);
+                        vtkRenderWindow* renderWindow, QGraphicsItem* pParent = nullptr);
     virtual ~ModeReportSceneItem();
 
     void clear();
@@ -57,12 +57,12 @@ private:
     void drawAll();
     void drawUndeformedState();
     void drawDeformedState();
-    void drawVertices(vtkSmartPointer<vtkPoints> points, vtkSmartPointer<vtkDoubleArray> scalars, vtkSmartPointer<vtkLookupTable> lookupTable);
+    void drawVertices(vtkSmartPointer<vtkPoints> points, vtkSmartPointer<vtkDoubleArray> scalars);
     void drawElements(vtkSmartPointer<vtkPoints> points, std::vector<std::vector<int>> const& indices, vtkColor3d color, double opacity = 1.0,
                       bool isEdgeVisible = true, bool isWireframe = false);
     void drawElements(vtkSmartPointer<vtkPoints> points, std::vector<std::vector<int>> const& indices, vtkSmartPointer<vtkDoubleArray> scalars,
-                      vtkSmartPointer<vtkLookupTable> lookupTable, bool isWireframe = false);
-    void drawScalarBar(vtkSmartPointer<vtkLookupTable> lookupTable);
+                      bool isWireframe = false);
+    void drawScalarBar();
     void drawTitle();
 
     // Helper functions
@@ -80,10 +80,11 @@ private:
     double mMaximumDimension;
 
     // VTK
-    vtkSmartPointer<vtkRenderWindow> mRenderWindow;
-    vtkSmartPointer<vtkRenderer> mRenderer;
-    vtkSmartPointer<vtkRenderer> mAxesRenderer;
+    vtkRenderWindow* mRenderWindow;
+    vtkRenderer* mRenderer;
+    vtkRenderer* mAxesRenderer;
     vtkSmartPointer<vtkAxesActor> mAxes;
+    vtkSmartPointer<vtkLookupTable> mLookupTable;
     QImage mImage;
 };
 

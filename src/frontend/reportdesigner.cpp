@@ -12,6 +12,8 @@
 #include <QVBoxLayout>
 #include <QWheelEvent>
 
+#include <vtkRenderWindow.h>
+
 #include "constants.h"
 #include "customtabwidget.h"
 #include "diagramreportsceneitem.h"
@@ -54,6 +56,14 @@ ReportDesigner::ReportDesigner(QSettings& settings, GeometryView* pGeometryView,
     createContent();
     createConnections();
     refresh();
+}
+
+ReportDesigner::~ReportDesigner()
+{
+    auto keys = mRenderWindows.keys();
+    for (auto k : keys)
+        mRenderWindows[k]->Delete();
+    mRenderWindows.clear();
 }
 
 //! Get the scene
@@ -203,11 +213,13 @@ void ReportDesigner::drawItems()
             break;
         case ReportItem::kMode:
             pSceneItem = new ModeReportSceneItem((ModeReportItem*) pReportItem, mTextEngine, mpResponseEditor->collection(),
-                                                 mpResponseEditor->iSelectedBundle(), mpGeometryView->getGeometry());
+                                                 mpResponseEditor->iSelectedBundle(), mpGeometryView->getGeometry(),
+                                                 createRenderWindow(pReportItem->id));
             break;
         case ReportItem::kDiagram:
             pSceneItem = new DiagramReportSceneItem((DiagramReportItem*) pReportItem, mTextEngine, mpResponseEditor->collection(),
-                                                    mpResponseEditor->iSelectedBundle(), mpGeometryView->getGeometry());
+                                                    mpResponseEditor->iSelectedBundle(), mpGeometryView->getGeometry(),
+                                                    createRenderWindow(pReportItem->id));
             break;
         default:
             break;
@@ -798,6 +810,17 @@ QWidget* ReportDesigner::createEditorWidget()
 ReportItemGetter ReportDesigner::createItemGetter(QUuid const& id)
 {
     return [this, id]() { return mScenePage.get(id); };
+}
+
+//! Construct a functor to get the render window with the specified identifier
+vtkRenderWindow* ReportDesigner::createRenderWindow(QUuid const& id)
+{
+    if (mRenderWindows.contains(id))
+        return mRenderWindows[id];
+    vtkRenderWindow* renderWindow = vtkRenderWindow::New();
+    renderWindow->OffScreenRenderingOn();
+    mRenderWindows[id] = renderWindow;
+    return renderWindow;
 }
 
 //! Create the report text parser and initialize it
