@@ -29,10 +29,20 @@ QList<ReportCurve> ReportDefaults::curves()
     return result;
 }
 
+//! Create a text engine
+ReportTextEngine ReportDefaults::textEngine()
+{
+    ReportTextEngine result;
+    result.setVariable("mode", QObject::tr("Mode"));
+    result.setVariable("excite", QObject::tr("Excitation"));
+    return result;
+}
+
 //! Create a document with page preset
 ReportDocument ReportDefaults::document()
 {
     ReportDocument result;
+    result.textEngine = ReportDefaults::textEngine();
     result.add(ReportDefaults::imRePage());
     result.add(ReportDefaults::multiImRePage());
     result.add(ReportDefaults::freqAmpPage());
@@ -74,7 +84,7 @@ ReportPage ReportDefaults::imRePage()
     TextReportItem* pTitle = new TextReportItem;
     pTitle->name = QObject::tr("Title");
     pTitle->rect = QRect(30, 10, 155, 20);
-    pTitle->text = QObject::tr("Mode name\nf = ${FREQ} Hz\nExcitation F = ${FORCE} N");
+    pTitle->text = QObject::tr("${MODE}, fr = ${FREQ} Hz.\n${EXCITE}.");
 
     // Create the caption
     TextReportItem* pCaption = new TextReportItem;
@@ -121,7 +131,7 @@ ReportPage ReportDefaults::multiImRePage()
     TextReportItem* pTitle = new TextReportItem;
     pTitle->name = QObject::tr("Title");
     pTitle->rect = QRect(30, 10, 155, 20);
-    pTitle->text = QObject::tr("Mode name\nExcitation\nPoint ${POINT}");
+    pTitle->text = QObject::tr("${MODE}.\n${EXCITE}.\nPoint ${NODE}.");
 
     // Create the caption
     TextReportItem* pCaption = new TextReportItem;
@@ -163,7 +173,7 @@ ReportPage ReportDefaults::freqAmpPage()
     TextReportItem* pTitle = new TextReportItem;
     pTitle->name = QObject::tr("Title");
     pTitle->rect = QRect(30, 10, 155, 20);
-    pTitle->text = QObject::tr("Mode name\nExcitation");
+    pTitle->text = QObject::tr("${MODE}.\n${EXCITE}.");
 
     // Create the caption
     TextReportItem* pCaption = new TextReportItem;
@@ -241,12 +251,15 @@ ReportPage ReportDefaults::projModeYPage()
     pTable->name = QObject::tr("Table");
     pTable->rect = QRect(197, 40, 72, 45);
     pTable->resize(3, 2);
+    pTable->midLabel = "Y; Im a,\n${UNIT}";
+    pTable->horLabels = {QObject::tr("Rod"), QObject::tr("Case")};
+    pTable->verLabels = {QObject::tr("FG"), QObject::tr("LG"), QObject::tr("RG")};
 
     // Create title
     TextReportItem* pTitle = new TextReportItem;
     pTitle->name = QObject::tr("Title");
     pTitle->rect = QRect(20, 22, 257, 20);
-    pTitle->text = QObject::tr("Mode name\nExcitation");
+    pTitle->text = QObject::tr("${MODE}, fr = ${FREQ} Hz.\n${EXCITE}.");
 
     // Create the caption
     TextReportItem* pCaption = new TextReportItem;
@@ -302,7 +315,7 @@ ReportPage ReportDefaults::mode3DPage()
     TextReportItem* pTitle = new TextReportItem;
     pTitle->name = QObject::tr("Title");
     pTitle->rect = QRect(30, 10, 155, 20);
-    pTitle->text = QObject::tr("Mode name\nExcitation");
+    pTitle->text = QObject::tr("${MODE}, fr = ${FREQ} Hz.\n${EXCITE}.");
 
     // Create the caption
     TextReportItem* pCaption = new TextReportItem;
@@ -339,7 +352,7 @@ ReportPage ReportDefaults::diagramPage()
     TextReportItem* pTitle = new TextReportItem;
     pTitle->name = QObject::tr("Title");
     pTitle->rect = QRect(20, 22, 257, 20);
-    pTitle->text = QObject::tr("Mode name\nExcitation");
+    pTitle->text = QObject::tr("${MODE}, fr = ${FREQ} Hz.\n${EXCITE}.");
 
     // Create the caption
     TextReportItem* pCaption = new TextReportItem;

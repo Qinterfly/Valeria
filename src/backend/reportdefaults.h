@@ -9,6 +9,7 @@ namespace Backend::Core
 class ReportCurve;
 class ReportDocument;
 class ReportPage;
+class ReportTextEngine;
 
 class ReportDefaults
 {
@@ -16,6 +17,7 @@ public:
     ReportDefaults() = delete;
 
     static QList<ReportCurve> curves();
+    static ReportTextEngine textEngine();
     static ReportDocument document();
     static ReportPage imRePage();
     static ReportPage multiImRePage();

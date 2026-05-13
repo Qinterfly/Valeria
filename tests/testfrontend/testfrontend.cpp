@@ -93,7 +93,6 @@ void TestFrontend::setImRePage()
     // Get the items
     ReportPage& page = pDesigner->page();
     GraphReportItem* pImag = (GraphReportItem*) page.get(0);
-    TextReportItem* pTitle = (TextReportItem*) page.get(2);
 
     // Add the curves
     int numPoints = points.size();
@@ -103,9 +102,6 @@ void TestFrontend::setImRePage()
         curve.lineColor = colors[i];
         curve.markerShape = markerShapes[i];
     }
-
-    // Set the title
-    pTitle->text = "${MODE}\nf = ${FREQ} Гц\n${EXCITE}, F = ${FORCE} Н";
 
     // Select the first item
     pDesigner->selectItem(0);
@@ -124,13 +120,9 @@ void TestFrontend::setMultiImRePage()
     // Get the items
     ReportPage& page = pDesigner->page();
     GraphReportItem* pImag = (GraphReportItem*) page.get(0);
-    TextReportItem* pTitle = (TextReportItem*) page.get(2);
 
     // Add the curves
     pImag->addPoint(point);
-
-    // Set the title
-    pTitle->text = "${MODE}\n${EXCITE}\nТочка ${NODE}";
 
     // Select the first item
     pDesigner->selectItem(0);
@@ -152,7 +144,6 @@ void TestFrontend::setFreqAmpPage()
     ReportPage& page = pDesigner->page();
     GraphReportItem* pAmp = (GraphReportItem*) page.get(0);
     PictureReportItem* pPic = (PictureReportItem*) page.get(1);
-    TextReportItem* pTitle = (TextReportItem*) page.get(2);
 
     // Add the curves
     int numPoints = points.size();
@@ -165,9 +156,6 @@ void TestFrontend::setFreqAmpPage()
 
     // Set the picture
     pPic->load(Utility::combineFilePath(INPUT_DIR, "picture.svg"));
-
-    // Set the title
-    pTitle->text = "${MODE}\n${EXCITE}";
 
     // Select the first item
     pDesigner->selectItem(0);
@@ -187,7 +175,6 @@ void TestFrontend::setProjModeYPage()
     GraphReportItem* pHStab = (GraphReportItem*) page.get(2);
     GraphReportItem* pVStab = (GraphReportItem*) page.get(3);
     TableReportItem* pTable = (TableReportItem*) page.get(4);
-    TextReportItem* pTitle = (TextReportItem*) page.get(5);
 
     // clang-format off
 
@@ -235,18 +222,12 @@ void TestFrontend::setProjModeYPage()
     // clang-format on
 
     // Set the tabular data
-    pTable->midLabel = "Y; a, ${UNIT}";
-    pTable->horLabels = {"Шток", "Гильза"};
-    pTable->verLabels = {"ПОШ", "ЛООШ", "ПООШ"};
     pTable->data[0][0] = "${POSh:5p10:Y}";
     pTable->data[0][1] = "${POSh:5p13:Y}";
     pTable->data[1][0] = "${OOSh:3p17:Y}";
     pTable->data[1][1] = "${OOSh:3p20:Y}";
     pTable->data[2][0] = "${OOSh:3p21:Y}";
     pTable->data[2][1] = "${OOSh:3p24:Y}";
-
-    // Set the title
-    pTitle->text = "${MODE}\n${EXCITE}";
 
     // Select the first item
     pDesigner->selectItem(0);
