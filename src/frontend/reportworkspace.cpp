@@ -178,7 +178,7 @@ bool ReportWorkspace::printDocument(QString const& pathFile)
         ReportDesigner* pDesigner = designer(iPage);
         if (!pDesigner)
             continue;
-        if (!pDesigner->options().enablePrinting)
+        if (!pDesigner->options().isValid)
             continue;
 
         // Create the page

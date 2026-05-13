@@ -39,7 +39,7 @@ ReportDesignerOptions::ReportDesignerOptions()
 {
     // Flags
     lockItems = true;
-    enablePrinting = true;
+    isValid = true;
 }
 
 ReportDesigner::ReportDesigner(QSettings& settings, GeometryView* pGeometryView, ResponseEditor* pResponseEditor, ReportPage& page,
@@ -174,6 +174,15 @@ void ReportDesigner::drawAll()
     mpScene->clear();
     mpScene->setSceneRect(mScenePage.layout.paintRect());
 
+    // Skip rendering the content if the page is not valid
+    if (!mOptions.isValid)
+    {
+        drawCross();
+        if (!mIsPrinting)
+            drawBorder();
+        return;
+    }
+
     // Set the text engine
     updateTextEngine();
 
@@ -248,11 +257,20 @@ void ReportDesigner::drawItems()
     }
 }
 
+//! Draw the cross if the page is not valid
+void ReportDesigner::drawCross()
+{
+    QRectF rect = mpScene->sceneRect();
+    rect = rect.marginsRemoved(QMarginsF(5, 5, 5, 5));
+    QPen pen(Qt::red, 3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    mpScene->addLine(rect.topLeft().x(), rect.topLeft().y(), rect.bottomRight().x(), rect.bottomRight().y(), pen);
+    mpScene->addLine(rect.topRight().x(), rect.topRight().y(), rect.bottomLeft().x(), rect.bottomLeft().y(), pen);
+}
+
 //! Draw the border around the page
 void ReportDesigner::drawBorder()
 {
-    QColor borderColor = mOptions.enablePrinting ? QColor("black") : QColor("red");
-    QGraphicsRectItem* pBorder = mpScene->addRect(mpScene->sceneRect(), QPen(borderColor, 0), QBrush(Qt::white));
+    QGraphicsRectItem* pBorder = mpScene->addRect(mpScene->sceneRect(), QPen(Qt::black, 0), QBrush(Qt::white));
     pBorder->setZValue(-1000);
     pBorder->setFlag(QGraphicsItem::ItemIsSelectable, false);
     pBorder->setFlag(QGraphicsItem::ItemIsMovable, false);
@@ -705,7 +723,7 @@ QWidget* ReportDesigner::createSceneWidget()
 
     // Create the actions
     QAction* pLockSceneAction = createBoolAction(QIcon(":/icons/lock.svg"), tr("Lock items"), mOptions.lockItems);
-    QAction* pEnablePrintingAction = createBoolAction(QIcon(":/icons/page-valid.svg"), tr("Enable printing"), mOptions.enablePrinting);
+    QAction* pEnablePrintingAction = createBoolAction(QIcon(":/icons/page-valid.svg"), tr("Validate page"), mOptions.isValid);
 
     // Create the toolbar
     QToolBar* pToolBar = new QToolBar;

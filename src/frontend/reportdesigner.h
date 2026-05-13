@@ -41,7 +41,7 @@ struct ReportDesignerOptions
 
     // Flags
     bool lockItems;
-    bool enablePrinting;
+    bool isValid;
 };
 
 //! Class to design page content
@@ -80,6 +80,7 @@ private:
     // Draw
     void drawAll();
     void drawItems();
+    void drawCross();
     void drawBorder();
 
     // Refresh
