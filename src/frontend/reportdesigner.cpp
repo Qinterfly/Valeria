@@ -553,7 +553,7 @@ void ReportDesigner::setDataEditor(ReportItem* pItem)
             mpDataEditor = new GraphReportDataEditor(mpGeometryView, mScenePage);
             break;
         case ReportItem::kMode:
-            mpDataEditor = new ModeReportDataEditor(mScenePage);
+            mpDataEditor = new ModeReportDataEditor(mpGeometryView, mScenePage);
             break;
         case ReportItem::kDiagram:
             mpDataEditor = new DiagramReportDataEditor(mpGeometryView, mScenePage);
@@ -853,11 +853,11 @@ void ReportDesigner::updateTextEngine()
     }
 
     // Set common translations
-    mTextEngine.setReplacement(Units::skM_S2, tr("m/s%1").arg(QChar(0x00B2)));
-    mTextEngine.setReplacement(Units::skM_S2_N, tr("(m/s%1)/N").arg(QChar(0x00B2)));
+    mTextEngine.setReplacement(Units::skM_S2, tr("m/s%1").arg(Constants::Symbol::skPow2));
+    mTextEngine.setReplacement(Units::skM_S2_N, tr("(m/s%1)/N").arg(Constants::Symbol::skPow2));
     mTextEngine.setReplacement(Units::skM, tr("m"));
-    mTextEngine.setReplacement(Units::skMM_S2, tr("mm/s%1").arg(QChar(0x00B2)));
-    mTextEngine.setReplacement(Units::skMM_S2_N, tr("(mm/s%1)/N").arg(QChar(0x00B2)));
+    mTextEngine.setReplacement(Units::skMM_S2, tr("mm/s%1").arg(Constants::Symbol::skPow2));
+    mTextEngine.setReplacement(Units::skMM_S2_N, tr("(mm/s%1)/N").arg(Constants::Symbol::skPow2));
     mTextEngine.setReplacement(Units::skMM, tr("mm"));
     mTextEngine.setReplacement(Units::skN, tr("N"));
 }
@@ -893,7 +893,7 @@ void ReportDesigner::resolveItemLinks()
                     pModeSlaveItem->colorMap = pModeMasterItem->colorMap;
                     pModeSlaveItem->scale = pModeMasterItem->scale;
                     pModeSlaveItem->amplitude = pModeMasterItem->amplitude;
-                    pModeSlaveItem->phase = pModeMasterItem->phase;
+                    pModeSlaveItem->maskComponents = pModeMasterItem->maskComponents;
                     pModeSlaveItem->showUndeformed = pModeMasterItem->showUndeformed;
                 }
                 else if (pMasterItem->type() == ReportItem::kDiagram)
@@ -905,7 +905,6 @@ void ReportDesigner::resolveItemLinks()
                     pModeSlaveItem->colorMap = pModeMasterItem->colorMap;
                     pModeSlaveItem->scale = pModeMasterItem->scale;
                     pModeSlaveItem->amplitude = pModeMasterItem->amplitude;
-                    pModeSlaveItem->phase = pModeMasterItem->phase;
                 }
             }
         }

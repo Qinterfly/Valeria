@@ -37,6 +37,7 @@ QJsonValue toJson(QColor const& color);
 QJsonValue toJson(QPair<double, double> const& pair);
 QJsonValue toJson(QByteArray const& data);
 QJsonValue toJson(QList<double> const& data);
+QJsonValue toJson(QList<bool> const& data);
 
 // Convert from Json
 void fromJson(QUuid& id, QJsonValue const& obj);
@@ -50,6 +51,7 @@ void fromJson(QPair<double, double>& pair, QJsonValue const& obj);
 void fromJson(QByteArray& data, QJsonValue const& obj);
 void fromJson(QStringList& data, QJsonValue const& obj);
 void fromJson(QList<double>& data, QJsonValue const& obj);
+void fromJson(QList<bool>& data, QJsonValue const& obj);
 }
 
 #endif // FILEUTILITY_H

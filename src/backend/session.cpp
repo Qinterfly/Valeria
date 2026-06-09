@@ -10,6 +10,7 @@ using namespace Backend::Core;
 ResponseBundle::ResponseBundle()
     : freq(0.0)
     , force(0.0)
+    , isInverse(false)
 {
 }
 
@@ -17,7 +18,40 @@ ResponseBundle::ResponseBundle(QString const& uName, Responses const& uResponses
     : ResponseBundle()
 {
     name = uName;
-    responses = uResponses;
+    mResponses = uResponses;
+}
+
+bool ResponseBundle::isEmpty() const
+{
+    return mResponses.empty();
+}
+
+int ResponseBundle::size() const
+{
+    return mResponses.size();
+}
+
+Testlab::Response ResponseBundle::get(int index) const
+{
+    if (index < 0 || index >= mResponses.size())
+        return Testlab::Response();
+    Testlab::Response result = mResponses[index];
+    if (isInverse)
+    {
+        size_t numKeys = result.keys.size();
+        for (size_t i = 0; i != numKeys; ++i)
+        {
+            result.realValues[i] *= -1.0;
+            result.imagValues[i] *= -1.0;
+        }
+    }
+    return result;
+}
+
+void ResponseBundle::merge(Responses const& uResponses)
+{
+    for (Testlab::Response const& v : uResponses)
+        mResponses.push_back(v);
 }
 
 ResponseCollection::ResponseCollection()
@@ -59,8 +93,7 @@ void ResponseCollection::merge(int index, Responses const& responses)
     if (index < 0 || index >= mBundles.size())
         return;
     ResponseBundle& bundle = mBundles[index];
-    for (Testlab::Response const& v : responses)
-        bundle.responses.push_back(v);
+    bundle.merge(responses);
 }
 
 bool ResponseCollection::remove(int index)

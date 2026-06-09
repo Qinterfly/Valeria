@@ -10,6 +10,7 @@
 QT_FORWARD_DECLARE_CLASS(QSettings)
 QT_FORWARD_DECLARE_CLASS(QListWidget)
 QT_FORWARD_DECLARE_CLASS(QDoubleSpinBox)
+QT_FORWARD_DECLARE_CLASS(QCheckBox)
 
 namespace Frontend
 {
@@ -94,6 +95,7 @@ private:
     Edit1d* mpBundleFreqEdit;
     Edit1d* mpBundleForceEdit;
     Edit1s* mpBundleRefPointEdit;
+    QCheckBox* mpBundleInverseCheckBox;
 
     // Response
     QListWidget* mpResponseList;

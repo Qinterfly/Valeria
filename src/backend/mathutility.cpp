@@ -110,10 +110,10 @@ Testlab::Response multiplyResponse(Testlab::Response const& response, double fac
 int findResponse(ResponseBundle const& bundle, ReportPoint const& point, ReportDirection dir, Testlab::ResponseType type, QString const& unit)
 {
     int iFound = -1;
-    int numResponses = bundle.responses.size();
+    int numResponses = bundle.size();
     for (int i = 0; i != numResponses; ++i)
     {
-        Testlab::Response const& response = bundle.responses[i];
+        Testlab::Response response = bundle.get(i);
 
         // Slice the response data
         Testlab::ResponsePoint const& responsePoint = response.header.point;
@@ -138,7 +138,7 @@ Testlab::Response getAcceleration(ResponseBundle const& bundle, ReportPoint cons
     int iResponse = findResponse(bundle, point, targetDir, Testlab::ResponseType::kAccel);
     if (iResponse < 0)
         return Testlab::Response();
-    Testlab::Response const& accel = bundle.responses[iResponse];
+    Testlab::Response accel = bundle.get(iResponse);
     return convertAcceleration(bundle, accel, targetUnit);
 }
 
@@ -178,7 +178,7 @@ Testlab::Response convertAcceleration(ResponseBundle const& bundle, Testlab::Res
     int iForce = findResponse(bundle, refPoint, refDir, Testlab::ResponseType::kForce, Units::skN);
     if (iForce >= 0)
     {
-        Testlab::Response const force = bundle.responses[iForce];
+        Testlab::Response const force = bundle.get(iForce);
         Testlab::Response response = accel;
         for (int i = 0; i != numKeys; ++i)
         {
@@ -350,12 +350,12 @@ double getMaximumDimension(Testlab::Geometry const& geometry)
 GeometryState getGeometryState(QString const& unit, ResponseBundle const& bundle, Testlab::Geometry const& geometry)
 {
     GeometryState result;
-    int numResponses = bundle.responses.size();
+    int numResponses = bundle.size();
     int iFound = -1;
     for (int i = 0; i != numResponses; ++i)
     {
         // Retrieve the acceleration which has the requested units
-        Testlab::Response const& response = bundle.responses[i];
+        Testlab::Response response = bundle.get(i);
         if (response.header.type != Testlab::ResponseType::kAccel)
             continue;
         Testlab::Response accel = Backend::Utility::convertAcceleration(bundle, response, unit);

@@ -111,6 +111,12 @@ QJsonValue toJson(QList<double> const& data)
     return QJsonArray::fromVariantList(vars);
 }
 
+QJsonValue toJson(QList<bool> const& data)
+{
+    QVariantList vars(data.begin(), data.end());
+    return QJsonArray::fromVariantList(vars);
+}
+
 void fromJson(QUuid& id, QJsonValue const& obj)
 {
     id = QUuid::fromString(obj.toString());
@@ -196,5 +202,14 @@ void fromJson(QList<double>& data, QJsonValue const& obj)
     data.resize(count);
     for (int i = 0; i != count; ++i)
         data[i] = vars[i].toDouble();
+}
+
+void fromJson(QList<bool>& data, QJsonValue const& obj)
+{
+    QVariantList vars = obj.toArray().toVariantList();
+    int count = vars.size();
+    data.resize(count);
+    for (int i = 0; i != count; ++i)
+        data[i] = vars[i].toBool();
 }
 }

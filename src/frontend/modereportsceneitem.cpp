@@ -236,8 +236,11 @@ void ModeReportSceneItem::drawUndeformedState()
     // Loop through all the components
     int numComponents = mGeometry.components.size();
     vtkColor3d color = Utility::getColor(pItem->undeformedColor);
+    bool isMask = pItem->maskComponents.size() == numComponents;
     for (int i = 0; i != numComponents; ++i)
     {
+        if (isMask && !pItem->maskComponents[i])
+            continue;
         Testlab::Component const& component = mGeometry.components[i];
 
         // Construct the vertices
@@ -270,16 +273,18 @@ void ModeReportSceneItem::drawDeformedState()
 
     // Set the mode parametsr
     double scale = pItem->amplitude * mMaximumDimension / limit;
-    double phase = pItem->phase * M_PI / 180.0;
 
     // Loop through all the components
     int numComponents = mGeometry.components.size();
+    bool isMask = pItem->maskComponents.size() == numComponents;
     for (int i = 0; i != numComponents; ++i)
     {
+        if (isMask && !pItem->maskComponents[i])
+            continue;
         Testlab::Component const& component = mGeometry.components[i];
 
         // Construct the vertices
-        vtkSmartPointer<vtkPoints> points = createPoints(component, scale, phase);
+        vtkSmartPointer<vtkPoints> points = createPoints(component, scale);
 
         // Compute the magnitudes
         vtkSmartPointer<vtkDoubleArray> magnitudes = getMagnitudes(component);
@@ -476,7 +481,7 @@ void ModeReportSceneItem::drawTitle()
 }
 
 //! Create points which are associated with the geometry
-vtkSmartPointer<vtkPoints> ModeReportSceneItem::createPoints(Testlab::Component const& component, double scale, double phase)
+vtkSmartPointer<vtkPoints> ModeReportSceneItem::createPoints(Testlab::Component const& component, double scale)
 {
     vtkNew<vtkPoints> points;
     QString componentName = QString::fromStdWString(component.name);
@@ -491,7 +496,7 @@ vtkSmartPointer<vtkPoints> ModeReportSceneItem::createPoints(Testlab::Component 
 
         // Apply the values
         Vector3d values = Backend::Utility::getNodeValues(mState, componentName, nodeName);
-        position += values * scale * cos(phase);
+        position += values * scale;
 
         // Add the point
         points->InsertPoint(iNode, position[0], position[1], position[2]);

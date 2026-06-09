@@ -20,6 +20,7 @@ static double const skInf = std::numeric_limits<double>::infinity();
 
 // Helper function
 PairDouble getValueRange(CustomPlot* pPlot, double keyLower = -skInf, double keyUpper = skInf);
+QString removeNonDigits(QString const& text);
 
 GraphReportSceneItem::GraphReportSceneItem(GraphReportItem* pItem, ReportTextEngine& textEngine, ResponseCollection const& collection,
                                            int iSelectedBundle, Testlab::Geometry const& geometry, QGraphicsItem* pParent)
@@ -216,7 +217,7 @@ void GraphReportSceneItem::processReIm(ResponseBundle const& bundle)
                 std::swap(xData, yData);
 
             // Add the plottable
-            QString name = tr("p. %1").arg(point.node);
+            QString name = tr("p. %1").arg(removeNonDigits(point.node));
             addPlottable(xData, yData, curve, name);
         }
     }
@@ -371,7 +372,7 @@ void GraphReportSceneItem::processFreqAmp()
         // Add the curve
         if (pItem->swapAxes)
             std::swap(xData, yData);
-        QString name = tr("p. %1").arg(point.node);
+        QString name = tr("p. %1").arg(removeNonDigits(point.node));
         addPlottable(xData, yData, curve, name);
     }
 }
@@ -612,4 +613,12 @@ PairDouble getValueRange(CustomPlot* pPlot, double keyLower, double keyUpper)
         }
     }
     return {min, max};
+}
+
+//! Remove all characters from a string except digits
+QString removeNonDigits(QString const& text)
+{
+    QString result = text;
+    result.remove(QRegularExpression("[^0-9]"));
+    return result;
 }

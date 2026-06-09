@@ -397,7 +397,6 @@ ModeReportItem::ModeReportItem()
     viewAngle = 0.0;
     scale = 1.5;
     amplitude = 0.1;
-    phase = 0.0;
 
     // Settings
     sRange = {0.0, 0.0};
@@ -431,7 +430,7 @@ ReportItem* ModeReportItem::clone() const
     pResult->viewAngle = viewAngle;
     pResult->scale = scale;
     pResult->amplitude = amplitude;
-    pResult->phase = phase;
+    pResult->maskComponents = maskComponents;
 
     // Settings
     pResult->title = title;
@@ -459,7 +458,9 @@ QJsonObject ModeReportItem::toJson() const
     obj["viewAngle"] = viewAngle;
     obj["scale"] = scale;
     obj["amplitude"] = amplitude;
-    obj["phase"] = phase;
+
+    // Selector
+    obj["maskComponents"] = Utility::toJson(maskComponents);
 
     // Settings
     obj["title"] = title;
@@ -487,7 +488,9 @@ void ModeReportItem::fromJson(QJsonObject const& obj)
     viewAngle = obj["viewAngle"].toDouble();
     scale = obj["scale"].toDouble();
     amplitude = obj["amplitude"].toDouble();
-    phase = obj["phase"].toDouble();
+
+    // Selector
+    Utility::fromJson(maskComponents, obj["maskComponents"]);
 
     // Settings
     title = obj["title"].toString();
@@ -510,7 +513,6 @@ DiagramReportItem::DiagramReportItem()
     viewAngle = 0.0;
     scale = 2.0;
     amplitude = 0.1;
-    phase = 0.0;
 
     // Settings
     sRange = {0.0, 0.0};
@@ -544,7 +546,6 @@ ReportItem* DiagramReportItem::clone() const
     pResult->viewAngle = viewAngle;
     pResult->scale = scale;
     pResult->amplitude = amplitude;
-    pResult->phase = phase;
 
     // Settings
     pResult->title = title;
@@ -581,7 +582,6 @@ QJsonObject DiagramReportItem::toJson() const
     obj["viewAngle"] = viewAngle;
     obj["scale"] = scale;
     obj["amplitude"] = amplitude;
-    obj["phase"] = phase;
 
     // Settings
     obj["title"] = title;
@@ -614,7 +614,6 @@ void DiagramReportItem::fromJson(QJsonObject const& obj)
     viewAngle = obj["viewAngle"].toDouble();
     scale = obj["scale"].toDouble();
     amplitude = obj["amplitude"].toDouble();
-    phase = obj["phase"].toDouble();
 
     // Settings
     title = obj["title"].toString();

@@ -37,6 +37,7 @@ uint const skMaxRecentProjects = 5;
 namespace Symbol
 {
 const QChar skDeg = QChar(0x00b0);
+const QChar skPow2 = QChar(0x00B2);
 }
 }
 

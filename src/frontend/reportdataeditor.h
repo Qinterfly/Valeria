@@ -16,6 +16,11 @@ class CustomVariantPropertyManager;
 class QtVariantEditorFactory;
 class QtProperty;
 
+namespace Testlab
+{
+struct Geometry;
+}
+
 namespace Backend::Core
 {
 class ReportPage;
@@ -27,6 +32,7 @@ namespace Frontend
 class GeometryView;
 class ReportCurvePropertyEditor;
 class ReportSectionPropertyEditor;
+class ReportComponentSelector;
 
 //! General class to edit report item data
 class ReportDataEditor : public QWidget
@@ -111,7 +117,7 @@ class ModeReportDataEditor : public ReportDataEditor
     Q_OBJECT
 
 public:
-    ModeReportDataEditor(Backend::Core::ReportPage const& page, QWidget* pParent = nullptr);
+    ModeReportDataEditor(GeometryView* pGeometryView, Backend::Core::ReportPage const& page, QWidget* pParent = nullptr);
     virtual ~ModeReportDataEditor() = default;
 
     Backend::Core::ReportItem::Type type() const override;
@@ -120,12 +126,16 @@ public:
 private:
     void createContent();
     void createConnections();
+    QLayout* createHeaderLayout();
+    QLayout* createComponentLayout();
 
     // Slots
     Backend::Core::ModeReportItem* getItem();
     void processChanged();
+    void processComponentSelected(QList<bool> mask);
 
 private:
+    GeometryView* mpGeometryView;
     Backend::Core::ReportPage const& mPage;
 
     // Widgets
@@ -135,8 +145,8 @@ private:
     Edit1d* mpViewAngleEdit;
     Edit1d* mpScaleEdit;
     Edit1d* mpAmplitudeEdit;
-    Edit1d* mpPhaseEdit;
     QComboBox* mpLinkSelector;
+    ReportComponentSelector* mpComponentSelector;
 };
 
 //! Class to edit diagram item data
@@ -188,7 +198,6 @@ private:
     Edit1d* mpViewAngleEdit;
     Edit1d* mpScaleEdit;
     Edit1d* mpAmplitudeEdit;
-    Edit1d* mpPhaseEdit;
     QComboBox* mpLinkSelector;
 
     // Sections
@@ -277,6 +286,32 @@ private:
     CustomVariantPropertyManager* mpManager;
     QtVariantEditorFactory* mpFactory;
     QtTreePropertyBrowser* mpEditor;
+};
+
+//! Class to select geometrical components
+class ReportComponentSelector : public QWidget
+{
+    Q_OBJECT
+
+public:
+    ReportComponentSelector(QWidget* pParent = nullptr);
+    ~ReportComponentSelector() = default;
+
+    void refresh(QList<bool> const& mask, Testlab::Geometry const& geometry);
+
+signals:
+    void changed(QList<bool> mask);
+
+private:
+    void createContent();
+
+    // Slots
+    void processSelection();
+    void selectAll();
+    void invertSelection();
+
+private:
+    QListWidget* mpList;
 };
 }
 

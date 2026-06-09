@@ -181,9 +181,7 @@ void DiagramReportSceneItem::drawDeformedState()
     mLookupTable = Utility::createLookupTable(pItem->colorMap, -limit, limit);
 
     // Set the mode parametsr
-    double amplitude = pItem->amplitude * mMaximumDimension / limit;
-    double phase = pItem->phase * M_PI / 180.0;
-    mAmplitudeScale = amplitude * cos(phase);
+    mAmplitudeScale = pItem->amplitude * mMaximumDimension / limit;
 
     // Loop through all the sections
     int numSections = pItem->sections.size();

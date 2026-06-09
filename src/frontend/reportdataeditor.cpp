@@ -592,8 +592,9 @@ ReportCurveGetter GraphReportDataEditor::createCurveGetter(int iCurve)
     };
 }
 
-ModeReportDataEditor::ModeReportDataEditor(ReportPage const& page, QWidget* pParent)
+ModeReportDataEditor::ModeReportDataEditor(GeometryView* pGeometryView, ReportPage const& page, QWidget* pParent)
     : ReportDataEditor(pParent)
+    , mpGeometryView(pGeometryView)
     , mPage(page)
 {
     setFont(Utility::getFont());
@@ -639,17 +640,39 @@ void ModeReportDataEditor::refresh()
     QSignalBlocker blockerAmplitude(mpAmplitudeEdit);
     mpAmplitudeEdit->setValue(pItem->amplitude);
 
-    // Set the phase
-    QSignalBlocker blockerPhase(mpPhaseEdit);
-    mpPhaseEdit->setValue(pItem->phase);
-
     // Set the link
     QSignalBlocker blockerLink(mpLinkSelector);
     refreshLinkSelector(mpLinkSelector, mPage, pItem);
+
+    // Set the selector
+    Testlab::Geometry const& geometry = mpGeometryView->getGeometry();
+    mpComponentSelector->refresh(pItem->maskComponents, geometry);
 }
 
 //! Create all the widgets
 void ModeReportDataEditor::createContent()
+{
+    QVBoxLayout* pLayout = new QVBoxLayout;
+    pLayout->addLayout(createHeaderLayout());
+    pLayout->addLayout(createComponentLayout());
+    setLayout(pLayout);
+}
+
+//! Set the widget connections
+void ModeReportDataEditor::createConnections()
+{
+    connect(mpUnitSelector, &QComboBox::currentIndexChanged, this, &ModeReportDataEditor::processChanged);
+    connect(mpViewSelector, &QComboBox::currentIndexChanged, this, &ModeReportDataEditor::processChanged);
+    connect(mpColorMapSelector, &QComboBox::currentIndexChanged, this, &ModeReportDataEditor::processChanged);
+    connect(mpViewAngleEdit, &Edit1d::valueChanged, this, &ModeReportDataEditor::processChanged);
+    connect(mpScaleEdit, &Edit1d::valueChanged, this, &ModeReportDataEditor::processChanged);
+    connect(mpAmplitudeEdit, &Edit1d::valueChanged, this, &ModeReportDataEditor::processChanged);
+    connect(mpLinkSelector, &QComboBox::currentIndexChanged, this, &ModeReportDataEditor::processChanged);
+    connect(mpComponentSelector, &ReportComponentSelector::changed, this, &ModeReportDataEditor::processComponentSelected);
+}
+
+//! Create a group of widgets to change header data
+QLayout* ModeReportDataEditor::createHeaderLayout()
 {
     // Create the widgets
     mpUnitSelector = createUnitSelector();
@@ -658,7 +681,6 @@ void ModeReportDataEditor::createContent()
     mpViewAngleEdit = new Edit1d;
     mpScaleEdit = new Edit1d;
     mpAmplitudeEdit = new Edit1d;
-    mpPhaseEdit = new Edit1d;
     mpLinkSelector = new QComboBox;
 
     // Initialize the widgets
@@ -678,26 +700,19 @@ void ModeReportDataEditor::createContent()
     pLayout->addWidget(mpScaleEdit, 4, 1);
     pLayout->addWidget(new QLabel(tr("Amplitude: ")), 5, 0);
     pLayout->addWidget(mpAmplitudeEdit, 5, 1);
-    pLayout->addWidget(new QLabel(tr("Phase, %1: ").arg(Constants::Symbol::skDeg)), 6, 0);
-    pLayout->addWidget(mpPhaseEdit, 6, 1);
-    pLayout->addWidget(new QLabel(tr("Link: ")), 7, 0);
-    pLayout->addWidget(mpLinkSelector, 7, 1);
+    pLayout->addWidget(new QLabel(tr("Link: ")), 6, 0);
+    pLayout->addWidget(mpLinkSelector, 6, 1);
     pLayout->addItem(new QSpacerItem(1, 1, QSizePolicy::Expanding, QSizePolicy::Preferred), 0, 2);
-    pLayout->addItem(new QSpacerItem(1, 1, QSizePolicy::Preferred, QSizePolicy::Expanding), 8, 0);
-    setLayout(pLayout);
+    return pLayout;
 }
 
-//! Set the widget connections
-void ModeReportDataEditor::createConnections()
+//! Create a group of widgets to change component data
+QLayout* ModeReportDataEditor::createComponentLayout()
 {
-    connect(mpUnitSelector, &QComboBox::currentIndexChanged, this, &ModeReportDataEditor::processChanged);
-    connect(mpViewSelector, &QComboBox::currentIndexChanged, this, &ModeReportDataEditor::processChanged);
-    connect(mpColorMapSelector, &QComboBox::currentIndexChanged, this, &ModeReportDataEditor::processChanged);
-    connect(mpViewAngleEdit, &Edit1d::valueChanged, this, &ModeReportDataEditor::processChanged);
-    connect(mpScaleEdit, &Edit1d::valueChanged, this, &ModeReportDataEditor::processChanged);
-    connect(mpAmplitudeEdit, &Edit1d::valueChanged, this, &ModeReportDataEditor::processChanged);
-    connect(mpPhaseEdit, &Edit1d::valueChanged, this, &ModeReportDataEditor::processChanged);
-    connect(mpLinkSelector, &QComboBox::currentIndexChanged, this, &ModeReportDataEditor::processChanged);
+    mpComponentSelector = new ReportComponentSelector;
+    QVBoxLayout* pLayout = new QVBoxLayout;
+    pLayout->addWidget(mpComponentSelector);
+    return pLayout;
 }
 
 //! Get the item of the requested type
@@ -723,11 +738,25 @@ void ModeReportDataEditor::processChanged()
     pItem->viewAngle = mpViewAngleEdit->value();
     pItem->scale = mpScaleEdit->value();
     pItem->amplitude = mpAmplitudeEdit->value();
-    pItem->phase = mpPhaseEdit->value();
     pItem->link = mpLinkSelector->currentData().toUuid();
 
     // Update the content
     refresh();
+
+    // Finish up the editing
+    emit edited();
+}
+
+//! Process component selection change
+void ModeReportDataEditor::processComponentSelected(QList<bool> mask)
+{
+    // Get the item
+    ModeReportItem* pItem = getItem();
+    if (!pItem)
+        return;
+
+    // Set the selection
+    pItem->maskComponents = mask;
 
     // Finish up the editing
     emit edited();
@@ -909,7 +938,6 @@ QLayout* DiagramReportDataEditor::createHeaderLayout()
     mpViewAngleEdit = new Edit1d;
     mpScaleEdit = new Edit1d;
     mpAmplitudeEdit = new Edit1d;
-    mpPhaseEdit = new Edit1d;
     mpLinkSelector = new QComboBox;
 
     // Initialize the widgets
@@ -929,12 +957,9 @@ QLayout* DiagramReportDataEditor::createHeaderLayout()
     pLayout->addWidget(mpScaleEdit, 4, 1);
     pLayout->addWidget(new QLabel(tr("Amplitude: ")), 5, 0);
     pLayout->addWidget(mpAmplitudeEdit, 5, 1);
-    pLayout->addWidget(new QLabel(tr("Phase, %1: ").arg(Constants::Symbol::skDeg)), 6, 0);
-    pLayout->addWidget(mpPhaseEdit, 6, 1);
-    pLayout->addWidget(new QLabel(tr("Link: ")), 7, 0);
-    pLayout->addWidget(mpLinkSelector, 7, 1);
+    pLayout->addWidget(new QLabel(tr("Link: ")), 6, 0);
+    pLayout->addWidget(mpLinkSelector, 6, 1);
     pLayout->addItem(new QSpacerItem(1, 1, QSizePolicy::Expanding, QSizePolicy::Preferred), 0, 2);
-    pLayout->addItem(new QSpacerItem(1, 1, QSizePolicy::Preferred, QSizePolicy::Expanding), 8, 0);
     return pLayout;
 }
 
@@ -989,7 +1014,6 @@ void DiagramReportDataEditor::createConnections()
     connect(mpViewAngleEdit, &Edit1d::valueChanged, this, &DiagramReportDataEditor::processChanged);
     connect(mpScaleEdit, &Edit1d::valueChanged, this, &DiagramReportDataEditor::processChanged);
     connect(mpAmplitudeEdit, &Edit1d::valueChanged, this, &DiagramReportDataEditor::processChanged);
-    connect(mpPhaseEdit, &Edit1d::valueChanged, this, &DiagramReportDataEditor::processChanged);
     connect(mpLinkSelector, &QComboBox::currentIndexChanged, this, &DiagramReportDataEditor::processChanged);
 
     // Section
@@ -1029,10 +1053,6 @@ void DiagramReportDataEditor::refreshHeader()
     // Set the amplitude
     QSignalBlocker blockerAmplitude(mpAmplitudeEdit);
     mpAmplitudeEdit->setValue(pItem->amplitude);
-
-    // Set the phase
-    QSignalBlocker blockerPhase(mpPhaseEdit);
-    mpPhaseEdit->setValue(pItem->phase);
 
     // Set the link
     QSignalBlocker blockerLink(mpLinkSelector);
@@ -1124,7 +1144,6 @@ void DiagramReportDataEditor::processChanged()
     pItem->viewAngle = mpViewAngleEdit->value();
     pItem->scale = mpScaleEdit->value();
     pItem->amplitude = mpAmplitudeEdit->value();
-    pItem->phase = mpPhaseEdit->value();
     pItem->link = mpLinkSelector->currentData().toUuid();
 
     // Update the content
@@ -1442,6 +1461,97 @@ void ReportSectionPropertyEditor::setValue(QtProperty* pProperty, QVariant value
     emit edited();
 }
 
+ReportComponentSelector::ReportComponentSelector(QWidget* pParent)
+    : QWidget(pParent)
+{
+    setFont(Utility::getFont());
+    createContent();
+}
+
+//! Update the widgets content
+void ReportComponentSelector::refresh(QList<bool> const& mask, Testlab::Geometry const& geometry)
+{
+    QSignalBlocker blocker(mpList);
+    mpList->clear();
+    int numComponents = geometry.components.size();
+    bool isMask = mask.size() == numComponents;
+    for (int i = 0; i != numComponents; ++i)
+    {
+        Testlab::Component const& component = geometry.components[i];
+        QListWidgetItem* pItem = new QListWidgetItem(QString::fromStdWString(component.name));
+        mpList->addItem(pItem);
+        if (isMask)
+            pItem->setSelected(mask[i]);
+        else
+            pItem->setSelected(true);
+    }
+}
+
+//! Create all the widgets
+void ReportComponentSelector::createContent()
+{
+    // Create the list
+    mpList = new QListWidget;
+    mpList->setFont(font());
+    mpList->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    connect(mpList, &QListWidget::itemSelectionChanged, this, &ReportComponentSelector::processSelection);
+
+    // Create the control
+    QHBoxLayout* pControlLayout = new QHBoxLayout;
+    QPushButton* pSelectAllButton = new QPushButton(tr("Select all"));
+    QPushButton* pInvertButton = new QPushButton(tr("Invert"));
+    connect(pSelectAllButton, &QPushButton::clicked, this, &ReportComponentSelector::selectAll);
+    connect(pInvertButton, &QPushButton::clicked, this, &ReportComponentSelector::invertSelection);
+    pControlLayout->addWidget(pSelectAllButton);
+    pControlLayout->addWidget(pInvertButton);
+    pControlLayout->addStretch();
+
+    // Combine all the widgets
+    QVBoxLayout* pMainLayout = new QVBoxLayout;
+    pMainLayout->addLayout(pControlLayout);
+    pMainLayout->addWidget(mpList);
+    setLayout(pMainLayout);
+}
+
+//! Process item selection
+void ReportComponentSelector::processSelection()
+{
+    int count = mpList->count();
+    QList<bool> mask(count);
+    for (int i = 0; i != count; ++i)
+        mask[i] = mpList->item(i)->isSelected();
+    emit changed(mask);
+}
+
+//! Select all the items
+void ReportComponentSelector::selectAll()
+{
+    // Perform the selection
+    QSignalBlocker blocker(mpList);
+    int count = mpList->count();
+    for (int i = 0; i != count; ++i)
+        mpList->item(i)->setSelected(true);
+
+    // Finish up the selection
+    processSelection();
+}
+
+//! Invert the item selection
+void ReportComponentSelector::invertSelection()
+{
+    // Perform the selection
+    QSignalBlocker blocker(mpList);
+    int count = mpList->count();
+    for (int i = 0; i != count; ++i)
+    {
+        QListWidgetItem* pItem = mpList->item(i);
+        pItem->setSelected(!pItem->isSelected());
+    }
+
+    // Finish up the selection
+    processSelection();
+}
+
 //! Helper function to create a combobox with predefined directions
 QComboBox* createDirSelector()
 {
@@ -1459,11 +1569,11 @@ QComboBox* createUnitSelector()
 {
     QComboBox* pResult = new QComboBox;
     pResult->addItem(QString());
-    pResult->addItem(QObject::tr("m/s%1").arg(QChar(0x00B2)), Units::skM_S2);
-    pResult->addItem(QObject::tr("(m/s%1)/N").arg(QChar(0x00B2)), Units::skM_S2_N);
+    pResult->addItem(QObject::tr("m/s%1").arg(Constants::Symbol::skPow2), Units::skM_S2);
+    pResult->addItem(QObject::tr("(m/s%1)/N").arg(Constants::Symbol::skPow2), Units::skM_S2_N);
     pResult->addItem(QObject::tr("m"), Units::skM);
-    pResult->addItem(QObject::tr("mm/s%1").arg(QChar(0x00B2)), Units::skMM_S2);
-    pResult->addItem(QObject::tr("(mm/s%1)/N").arg(QChar(0x00B2)), Units::skMM_S2_N);
+    pResult->addItem(QObject::tr("mm/s%1").arg(Constants::Symbol::skPow2), Units::skMM_S2);
+    pResult->addItem(QObject::tr("(mm/s%1)/N").arg(Constants::Symbol::skPow2), Units::skMM_S2_N);
     pResult->addItem(QObject::tr("mm"), Units::skMM);
     return pResult;
 }

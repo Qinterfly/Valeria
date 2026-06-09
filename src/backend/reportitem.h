@@ -192,7 +192,9 @@ public:
     double viewAngle;
     double scale;
     double amplitude;
-    double phase;
+
+    // Selector
+    QList<bool> maskComponents;
 
     // Settings
     QString title;
@@ -233,7 +235,6 @@ public:
     double viewAngle;
     double scale;
     double amplitude;
-    double phase;
 
     // Settings
     QString title;

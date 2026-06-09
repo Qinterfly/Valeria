@@ -1,3 +1,4 @@
+#include <QCheckBox>
 #include <QDoubleSpinBox>
 #include <QFileDialog>
 #include <QInputDialog>
@@ -295,6 +296,7 @@ void ResponseEditor::refresh()
         mpBundleFreqEdit->setValue(bundle.freq);
         mpBundleForceEdit->setValue(bundle.force);
         mpBundleRefPointEdit->setText(bundle.refPoint);
+        mpBundleInverseCheckBox->setChecked(bundle.isInverse);
     }
 
     // Add the responses
@@ -304,10 +306,10 @@ void ResponseEditor::refresh()
     if (iBundle >= 0)
     {
         ResponseBundle const& bundle = mCollection.get(iBundle);
-        numResponses = bundle.responses.size();
+        numResponses = bundle.size();
         for (int i = 0; i != numResponses; ++i)
         {
-            Testlab::Response const& response = bundle.responses[i];
+            Testlab::Response response = bundle.get(i);
             QListWidgetItem* pItem = new QListWidgetItem(QString::fromStdWString(response.header.name));
             mpResponseList->addItem(pItem);
         }
@@ -357,6 +359,10 @@ QLayout* ResponseEditor::createBundleLayout()
     mpBundleRefPointEdit = new Edit1s;
     connect(mpBundleRefPointEdit, &Edit1s::editingFinished, this, &ResponseEditor::setBundleProperties);
 
+    // Create the inverse checkbox
+    mpBundleInverseCheckBox = new QCheckBox(tr("Inverse"));
+    connect(mpBundleInverseCheckBox, &QCheckBox::clicked, this, &ResponseEditor::setBundleProperties);
+
     // Create the value layout
     QHBoxLayout* pValueLayout = new QHBoxLayout;
     pValueLayout->addWidget(new QLabel(tr("Freq.: ")));
@@ -369,6 +375,7 @@ QLayout* ResponseEditor::createBundleLayout()
     QHBoxLayout* pRefLayout = new QHBoxLayout;
     pRefLayout->addWidget(new QLabel(tr("Reference point: ")));
     pRefLayout->addWidget(mpBundleRefPointEdit);
+    pRefLayout->addWidget(mpBundleInverseCheckBox);
 
     // Combine the widgets
     QVBoxLayout* pMainLayout = new QVBoxLayout;
@@ -419,6 +426,7 @@ void ResponseEditor::setBundleProperties()
     bundle.freq = mpBundleFreqEdit->value();
     bundle.force = mpBundleForceEdit->value();
     bundle.refPoint = mpBundleRefPointEdit->text();
+    bundle.isInverse = mpBundleInverseCheckBox->isChecked();
 
     // Finish up the editing
     emit edited();

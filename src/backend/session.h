@@ -16,17 +16,28 @@ namespace Backend::Core
 
 using Responses = std::vector<Testlab::Response>;
 
-struct ResponseBundle
+class ResponseBundle
 {
+public:
     ResponseBundle();
     ResponseBundle(QString const& uName, Responses const& uResponses);
     ~ResponseBundle() = default;
 
+    bool isEmpty() const;
+    int size() const;
+    Testlab::Response get(int index) const;
+
+    void merge(Responses const& uResponses);
+
+public:
     QString name;
-    Responses responses;
     double freq;
     double force;
     QString refPoint;
+    bool isInverse;
+
+private:
+    Responses mResponses;
 };
 
 class ResponseCollection
