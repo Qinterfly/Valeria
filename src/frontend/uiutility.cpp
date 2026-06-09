@@ -349,31 +349,31 @@ vtkSmartPointer<vtkLookupTable> createPlasmaColorMap()
 }
 
 //! Set the camera position as well as zoom
-void setView(ReportView view, double scale, vtkSmartPointer<vtkRenderer> renderer, vtkSmartPointer<vtkRenderer> axesRenderer)
+void setView(ReportView view, double angle, double scale, vtkSmartPointer<vtkRenderer> renderer, vtkSmartPointer<vtkRenderer> axesRenderer)
 {
     // Set the camera position
     switch (view)
     {
     case ReportView::kFront:
-        Utility::setPlaneView(renderer, 0, 1);
+        Utility::setPlaneView(renderer, 0, 1, angle);
         break;
     case ReportView::kRear:
-        Utility::setPlaneView(renderer, 0, -1);
+        Utility::setPlaneView(renderer, 0, -1, angle);
         break;
     case ReportView::kTop:
-        Utility::setPlaneView(renderer, 1, 1);
+        Utility::setPlaneView(renderer, 1, 1, angle);
         break;
     case ReportView::kBottom:
-        Utility::setPlaneView(renderer, 1, -1);
+        Utility::setPlaneView(renderer, 1, -1, angle);
         break;
     case ReportView::kLeft:
-        Utility::setPlaneView(renderer, 2, 1);
+        Utility::setPlaneView(renderer, 2, -1, angle);
         break;
     case ReportView::kRight:
-        Utility::setPlaneView(renderer, 2, -1);
+        Utility::setPlaneView(renderer, 2, 1, angle);
         break;
     case ReportView::kIsometric:
-        Utility::setIsometricView(renderer);
+        Utility::setIsometricView(renderer, angle);
         break;
     default:
         break;
@@ -398,29 +398,43 @@ void setView(ReportView view, double scale, vtkSmartPointer<vtkRenderer> rendere
 }
 
 //! Set the isometric view
-void setIsometricView(vtkSmartPointer<vtkRenderer> renderer)
+void setIsometricView(vtkSmartPointer<vtkRenderer> renderer, double angle)
 {
     vtkCamera* camera = renderer->GetActiveCamera();
     camera->ParallelProjectionOn();
     camera->SetPosition(1, 1, -1);
     camera->SetFocalPoint(0, 0, 0);
     camera->SetViewUp(0, 1, 0);
+    camera->Azimuth(angle);
     renderer->ResetCamera();
 }
 
 //! Set view perpendicular to one of the planes
-void setPlaneView(vtkSmartPointer<vtkRenderer> renderer, int dir, int sign)
+void setPlaneView(vtkSmartPointer<vtkRenderer> renderer, int dir, int sign, double angle)
 {
-    int const kNumDirections = 3;
-    vtkSmartPointer<vtkCamera> camera = renderer->GetActiveCamera();
-    double position[kNumDirections];
-    for (int i = 0; i != kNumDirections; ++i)
-        position[i] = 0.0;
-    position[dir] = 1.0 * sign;
+    vtkCamera* camera = renderer->GetActiveCamera();
+    double a = vtkMath::RadiansFromDegrees(angle);
+    double c = cos(a);
+    double s = sin(a);
+    switch (dir)
+    {
+    case 0:
+        camera->SetPosition(sign, 0, 0);
+        camera->SetViewUp(0, c, s);
+        break;
+    case 1:
+        camera->SetPosition(0, sign, 0);
+        camera->SetViewUp(-s, 0, -c);
+        break;
+    case 2:
+        camera->SetPosition(0, 0, sign);
+        camera->SetViewUp(s, c, 0);
+        break;
+    default:
+        break;
+    }
     camera->ParallelProjectionOn();
-    camera->SetPosition(position);
     camera->SetFocalPoint(0, 0, 0);
-    camera->SetViewUp(0, 1, 0);
     renderer->ResetCamera();
 }
 

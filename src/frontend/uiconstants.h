@@ -20,11 +20,11 @@ const QString skMainWindow = "mainWindow";
 const QString skLastPathFile = "lastPathFile";
 }
 
-namespace Colors
+namespace Color
 {
 
-QList<QColor> const skStandardColors = {"red",    "green", "blue",      "orange", "cyan",      "magenta",  "gray",
-                                        "purple", "brown", "chocolate", "olive",  "steelblue", "firebrick"};
+QList<QColor> const skStandardSet = {"red",    "green", "blue",      "orange", "cyan",      "magenta",  "gray",
+                                     "purple", "brown", "chocolate", "olive",  "steelblue", "firebrick"};
 }
 
 namespace Size
@@ -32,6 +32,11 @@ namespace Size
 
 QSize const skToolBarIcon = QSize(25, 25);
 uint const skMaxRecentProjects = 5;
+}
+
+namespace Symbol
+{
+const QChar skDeg = QChar(0x00b0);
 }
 }
 

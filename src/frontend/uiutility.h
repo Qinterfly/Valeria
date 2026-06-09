@@ -69,9 +69,10 @@ vtkSmartPointer<vtkLookupTable> createJetColorMap();
 vtkSmartPointer<vtkLookupTable> createPlasmaColorMap();
 
 // Render: view
-void setView(Backend::Core::ReportView view, double scale, vtkSmartPointer<vtkRenderer> renderer, vtkSmartPointer<vtkRenderer> axesRenderer);
-void setIsometricView(vtkSmartPointer<vtkRenderer> renderer);
-void setPlaneView(vtkSmartPointer<vtkRenderer> renderer, int dir, int sign);
+void setView(Backend::Core::ReportView view, double angle, double scale, vtkSmartPointer<vtkRenderer> renderer,
+             vtkSmartPointer<vtkRenderer> axesRenderer);
+void setIsometricView(vtkSmartPointer<vtkRenderer> renderer, double angle = 0.0);
+void setPlaneView(vtkSmartPointer<vtkRenderer> renderer, int dir, int sign, double angle = 0.0);
 QImage getImage(vtkSmartPointer<vtkRenderWindow> renderWindow, double quality = 2.0);
 
 // Render: actors

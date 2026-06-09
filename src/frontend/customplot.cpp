@@ -91,13 +91,13 @@ void CustomPlot::setLegendAlignment(QFlags<Qt::AlignmentFlag> const& flags)
 QColor CustomPlot::getAvailableColor() const
 {
     uint numPlottables = plottableCount();
-    uint numColors = Constants::Colors::skStandardColors.size();
+    uint numColors = Constants::Color::skStandardSet.size();
     uint iColor = numPlottables;
     while (iColor >= numColors)
         iColor -= numColors;
     if (iColor < 0)
         iColor = 0;
-    return Constants::Colors::skStandardColors[iColor];
+    return Constants::Color::skStandardSet[iColor];
 }
 
 //! Set the plot configuration

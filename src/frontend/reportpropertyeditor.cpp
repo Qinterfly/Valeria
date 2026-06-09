@@ -8,6 +8,7 @@
 #include "reportdocument.h"
 #include "reportitem.h"
 #include "reportpropertyeditor.h"
+#include "uiconstants.h"
 #include "uiutility.h"
 
 using namespace Backend::Core;
@@ -101,7 +102,7 @@ void ReportPropertyEditor::addBaseProperties(ReportItem* pItem)
     pRectProperty->setValue(pItem->rect);
     mpEditor->addProperty(pRectProperty);
 
-    QtVariantProperty* pAngleProperty = mpManager->addProperty(kAngle, QMetaType::Double, tr("Rotation, %1").arg(QChar(0x00b0)));
+    QtVariantProperty* pAngleProperty = mpManager->addProperty(kAngle, QMetaType::Double, tr("Rotation, %1").arg(Constants::Symbol::skDeg));
     pAngleProperty->setValue(pItem->angle);
     mpEditor->addProperty(pAngleProperty);
 

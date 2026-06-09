@@ -285,8 +285,8 @@ void GeometryView::createContent()
     QAction* pRearViewAction = createViewAction(QIcon(":/icons/draw-rear.svg"), tr("Show rear view"), 0, -1);
     QAction* pTopViewAction = createViewAction(QIcon(":/icons/draw-top.svg"), tr("Show top view"), 1, 1);
     QAction* pBottomViewAction = createViewAction(QIcon(":/icons/draw-bottom.svg"), tr("Show bottom view"), 1, -1);
-    QAction* pLeftViewAction = createViewAction(QIcon(":/icons/draw-left.svg"), tr("Show left view"), 2, 1);
-    QAction* pRightViewAction = createViewAction(QIcon(":/icons/draw-right.svg"), tr("Show right view"), 2, -1);
+    QAction* pLeftViewAction = createViewAction(QIcon(":/icons/draw-left.svg"), tr("Show left view"), 2, -1);
+    QAction* pRightViewAction = createViewAction(QIcon(":/icons/draw-right.svg"), tr("Show right view"), 2, 1);
 
     // Create the show actions
     QAction* pLabelsAction = createShowAction(QIcon(":/icons/draw-label.svg"), tr("Show labels"), mOptions.showLabels);

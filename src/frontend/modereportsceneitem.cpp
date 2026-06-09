@@ -196,7 +196,7 @@ void ModeReportSceneItem::initialize()
 void ModeReportSceneItem::setView()
 {
     ModeReportItem* pItem = (ModeReportItem*) mpItem;
-    Utility::setView(pItem->view, pItem->scale, mRenderer, mAxesRenderer);
+    Utility::setView(pItem->view, pItem->viewAngle, pItem->scale, mRenderer, mAxesRenderer);
 }
 
 //! Represent all the elements

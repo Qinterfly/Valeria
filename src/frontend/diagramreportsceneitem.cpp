@@ -107,7 +107,7 @@ void DiagramReportSceneItem::setState()
 void DiagramReportSceneItem::setView()
 {
     DiagramReportItem* pItem = (DiagramReportItem*) mpItem;
-    Utility::setView(pItem->view, pItem->scale, mRenderer, mAxesRenderer);
+    Utility::setView(pItem->view, pItem->viewAngle, pItem->scale, mRenderer, mAxesRenderer);
 }
 
 //! Represent geometry

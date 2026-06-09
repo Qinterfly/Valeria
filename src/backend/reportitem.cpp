@@ -394,6 +394,7 @@ ModeReportItem::ModeReportItem()
     // View
     view = ReportView::kIsometric;
     colorMap = ReportColorMap::kJet;
+    viewAngle = 0.0;
     scale = 1.5;
     amplitude = 0.1;
     phase = 0.0;
@@ -427,6 +428,7 @@ ReportItem* ModeReportItem::clone() const
     pResult->unit = unit;
     pResult->view = view;
     pResult->colorMap = colorMap;
+    pResult->viewAngle = viewAngle;
     pResult->scale = scale;
     pResult->amplitude = amplitude;
     pResult->phase = phase;
@@ -454,6 +456,7 @@ QJsonObject ModeReportItem::toJson() const
     obj["unit"] = unit;
     obj["view"] = (int) view;
     obj["colorMap"] = (int) colorMap;
+    obj["viewAngle"] = viewAngle;
     obj["scale"] = scale;
     obj["amplitude"] = amplitude;
     obj["phase"] = phase;
@@ -481,6 +484,7 @@ void ModeReportItem::fromJson(QJsonObject const& obj)
     unit = obj["unit"].toString();
     view = (ReportView) obj["view"].toInt();
     colorMap = (ReportColorMap) obj["colorMap"].toInt();
+    viewAngle = obj["viewAngle"].toDouble();
     scale = obj["scale"].toDouble();
     amplitude = obj["amplitude"].toDouble();
     phase = obj["phase"].toDouble();
@@ -503,6 +507,7 @@ DiagramReportItem::DiagramReportItem()
     // View
     view = ReportView::kIsometric;
     colorMap = ReportColorMap::kBlueToRed3;
+    viewAngle = 0.0;
     scale = 2.0;
     amplitude = 0.1;
     phase = 0.0;
@@ -536,6 +541,7 @@ ReportItem* DiagramReportItem::clone() const
     pResult->unit = unit;
     pResult->view = view;
     pResult->colorMap = colorMap;
+    pResult->viewAngle = viewAngle;
     pResult->scale = scale;
     pResult->amplitude = amplitude;
     pResult->phase = phase;
@@ -572,6 +578,7 @@ QJsonObject DiagramReportItem::toJson() const
     obj["unit"] = unit;
     obj["view"] = (int) view;
     obj["colorMap"] = (int) colorMap;
+    obj["viewAngle"] = viewAngle;
     obj["scale"] = scale;
     obj["amplitude"] = amplitude;
     obj["phase"] = phase;
@@ -604,6 +611,7 @@ void DiagramReportItem::fromJson(QJsonObject const& obj)
     unit = obj["unit"].toString();
     view = (ReportView) obj["view"].toInt();
     colorMap = (ReportColorMap) obj["colorMap"].toInt();
+    viewAngle = obj["viewAngle"].toDouble();
     scale = obj["scale"].toDouble();
     amplitude = obj["amplitude"].toDouble();
     phase = obj["phase"].toDouble();
