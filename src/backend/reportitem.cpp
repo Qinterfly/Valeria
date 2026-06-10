@@ -430,6 +430,8 @@ ReportItem* ModeReportItem::clone() const
     pResult->viewAngle = viewAngle;
     pResult->scale = scale;
     pResult->amplitude = amplitude;
+
+    // Selector
     pResult->maskComponents = maskComponents;
 
     // Settings
@@ -547,6 +549,9 @@ ReportItem* DiagramReportItem::clone() const
     pResult->scale = scale;
     pResult->amplitude = amplitude;
 
+    // Selector
+    pResult->maskComponents = maskComponents;
+
     // Settings
     pResult->title = title;
     pResult->sLabel = sLabel;
@@ -583,6 +588,9 @@ QJsonObject DiagramReportItem::toJson() const
     obj["scale"] = scale;
     obj["amplitude"] = amplitude;
 
+    // Selector
+    obj["maskComponents"] = Utility::toJson(maskComponents);
+
     // Settings
     obj["title"] = title;
     obj["sLabel"] = sLabel;
@@ -614,6 +622,9 @@ void DiagramReportItem::fromJson(QJsonObject const& obj)
     viewAngle = obj["viewAngle"].toDouble();
     scale = obj["scale"].toDouble();
     amplitude = obj["amplitude"].toDouble();
+
+    // Selector
+    Utility::fromJson(maskComponents, obj["maskComponents"]);
 
     // Settings
     title = obj["title"].toString();

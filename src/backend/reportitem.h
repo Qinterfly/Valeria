@@ -236,6 +236,9 @@ public:
     double scale;
     double amplitude;
 
+    // Selector
+    QList<bool> maskComponents;
+
     // Settings
     QString title;
     QString sLabel;

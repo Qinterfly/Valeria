@@ -782,7 +782,8 @@ ReportItem::Type DiagramReportDataEditor::type() const
 void DiagramReportDataEditor::refresh()
 {
     refreshHeader();
-    refreshList();
+    refreshSection();
+    refreshComponent();
 }
 
 //! Add a new section
@@ -925,6 +926,7 @@ void DiagramReportDataEditor::createContent()
     pLayout->addLayout(createHeaderLayout());
     pLayout->addWidget(createToolBar());
     pLayout->addLayout(createSectionLayout());
+    pLayout->addLayout(createComponentLayout());
     setLayout(pLayout);
 }
 
@@ -1004,6 +1006,15 @@ QLayout* DiagramReportDataEditor::createSectionLayout()
     return pLayout;
 }
 
+//! Create a group of widgets to change component data
+QLayout* DiagramReportDataEditor::createComponentLayout()
+{
+    mpComponentSelector = new ReportComponentSelector;
+    QVBoxLayout* pLayout = new QVBoxLayout;
+    pLayout->addWidget(mpComponentSelector);
+    return pLayout;
+}
+
 //! Set the widget connections
 void DiagramReportDataEditor::createConnections()
 {
@@ -1015,6 +1026,9 @@ void DiagramReportDataEditor::createConnections()
     connect(mpScaleEdit, &Edit1d::valueChanged, this, &DiagramReportDataEditor::processChanged);
     connect(mpAmplitudeEdit, &Edit1d::valueChanged, this, &DiagramReportDataEditor::processChanged);
     connect(mpLinkSelector, &QComboBox::currentIndexChanged, this, &DiagramReportDataEditor::processChanged);
+
+    // Selector
+    connect(mpComponentSelector, &ReportComponentSelector::changed, this, &DiagramReportDataEditor::processComponentSelected);
 
     // Section
     connect(mpSectionList, &QListWidget::itemSelectionChanged, this, &DiagramReportDataEditor::processSectionSelected);
@@ -1059,8 +1073,8 @@ void DiagramReportDataEditor::refreshHeader()
     refreshLinkSelector(mpLinkSelector, mPage, pItem);
 }
 
-//! Update the hierarchy widgets
-void DiagramReportDataEditor::refreshList()
+//! Update the section list
+void DiagramReportDataEditor::refreshSection()
 {
     // Get the item
     DiagramReportItem* pItem = getItem();
@@ -1091,6 +1105,19 @@ void DiagramReportDataEditor::refreshList()
     // Set the current section
     if (iSelected >= 0 && iSelected < mpSectionList->count())
         mpSectionList->setCurrentRow(iSelected);
+}
+
+//! Update the component selector
+void DiagramReportDataEditor::refreshComponent()
+{
+    // Get the item
+    DiagramReportItem* pItem = getItem();
+    if (!pItem)
+        return;
+
+    // Set the selector
+    Testlab::Geometry const& geometry = mpGeometryView->getGeometry();
+    mpComponentSelector->refresh(pItem->maskComponents, geometry);
 }
 
 //! Get the item of the requested type
@@ -1125,7 +1152,7 @@ void DiagramReportDataEditor::processSectionSelected()
 //! Process changing section
 void DiagramReportDataEditor::processSectionEdited()
 {
-    refreshList();
+    refreshSection();
     emit edited();
 }
 
@@ -1148,6 +1175,21 @@ void DiagramReportDataEditor::processChanged()
 
     // Update the content
     refresh();
+
+    // Finish up the editing
+    emit edited();
+}
+
+//! Process component selection change
+void DiagramReportDataEditor::processComponentSelected(QList<bool> mask)
+{
+    // Get the item
+    DiagramReportItem* pItem = getItem();
+    if (!pItem)
+        return;
+
+    // Set the selection
+    pItem->maskComponents = mask;
 
     // Finish up the editing
     emit edited();

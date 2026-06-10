@@ -148,8 +148,11 @@ void DiagramReportSceneItem::drawUndeformedState()
     int numComponents = mGeometry.components.size();
     vtkColor3d color = Utility::getColor(pItem->undeformedColor);
     double opacity = pItem->undeformedOpacity;
+    bool isMask = pItem->maskComponents.size() == numComponents;
     for (int i = 0; i != numComponents; ++i)
     {
+        if (isMask && !pItem->maskComponents[i])
+            continue;
         Testlab::Component const& component = mGeometry.components[i];
 
         // Construct the vertices

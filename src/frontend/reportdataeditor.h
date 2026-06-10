@@ -173,16 +173,19 @@ private:
     QLayout* createHeaderLayout();
     QWidget* createToolBar();
     QLayout* createSectionLayout();
+    QLayout* createComponentLayout();
 
     // Widgets
     void refreshHeader();
-    void refreshList();
+    void refreshSection();
+    void refreshComponent();
 
     // Slots
     Backend::Core::DiagramReportItem* getItem();
     void processSectionSelected();
     void processSectionEdited();
     void processChanged();
+    void processComponentSelected(QList<bool> mask);
 
     // Help
     Backend::Core::ReportSectionGetter createSectionGetter(int iSection);
@@ -199,6 +202,7 @@ private:
     Edit1d* mpScaleEdit;
     Edit1d* mpAmplitudeEdit;
     QComboBox* mpLinkSelector;
+    ReportComponentSelector* mpComponentSelector;
 
     // Sections
     QListWidget* mpSectionList;

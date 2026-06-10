@@ -469,7 +469,7 @@ void ReportWorkspace::setAutoSave()
 
     // Set the autosave path
     QString dir = Backend::Utility::combineFilePath(qApp->applicationDirPath(), "autosave");
-    QString fileName = QString("%1.%2").arg(QDateTime::currentDateTime().toString("dd.mm.yyyy - hh.mm"), ReportDocument::fileSuffix());
+    QString fileName = QString("%1.%2").arg(QDateTime::currentDateTime().toString("dd.MM.yyyy - hh.mm"), ReportDocument::fileSuffix());
     mOptions.autoSavePathFile = Backend::Utility::combineFilePath(dir, fileName);
     if (!QFileInfo::exists(dir))
         QDir().mkpath(dir);
