@@ -35,6 +35,9 @@ public:
     void setLegendAlignment(QFlags<Qt::AlignmentFlag> const& flags);
     QColor getAvailableColor() const;
 
+    void addTextTip(double xData, double yData, QString const& text, QColor const& color = Qt::black);
+    void arrangeTextTips();
+
 signals:
     void dataDropped(QList<QStandardItem*> items);
 
@@ -79,6 +82,7 @@ private:
 
     // Items
     QList<DataTip*> mDataTips;
+    QList<QCPItemText*> mTextTips;
 
     // Elements
     QCPTextElement* mpTitle;

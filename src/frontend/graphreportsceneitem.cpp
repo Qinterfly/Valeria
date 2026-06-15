@@ -181,6 +181,9 @@ void GraphReportSceneItem::setState()
 
     // Render the plot
     mpPlot->replot();
+
+    // Align the text tips
+    mpPlot->arrangeTextTips();
 }
 
 //! Process the item of the real (imag) subtype
@@ -252,7 +255,7 @@ void GraphReportSceneItem::processMultiReIm()
     ReportPoint const& point = baseCurve.points.first();
     mTextEngine.setVariable("point", point.name());
     mTextEngine.setVariable("component", point.component);
-    mTextEngine.setVariable("node", point.node);
+    mTextEngine.setVariable("node", removeNonDigits(point.node));
 
     // Loop through all the bundles
     int numBundles = mCollection.count();
@@ -300,6 +303,7 @@ void GraphReportSceneItem::processFreqAmp()
     // Loop through all the curves
     int numCurves = pItem->curves.size();
     int numBundles = mCollection.count();
+    QList<QPair<QList<double>, QList<double>>> dataCurves(numCurves);
     for (int iCurve = 0; iCurve != numCurves; ++iCurve)
     {
         ReportCurve const& curve = pItem->curves[iCurve];
@@ -374,6 +378,22 @@ void GraphReportSceneItem::processFreqAmp()
             std::swap(xData, yData);
         QString name = tr("p. %1").arg(removeNonDigits(point.node));
         addPlottable(xData, yData, curve, name);
+
+        // Store the data
+        dataCurves[iCurve] = {xData, yData};
+    }
+
+    // Add the text tips. Render them on top of all the curves
+    for (int iCurve = 0; iCurve != numCurves; ++iCurve)
+    {
+        auto const& [xData, yData] = dataCurves[iCurve];
+        ReportCurve const& curve = pItem->curves[iCurve];
+        for (int iBundle = 0; iBundle != numBundles; ++iBundle)
+        {
+            ResponseBundle const& bundle = mCollection.get(iBundle);
+            QString text = tr("F = %1 N").arg(QString::number(bundle.force));
+            mpPlot->addTextTip(xData[iBundle], yData[iBundle], text, curve.lineColor);
+        }
     }
 }
 
@@ -460,7 +480,8 @@ void GraphReportSceneItem::processModeshape(ResponseBundle const& bundle)
 }
 
 //! Add the plottable to the plot
-void GraphReportSceneItem::addPlottable(QList<double> const& xData, QList<double> const& yData, ReportCurve const& curve, QString const& name)
+QCPCurve* GraphReportSceneItem::addPlottable(QList<double> const& xData, QList<double> const& yData, ReportCurve const& curve,
+                                             QString const& name)
 {
     // Define the style
     QPen pen(curve.lineColor, curve.lineWidth, curve.lineStyle);
@@ -485,6 +506,8 @@ void GraphReportSceneItem::addPlottable(QList<double> const& xData, QList<double
     pPlottable->setName(label);
     pPlottable->setScatterStyle(scatterStyle);
     pPlottable->setScatterSkip(curve.markerSkip);
+
+    return pPlottable;
 }
 
 //! Retrieve the axes, taking into account the swap flag

@@ -1,6 +1,7 @@
 #include <Eigen/Geometry>
 #include <complex.h>
 #include <QMap>
+#include <QRect>
 #include <QtMath>
 
 #include "constants.h"
@@ -495,6 +496,98 @@ bool findLineIntersect(Vector2d const& a1, Vector2d const& a2, Vector2d const& b
     x = a1 + t * r;
 
     return true;
+}
+
+//! Move the rectangle so it does not intersect boundaries
+void clampToBounds(QRectF& rect, QRectF const& bounds)
+{
+    double dx = 0.0;
+    double dy = 0.0;
+
+    if (rect.left() < bounds.left())
+        dx = bounds.left() - rect.left();
+    else if (rect.right() > bounds.right())
+        dx = bounds.right() - rect.right();
+
+    if (rect.top() < bounds.top())
+        dy = bounds.top() - rect.top();
+    else if (rect.bottom() > bounds.bottom())
+        dy = bounds.bottom() - rect.bottom();
+
+    rect.translate(dx, dy);
+}
+
+//! Resolve overlaps between rectangles
+bool resolveOverlaps(QList<QRectF>& rects, QRectF const& bounds, int maxIterations, double stiffness)
+{
+    // Constants
+    double const kEps = std::numeric_limits<double>::epsilon();
+
+    // Ensure that the rects are inside boundaries
+    int numRects = rects.size();
+    for (int i = 0; i != numRects; ++i)
+        clampToBounds(rects[i], bounds);
+
+    // Iterate till there is no overlap between rectangles
+    QList<QPointF> shifts(numRects);
+    for (int iIter = 0; iIter != maxIterations; ++iIter)
+    {
+        // Compute the shifts
+        bool isOverlap = false;
+        shifts.fill(QPointF(0.0, 0.0));
+        for (int iRect = 0; iRect != numRects; ++iRect)
+        {
+            QRectF const& rectI = rects[iRect];
+            QPointF centerI = rectI.center();
+            for (int jRect = iRect + 1; jRect != numRects; ++jRect)
+            {
+                QRectF const& rectJ = rects[jRect];
+                QPointF centerJ = rectJ.center();
+
+                // Compute the overlap
+                QRectF overlap = rectI.intersected(rectJ);
+                if (overlap.isEmpty())
+                    continue;
+                isOverlap = true;
+
+                // Handle coincident centers
+                double dx = centerJ.x() - centerI.x();
+                double dy = centerJ.y() - centerI.y();
+                if (std::abs(dx) < kEps && std::abs(dy) < kEps)
+                {
+                    dx = 1.0;
+                    dy = 0.0;
+                }
+                double signX = std::copysign(1.0, dx);
+                double signY = std::copysign(1.0, dy);
+
+                // Compute the push intensity
+                double pushX = 0.0;
+                double pushY = 0.0;
+                if (std::abs(dx) > kEps)
+                    pushX = (overlap.width() / 2 + 1.0) * stiffness;
+                if (std::abs(dy) > kEps)
+                    pushY = (overlap.height() / 2 + 1.0) * stiffness;
+
+                // Compute the shift
+                QPointF shift(pushX * signX, pushY * signY);
+
+                // Accumulate the shifts
+                shifts[iRect] -= shift;
+                shifts[jRect] += shift;
+            }
+        }
+        if (!isOverlap)
+            return true;
+
+        // Apply the shifts
+        for (int iRect = 0; iRect != numRects; ++iRect)
+        {
+            rects[iRect].translate(shifts[iRect]);
+            clampToBounds(rects[iRect], bounds);
+        }
+    }
+    return false;
 }
 
 //! Find all the response roots

@@ -36,8 +36,8 @@ void TestFrontend::addResponseBundles()
     // Set the response location in the project
     QStringList bundlePaths;
     bundlePaths.push_back("Section2/Отч 6,7 СВКД 60Н 3,47Гц/ResponsesSpectra/");
-    // bundlePaths.push_back("Section2/Отч 6,6 СВКД 140Н 3,40Гц/ResponsesSpectra/");
-    // bundlePaths.push_back("Section2/Отч 6,6 СВКД 180Н 3,37Гц/ResponsesSpectra/");
+    bundlePaths.push_back("Section2/Отч 6,6 СВКД 140Н 3,40Гц/ResponsesSpectra/");
+    bundlePaths.push_back("Section2/Отч 6,6 СВКД 180Н 3,37Гц/ResponsesSpectra/");
     // bundlePaths.push_back("Section2/7,4 STS En Y -E=-G=I=K=0,5V 10-40/Range1 (10 - 40 Hz)/FRF/En:3p10:+Y/");
 
     // Get names of responses

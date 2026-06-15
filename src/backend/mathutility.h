@@ -9,6 +9,8 @@
 
 #include "reportcommon.h"
 
+QT_FORWARD_DECLARE_CLASS(QRectF)
+
 namespace Backend::Core
 {
 class ResponseBundle;
@@ -53,6 +55,8 @@ Eigen::Vector3d getNodeValues(Backend::Core::GeometryState const& state, QString
 Eigen::Vector3d projectVector(Eigen::Vector3d const& current, Eigen::Vector3d const& base);
 bool findLineIntersect(Eigen::Vector2d const& a1, Eigen::Vector2d const& a2, Eigen::Vector2d const& b1, Eigen::Vector2d const& b2,
                        Eigen::Vector2d& x);
+void clampToBounds(QRectF& rect, QRectF const& bounds);
+bool resolveOverlaps(QList<QRectF>& rects, QRectF const& bounds, int maxIterations = 20, double stiffness = 0.5);
 
 // Roots
 struct Root

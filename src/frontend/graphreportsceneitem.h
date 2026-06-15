@@ -20,6 +20,7 @@ class ReportCurve;
 }
 
 class QCPAxis;
+class QCPCurve;
 
 namespace Frontend
 {
@@ -51,8 +52,8 @@ private:
     void processMultiReIm();
     void processFreqAmp();
     void processModeshape(Backend::Core::ResponseBundle const& bundle);
-    void addPlottable(QList<double> const& xData, QList<double> const& yData, Backend::Core::ReportCurve const& curve,
-                      QString const& name = QString());
+    QCPCurve* addPlottable(QList<double> const& xData, QList<double> const& yData, Backend::Core::ReportCurve const& curve,
+                           QString const& name = QString());
     QPair<QCPAxis*, QCPAxis*> axes();
 
     // Rendering

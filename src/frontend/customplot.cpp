@@ -6,9 +6,10 @@
 #include <qtvariantproperty.h>
 
 #include "customplot.h"
+#include "customtable.h"
+#include "mathutility.h"
 #include "uiconstants.h"
 #include "uiutility.h"
-#include "customtable.h"
 
 using namespace Frontend;
 
@@ -16,6 +17,7 @@ static const char* skLineStyle = "lineStyle";
 static const char* skScatterStyle = "scatterStyle";
 
 QPair<QList<double>, QList<double>> getPlottableData(QCPAbstractPlottable* pPlottable);
+QRectF getRect(QCPItemText* pItem);
 
 CustomPlot::CustomPlot(QWidget* pParent)
     : QCustomPlot(pParent)
@@ -36,6 +38,7 @@ void CustomPlot::clear()
     QString nullString;
     clearItems();
     mDataTips.clear();
+    mTextTips.clear();
     clearPlottables();
     legend->setVisible(false);
     setTitle(nullString);
@@ -98,6 +101,52 @@ QColor CustomPlot::getAvailableColor() const
     if (iColor < 0)
         iColor = 0;
     return Constants::Color::skStandardSet[iColor];
+}
+
+//! Add a text tip
+void CustomPlot::addTextTip(double xData, double yData, QString const& text, QColor const& color)
+{
+    QCPItemText* pItem = new QCPItemText(this);
+
+    // Set text
+    pItem->setText(text);
+    pItem->setColor(color);
+
+    // Set position
+    pItem->position->setType(QCPItemPosition::ptPlotCoords);
+    pItem->position->setCoords(xData, yData);
+    pItem->setPositionAlignment(Qt::AlignLeft | Qt::AlignTop);
+
+    // Add to the collection
+    mTextTips.push_back(pItem);
+}
+
+//! Arrange the text tips so they are not overlap or clipped by plot
+void CustomPlot::arrangeTextTips()
+{
+    // Constants
+    QMargins const kPlotMargins = QMargins(10, 10, 10, 10);
+    QMargins const kItemMargins = QMargins(5, 5, 5, 5);
+
+    // Check if there are any tips to place
+    if (mTextTips.isEmpty())
+        return;
+
+    // Get the rectangles
+    int numTips = mTextTips.size();
+    QRectF bounds = axisRect()->rect().marginsRemoved(kPlotMargins);
+    QList<QRectF> rects(numTips);
+    for (int i = 0; i != numTips; ++i)
+        rects[i] = getRect(mTextTips[i]).marginsAdded(kItemMargins);
+
+    // Place the rectangles
+    bool isResolved = Backend::Utility::resolveOverlaps(rects, bounds);
+    if (!isResolved)
+        qWarning() << tr("Could not resolve overlaps of text items located at the frequency/amplitude plot");
+
+    // Apply the translations to the tips
+    for (int i = 0; i != numTips; ++i)
+        mTextTips[i]->position->setPixelPosition(rects[i].topLeft());
 }
 
 //! Set the plot configuration
@@ -483,6 +532,7 @@ void CustomPlot::processBeforeReplot()
     legend->setMaximumSize(legend->minimumOuterSizeHint());
 }
 
+//! Render the context menu
 void CustomPlot::showContextMenu(QPoint position)
 {
     QMenu* pMenu = new QMenu(this);
@@ -875,4 +925,10 @@ QPair<QList<double>, QList<double>> getPlottableData(QCPAbstractPlottable* pPlot
         }
     }
     return QPair<QList<double>, QList<double>>(xData, yData);
+}
+
+//! Helper function to get a text item rectangle
+QRectF getRect(QCPItemText* pItem)
+{
+    return QRectF(pItem->topLeft->pixelPosition(), pItem->bottomRight->pixelPosition());
 }
