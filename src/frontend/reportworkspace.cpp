@@ -23,6 +23,9 @@ using namespace Frontend;
 using namespace Backend::Core;
 using namespace Constants;
 
+// Helpers
+void setPrinterLayout(QPrinter& printer, ReportDesigner* pDesigner);
+
 ReportWorkspaceOptions::ReportWorkspaceOptions()
 {
     autoSaveDuration = 120000;
@@ -157,10 +160,19 @@ void ReportWorkspace::saveAsDocumentDialog()
 //! Print all the pages to a pdf file
 bool ReportWorkspace::printDocument(QString const& pathFile)
 {
+    // Handle the dummy document
+    if (mDocument.isEmpty())
+        return false;
+
     // Create the printer
     QPrinter printer;
     printer.setOutputFormat(QPrinter::PdfFormat);
     printer.setOutputFileName(pathFile);
+
+    // Set the layout for the first page
+    ReportDesigner* pDesigner = designer(0);
+    if (pDesigner && pDesigner->options().isValid)
+        setPrinterLayout(printer, pDesigner);
 
     // Start the painter
     QPainter painter;
@@ -175,7 +187,7 @@ bool ReportWorkspace::printDocument(QString const& pathFile)
     int numPrint = 0;
     for (int iPage = 0; iPage != numPages; ++iPage)
     {
-        ReportDesigner* pDesigner = designer(iPage);
+        pDesigner = designer(iPage);
         if (!pDesigner)
             continue;
         if (!pDesigner->options().isValid)
@@ -183,7 +195,10 @@ bool ReportWorkspace::printDocument(QString const& pathFile)
 
         // Create the page
         if (numPrint > 0)
+        {
+            setPrinterLayout(printer, pDesigner);
             printer.newPage();
+        }
 
         // Print the page
         if (!pDesigner->print(printer, painter))
@@ -208,6 +223,9 @@ bool ReportWorkspace::printPage(QString const& pathFile, ReportDesigner* pDesign
     QPrinter printer;
     printer.setOutputFileName(pathFile);
     printer.setOutputFormat(QPrinter::PdfFormat);
+
+    // Set the layout
+    setPrinterLayout(printer, pDesigner);
 
     // Start the painter
     QPainter painter;
@@ -703,4 +721,12 @@ void ReportTextEngineEditor::processItemChanged()
         mTextEngine.setVariable(key, value);
     }
     emit edited();
+}
+
+//! Helper function to set printer layout
+void setPrinterLayout(QPrinter& printer, ReportDesigner* pDesigner)
+{
+    QPageLayout printLayout = pDesigner->page().layout;
+    printLayout.setOrientation(QPageLayout::Portrait); // Force the portrait orientation for printing
+    printer.setPageLayout(printLayout);
 }

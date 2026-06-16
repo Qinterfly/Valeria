@@ -6,6 +6,7 @@
 
 #include <Eigen/Core>
 
+#include <vtkCameraOrientationRepresentation.h>
 #include <vtkColor.h>
 #include <vtkInteractorStyleTrackballCamera.h>
 #include <vtkPolyDataMapper.h>
@@ -84,6 +85,15 @@ private:
     QList<vtkActor*> mSelectedActors;
     QMap<vtkActor*, vtkSmartPointer<vtkProperty>> mProperties;
     QMap<GeometrySelection, vtkActor*> mActors;
+};
+
+//! Class to define orientation widget representation
+class CameraOrientationRepresentation : public vtkCameraOrientationRepresentation
+{
+public:
+    static CameraOrientationRepresentation* New();
+
+    void recolorAxesGBR();
 };
 
 //! Rendering options

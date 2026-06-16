@@ -13,6 +13,7 @@
 #include <vtkNamedColors.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkPolygon.h>
+#include <vtkProperty.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
 #include <vtkScalarBarActor.h>
@@ -501,7 +502,20 @@ vtkSmartPointer<vtkActor> createCubeActor(Eigen::Vector3d const& position, doubl
 //! Create the axes actor
 vtkSmartPointer<vtkAxesActor> createAxesActor(int fontSize)
 {
+    // Constants
+    vtkColor3d xColor = vtkColors->GetColor3d("green");
+    vtkColor3d yColor = vtkColors->GetColor3d("blue");
+    vtkColor3d zColor = vtkColors->GetColor3d("red");
+
     vtkNew<vtkAxesActor> actor;
+
+    // Set the shaft and tip properties
+    actor->GetXAxisShaftProperty()->SetColor(xColor.GetData());
+    actor->GetYAxisShaftProperty()->SetColor(yColor.GetData());
+    actor->GetZAxisShaftProperty()->SetColor(zColor.GetData());
+    actor->GetXAxisTipProperty()->SetColor(xColor.GetData());
+    actor->GetYAxisTipProperty()->SetColor(yColor.GetData());
+    actor->GetZAxisTipProperty()->SetColor(zColor.GetData());
 
     // Set the text properties
     vtkCaptionActor2D* xCaption = actor->GetXAxisCaptionActor2D();
@@ -510,9 +524,9 @@ vtkSmartPointer<vtkAxesActor> createAxesActor(int fontSize)
     vtkTextProperty* xProp = xCaption->GetCaptionTextProperty();
     vtkTextProperty* yProp = yCaption->GetCaptionTextProperty();
     vtkTextProperty* zProp = zCaption->GetCaptionTextProperty();
-    xProp->SetColor(vtkColors->GetColor3d("Red").GetData());
-    yProp->SetColor(vtkColors->GetColor3d("Green").GetData());
-    zProp->SetColor(vtkColors->GetColor3d("Blue").GetData());
+    xProp->SetColor(xColor.GetData());
+    yProp->SetColor(yColor.GetData());
+    zProp->SetColor(zColor.GetData());
     xProp->ShadowOff();
     yProp->ShadowOff();
     zProp->ShadowOff();

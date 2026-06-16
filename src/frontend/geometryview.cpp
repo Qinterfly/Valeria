@@ -13,6 +13,7 @@
 #include <vtkCellArray.h>
 #include <vtkCellPicker.h>
 #include <vtkCubeSource.h>
+#include <vtkDoubleArray.h>
 #include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkGlyph3DMapper.h>
 #include <vtkInformation.h>
@@ -37,6 +38,7 @@ using namespace Constants;
 
 // Macros
 vtkStandardNewMacro(GeometryInteractorStyle);
+vtkStandardNewMacro(CameraOrientationRepresentation);
 
 // Constants
 vtkNew<vtkNamedColors> const vtkColors;
@@ -217,10 +219,13 @@ void GeometryView::initialize()
     mRenderWidget->setRenderWindow(mRenderWindow);
 
     // Create the orientation widget
+    vtkNew<CameraOrientationRepresentation> rep;
+    rep->recolorAxesGBR();
     mOrientationWidget = vtkCameraOrientationWidget::New();
     mOrientationWidget->SetParentRenderer(mRenderer);
-    mOrientationWidget->On();
     mOrientationWidget->SetAnimatorTotalFrames(kNumOrientationFrames);
+    mOrientationWidget->SetRepresentation(rep);
+    mOrientationWidget->On();
 
     // Set the custom style to use for interaction
     auto interactor = mRenderWindow->GetInteractor();
@@ -1025,6 +1030,31 @@ int GeometryInteractorStyle::index(vtkActor* actor)
             return i;
     }
     return -1;
+}
+
+//! Recolor axes to the green-blue-red sequence
+void CameraOrientationRepresentation::recolorAxesGBR()
+{
+    // Define the colors
+    const double minusXyzColor[3][3] = {{0.49, 0.737, 0.333}, {0.098, 0.098, 0.439}, {0.655, 0.157, 0.106}};
+    const double xyzColor[3][3] = {{0.654, 0.823, 0.549}, {0.275, 0.510, 0.706}, {0.870, 0.254, 0.188}};
+
+    // Set the colors of the handles
+    GetXMinusLabelProperty()->SetBackgroundColor(minusXyzColor[0]);
+    GetXPlusLabelProperty()->SetBackgroundColor(xyzColor[0]);
+    GetYMinusLabelProperty()->SetBackgroundColor(minusXyzColor[1]);
+    GetYPlusLabelProperty()->SetBackgroundColor(xyzColor[1]);
+    GetZMinusLabelProperty()->SetBackgroundColor(minusXyzColor[2]);
+    GetZPlusLabelProperty()->SetBackgroundColor(xyzColor[2]);
+
+    // Set the colors of the axes
+    for (int i = 0; i != 3; ++i)
+        AxesColors->SetTuple3(i, xyzColor[i][0], xyzColor[i][1], xyzColor[i][2]);
+
+    // Finish up the modification
+    AxesColors->Modified();
+    Skeleton->Modified();
+    BuildRepresentation();
 }
 
 //! Helper function to multiply actor scale

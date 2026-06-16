@@ -110,10 +110,7 @@ void ReportDesigner::render(bool isPrint)
 //! Print the page content to a pdf file
 bool ReportDesigner::print(QPrinter& printer, QPainter& painter)
 {
-    // Set up the printer
-    QPageLayout printLayout = mPage.layout;
-    printLayout.setOrientation(QPageLayout::Portrait); // Force the portrait orientation for printing
-    printer.setPageLayout(printLayout);
+    // Save the painter state
     painter.save();
 
     // Set the view
@@ -140,6 +137,8 @@ bool ReportDesigner::print(QPrinter& printer, QPainter& painter)
 
     // Render to the painter
     mpScene->render(&painter);
+
+    // Restore the painter state
     painter.restore();
 
     return true;
