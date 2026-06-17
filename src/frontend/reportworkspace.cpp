@@ -164,34 +164,37 @@ bool ReportWorkspace::printDocument(QString const& pathFile)
     if (mDocument.isEmpty())
         return false;
 
+    // Render the pages for printing
+    render(true);
+
     // Create the printer
     QPrinter printer;
     printer.setOutputFormat(QPrinter::PdfFormat);
     printer.setOutputFileName(pathFile);
 
-    // Set the layout for the first page
-    ReportDesigner* pDesigner = designer(0);
-    if (pDesigner && pDesigner->options().isValid)
-        setPrinterLayout(printer, pDesigner);
-
-    // Start the painter
+    // Create the painter
     QPainter painter;
-    if (!painter.begin(&printer))
-        return false;
-
-    // Render the pages for printing
-    render(true);
 
     // Print all the pages
     int numPages = mDocument.count();
     int numPrint = 0;
+    bool isInit = false;
     for (int iPage = 0; iPage != numPages; ++iPage)
     {
-        pDesigner = designer(iPage);
+        ReportDesigner* pDesigner = designer(iPage);
         if (!pDesigner)
             continue;
         if (!pDesigner->options().isValid)
             continue;
+
+        // Initialize the painter on the first page
+        if (!isInit)
+        {
+            setPrinterLayout(printer, pDesigner);
+            if (!painter.begin(&printer))
+                return false;
+            isInit = true;
+        }
 
         // Create the page
         if (numPrint > 0)
