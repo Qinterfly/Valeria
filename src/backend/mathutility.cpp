@@ -392,10 +392,8 @@ void resolveGeometryStateSlaves(Backend::Core::GeometryState& state, Testlab::Ge
 
         // Get the slave
         ReportPoint slavePoint = getPoint(dependency.slave);
-        if (!state.contains(slavePoint))
-            continue;
         Vector3d slaveCoords = convert3d(getNodeCoords(geometry, slavePoint.component, slavePoint.node));
-        Vector3d slaveValues = state[slavePoint];
+        Vector3d slaveValues = state.contains(slavePoint) ? state[slavePoint] : Vector3d::Zero();
 
         // Count the valid master nodes
         int numMasters = dependency.masters.size();
@@ -414,13 +412,15 @@ void resolveGeometryStateSlaves(Backend::Core::GeometryState& state, Testlab::Ge
         int numDirs = slaveValues.size();
         MatrixXd masterCoords(numValidMasters, numDirs);
         MatrixXd masterValues(numValidMasters, numDirs);
+        int iValidMaster = 0;
         for (int iMaster = 0; iMaster != numMasters; ++iMaster)
         {
             ReportPoint masterPoint = getPoint(dependency.masters[iMaster]);
             if (!state.contains(masterPoint))
                 continue;
-            masterCoords.row(iMaster) = convert3d(getNodeCoords(geometry, masterPoint.component, masterPoint.node));
-            masterValues.row(iMaster) = state[masterPoint];
+            masterCoords.row(iValidMaster) = convert3d(getNodeCoords(geometry, masterPoint.component, masterPoint.node));
+            masterValues.row(iValidMaster) = state[masterPoint];
+            ++iValidMaster;
         }
 
         // Interpolate the master values
