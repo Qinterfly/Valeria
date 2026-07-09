@@ -904,6 +904,7 @@ void ReportDesigner::resolveItemLinks()
                     pModeSlaveItem->colorMap = pModeMasterItem->colorMap;
                     pModeSlaveItem->scale = pModeMasterItem->scale;
                     pModeSlaveItem->amplitude = pModeMasterItem->amplitude;
+                    pModeSlaveItem->maskComponents = pModeMasterItem->maskComponents;
                 }
             }
         }
