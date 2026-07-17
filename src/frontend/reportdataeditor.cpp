@@ -1600,6 +1600,118 @@ void ReportComponentSelector::invertSelection()
     processSelection();
 }
 
+ReportGlobalDataEditor::ReportGlobalDataEditor(Backend::Core::ReportDocument& document, QWidget* pParent)
+    : QWidget(pParent)
+    , mDocument(document)
+{
+    setFont(Utility::getFont());
+    createContent();
+    refresh();
+}
+
+//! Update the widgets content
+void ReportGlobalDataEditor::refresh()
+{
+    // Update the list of pages
+    QSignalBlocker blockerComponentList(mpPageList);
+    mpPageList->clear();
+    int numPages = mDocument.count();
+    for (int i = 0; i != numPages; ++i)
+    {
+        QListWidgetItem* pItem = new QListWidgetItem(mDocument.get(i).name);
+        mpPageList->addItem(pItem);
+        pItem->setSelected(true);
+    }
+}
+
+//! Create all the widgets
+void ReportGlobalDataEditor::createContent()
+{
+    // Create the unit selector
+    mpUnitSelector = createUnitSelector();
+    QHBoxLayout* pUnitLayout = new QHBoxLayout;
+    pUnitLayout->addWidget(new QLabel(tr("Unit: ")));
+    pUnitLayout->addWidget(mpUnitSelector);
+
+    // Create the apply button
+    QHBoxLayout* pButtonLayout = new QHBoxLayout;
+    QPushButton* pApplyButton = new QPushButton(tr("Apply"));
+    pButtonLayout->addStretch();
+    pButtonLayout->addWidget(pApplyButton);
+    connect(pApplyButton, &QPushButton::clicked, this, &ReportGlobalDataEditor::apply);
+
+    // Create the page list
+    mpPageList = new QListWidget;
+    mpPageList->setFont(font());
+    mpPageList->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    mpPageList->setResizeMode(QListWidget::Adjust);
+    mpPageList->setSizeAdjustPolicy(QListWidget::AdjustToContents);
+
+    // Combine all the widgets
+    QVBoxLayout* pMainLayout = new QVBoxLayout;
+    pMainLayout->addLayout(pUnitLayout);
+    pMainLayout->addWidget(new QLabel(tr("Pages: ")));
+    pMainLayout->addWidget(mpPageList);
+    pMainLayout->addItem(pButtonLayout);
+
+    // Set the layout
+    setLayout(pMainLayout);
+}
+
+//! Distribute the data among all the pages
+void ReportGlobalDataEditor::apply()
+{
+    // Get the current data
+    QString unit = mpUnitSelector->currentData().toString();
+
+    // Obtain the selected pages
+    QModelIndexList indices = mpPageList->selectionModel()->selectedRows();
+    if (indices.isEmpty())
+    {
+        qWarning() << tr("There are no selected pages for data distribution");
+        return;
+    }
+
+    // Process the selected pages
+    int numIndices = indices.size();
+    int numPages = mDocument.count();
+    for (int iIndex = 0; iIndex != numIndices; ++iIndex)
+    {
+        // Get the page
+        int iPage = indices[iIndex].row();
+        if (iPage < 0 && iPage >= numPages)
+            continue;
+        ReportPage& page = mDocument.get(iPage);
+
+        // Process the compatible items
+        int numItems = page.count();
+        for (int iItem = 0; iItem != numItems; ++iItem)
+        {
+            ReportItem* pItem = page.get(iItem);
+            if (!pItem)
+                continue;
+            switch (pItem->type())
+            {
+            case ReportItem::kGraph:
+                static_cast<GraphReportItem*>(pItem)->unit = unit;
+                break;
+            case ReportItem::kMode:
+                static_cast<ModeReportItem*>(pItem)->unit = unit;
+                break;
+            case ReportItem::kDiagram:
+                static_cast<DiagramReportItem*>(pItem)->unit = unit;
+                break;
+            default:
+                break;
+            }
+        }
+    }
+
+    // Finish up the editing
+    qInfo() << tr("Data distributed among the selected pages");
+    emit edited();
+}
+
 //! Helper function to create a combobox with predefined directions
 QComboBox* createDirSelector()
 {

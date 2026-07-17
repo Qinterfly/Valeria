@@ -13,6 +13,7 @@
 #include "fileutility.h"
 #include "graphreportsceneitem.h"
 #include "modereportsceneitem.h"
+#include "reportdataeditor.h"
 #include "reportdefaults.h"
 #include "reportdesigner.h"
 #include "reportworkspace.h"
@@ -384,6 +385,7 @@ void ReportWorkspace::createContent()
     pToolBar->addAction(QIcon(":/icons/document-new.svg"), tr("New document"), QKeySequence::New, this, &ReportWorkspace::setNewDocumentDialog);
     pToolBar->addAction(QIcon(":/icons/document-default.svg"), tr("Default document"), this, &ReportWorkspace::setDefaultDocumentDialog);
     pToolBar->addAction(QIcon(":/icons/document-variable.svg"), tr("Variable edtior"), this, &ReportWorkspace::editTextEngine);
+    pToolBar->addAction(QIcon(":/icons/document-global.svg"), tr("Global data editor"), this, &ReportWorkspace::editGlobalData);
     pToolBar->addAction(QIcon(":/icons/document-refresh.svg"), tr("Refresh document"), Qt::Key_F5, this, &ReportWorkspace::refresh);
     pToolBar->addSeparator();
     pToolBar->addAction(QIcon(":/icons/document-open.svg"), tr("Open document"), QKeySequence::Open, this, &ReportWorkspace::openDocumentDialog);
@@ -551,12 +553,27 @@ void ReportWorkspace::processTextEngineEdited()
     emit edited();
 }
 
+//! Process editing the data globally
+void ReportWorkspace::processGlobalDataEdited()
+{
+    refresh();
+    emit edited();
+}
+
 //! Show an editor to create and remove text variables
 void ReportWorkspace::editTextEngine()
 {
     ReportTextEngineEditor* pEditor = new ReportTextEngineEditor(mSettings, mDocument.textEngine);
     connect(pEditor, &ReportTextEngineEditor::edited, this, &ReportWorkspace::processTextEngineEdited);
     Utility::showAsDialog(pEditor, tr("Text Engine Editor"), this, false);
+}
+
+//! Show an editor to set data globally
+void ReportWorkspace::editGlobalData()
+{
+    ReportGlobalDataEditor* pEditor = new ReportGlobalDataEditor(mDocument);
+    connect(pEditor, &ReportGlobalDataEditor::edited, this, &ReportWorkspace::processGlobalDataEdited);
+    Utility::showAsDialog(pEditor, tr("Global Data Editor"), this, false);
 }
 
 //! Set the unite modeshape range for all the designers

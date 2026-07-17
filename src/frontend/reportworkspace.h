@@ -82,7 +82,9 @@ private:
     void processDesignerSelected();
     void processDesignerEdited();
     void processTextEngineEdited();
+    void processGlobalDataEdited();
     void editTextEngine();
+    void editGlobalData();
     void setUniteModeshapeRange();
 
 private:

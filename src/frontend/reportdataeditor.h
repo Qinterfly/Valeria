@@ -24,6 +24,7 @@ struct Geometry;
 namespace Backend::Core
 {
 class ReportPage;
+class ReportDocument;
 }
 
 namespace Frontend
@@ -317,6 +318,30 @@ private:
 
 private:
     QListWidget* mpList;
+};
+
+//! Class to distribute data globally
+class ReportGlobalDataEditor : public QWidget
+{
+    Q_OBJECT
+
+public:
+    ReportGlobalDataEditor(Backend::Core::ReportDocument& document, QWidget* pParent = nullptr);
+    virtual ~ReportGlobalDataEditor() = default;
+
+    void refresh();
+
+signals:
+    void edited();
+
+private:
+    void createContent();
+    void apply();
+
+private:
+    Backend::Core::ReportDocument& mDocument;
+    QComboBox* mpUnitSelector;
+    QListWidget* mpPageList;
 };
 }
 
