@@ -189,6 +189,7 @@ public:
     QString unit;
     ReportView view;
     ReportColorMap colorMap;
+    ReportColorTransform colorTransform;
     double viewAngle;
     double scale;
     double amplitude;

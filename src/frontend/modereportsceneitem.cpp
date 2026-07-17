@@ -263,16 +263,15 @@ void ModeReportSceneItem::drawDeformedState()
     // Check if the state is valid to be rendered
     if (mState.isEmpty())
         return;
-    PairDouble range = Backend::Utility::getMagnitudeRange(mState, mGeometry);
-    if (std::abs(range.second - range.first) < skEps)
+    auto [minLimit, maxLimit] = Backend::Utility::getColorMagnitudeRange(mState, mGeometry, pItem->colorTransform);
+    if (std::abs(maxLimit - minLimit) < skEps)
         return;
 
     // Create the lookup table
-    double limit = std::max(std::abs(range.first), std::abs(range.second));
-    mLookupTable = Utility::createLookupTable(pItem->colorMap, -limit, limit);
+    mLookupTable = Utility::createLookupTable(pItem->colorMap, minLimit, maxLimit);
 
     // Set the mode parametsr
-    double scale = pItem->amplitude * mMaximumDimension / limit;
+    double scale = pItem->amplitude * mMaximumDimension / maxLimit;
 
     // Loop through all the components
     int numComponents = mGeometry.components.size();
@@ -513,6 +512,11 @@ vtkSmartPointer<vtkDoubleArray> ModeReportSceneItem::getMagnitudes(Testlab::Comp
     vtkNew<vtkDoubleArray> magnitudes;
     magnitudes->SetNumberOfTuples(numNodes);
 
+    // Get the report item
+    ModeReportItem* pItem = (ModeReportItem*) mpItem;
+    if (!pItem)
+        return magnitudes;
+
     // Loop through all the nodes
     QString componentName = QString::fromStdWString(component.name);
     for (int iNode = 0; iNode != numNodes; ++iNode)
@@ -522,7 +526,7 @@ vtkSmartPointer<vtkDoubleArray> ModeReportSceneItem::getMagnitudes(Testlab::Comp
 
         // Find the maximum absolute node value
         Vector3d values = Backend::Utility::getNodeValues(mState, componentName, nodeName);
-        double magnitude = Backend::Utility::getSignedAbsMax(values);
+        double magnitude = Backend::Utility::getColorMagnitude(values, pItem->colorTransform);
 
         // Set the magnitude
         magnitudes->SetValue(iNode, magnitude);

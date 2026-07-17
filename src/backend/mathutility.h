@@ -50,7 +50,9 @@ double getMaximumDimension(Testlab::Geometry const& geometry);
 Backend::Core::GeometryState getGeometryState(QString const& unit, Backend::Core::ResponseBundle const& bundle,
                                               Testlab::Geometry const& geometry);
 void resolveGeometryStateSlaves(Backend::Core::GeometryState& state, Testlab::Geometry const& geometry);
-PairDouble getMagnitudeRange(Backend::Core::GeometryState const& state, Testlab::Geometry const& geometry);
+PairDouble getColorMagnitudeRange(Backend::Core::GeometryState const& state, Testlab::Geometry const& geometry,
+                                  Backend::Core::ReportColorTransform transform);
+double getColorMagnitude(Eigen::Vector3d const& data, Backend::Core::ReportColorTransform transform);
 Eigen::Vector3d getNodeValues(Backend::Core::GeometryState const& state, QString const& componentName, QString const& nodeName);
 Eigen::Vector3d projectVector(Eigen::Vector3d const& current, Eigen::Vector3d const& base);
 bool findLineIntersect(Eigen::Vector2d const& a1, Eigen::Vector2d const& a2, Eigen::Vector2d const& b1, Eigen::Vector2d const& b2,

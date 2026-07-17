@@ -142,6 +142,7 @@ private:
     QComboBox* mpUnitSelector;
     QComboBox* mpViewSelector;
     QComboBox* mpColorMapSelector;
+    QComboBox* mpColorTransformSelector;
     Edit1d* mpViewAngleEdit;
     Edit1d* mpScaleEdit;
     Edit1d* mpAmplitudeEdit;

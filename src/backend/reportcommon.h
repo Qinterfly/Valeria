@@ -61,6 +61,15 @@ enum class ReportColorMap
     kPlasma,
 };
 
+enum class ReportColorTransform
+{
+    kMax,
+    kAbs,
+    kX,
+    kY,
+    kZ
+};
+
 //! Class to a define a layout of a point
 class ReportPoint : public ISerializable
 {

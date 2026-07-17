@@ -890,6 +890,7 @@ void ReportDesigner::resolveItemLinks()
                     pModeSlaveItem->font = pModeMasterItem->font;
                     pModeSlaveItem->unit = pModeMasterItem->unit;
                     pModeSlaveItem->colorMap = pModeMasterItem->colorMap;
+                    pModeSlaveItem->colorTransform = pModeMasterItem->colorTransform;
                     pModeSlaveItem->scale = pModeMasterItem->scale;
                     pModeSlaveItem->amplitude = pModeMasterItem->amplitude;
                     pModeSlaveItem->maskComponents = pModeMasterItem->maskComponents;

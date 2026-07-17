@@ -438,7 +438,7 @@ void resolveGeometryStateSlaves(Backend::Core::GeometryState& state, Testlab::Ge
 }
 
 //! Get the range of magnitudes
-PairDouble getMagnitudeRange(GeometryState const& state, Testlab::Geometry const& geometry)
+PairDouble getColorMagnitudeRange(GeometryState const& state, Testlab::Geometry const& geometry, ReportColorTransform transform)
 {
     double min = std::numeric_limits<double>::max();
     double max = std::numeric_limits<double>::lowest();
@@ -453,11 +453,40 @@ PairDouble getMagnitudeRange(GeometryState const& state, Testlab::Geometry const
             Testlab::Node const& node = component.nodes[iNode];
             QString nodeName = QString::fromStdWString(node.name);
             Vector3d values = getNodeValues(state, componentName, nodeName);
-            min = std::min(min, values.minCoeff());
-            max = std::max(max, values.maxCoeff());
+            double magnitude = getColorMagnitude(values, transform);
+            min = std::min(min, magnitude);
+            max = std::max(max, magnitude);
         }
     }
+
+    // Force symmetrical limits
+    if (transform != ReportColorTransform::kAbs)
+    {
+        max = std::max(std::abs(min), std::abs(max));
+        min = -max;
+    }
     return {min, max};
+}
+
+//! Get color magnitude
+double getColorMagnitude(Eigen::Vector3d const& data, ReportColorTransform transform)
+{
+    switch (transform)
+    {
+    case ReportColorTransform::kMax:
+        return getSignedAbsMax(data);
+    case ReportColorTransform::kAbs:
+        return data.norm();
+    case ReportColorTransform::kX:
+        return data.x();
+    case ReportColorTransform::kY:
+        return data.y();
+    case ReportColorTransform::kZ:
+        return data.z();
+    default:
+        break;
+    }
+    return 0.0;
 }
 
 //! Get the vertex field value related to the node

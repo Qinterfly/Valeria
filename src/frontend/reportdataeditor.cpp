@@ -34,6 +34,7 @@ QComboBox* createDirSelector();
 QComboBox* createUnitSelector();
 QComboBox* createViewSelector();
 QComboBox* createColorMapSelector();
+QComboBox* createColorTransformSelector();
 void refreshUnitSelector(QComboBox* pSelector, QString const& unit);
 void refreshLinkSelector(QComboBox* pSelector, ReportPage const& page, ReportItem* pItem);
 QList<ReportPoint> getSelectedPoints(GeometryView* pView);
@@ -664,6 +665,7 @@ void ModeReportDataEditor::createConnections()
     connect(mpUnitSelector, &QComboBox::currentIndexChanged, this, &ModeReportDataEditor::processChanged);
     connect(mpViewSelector, &QComboBox::currentIndexChanged, this, &ModeReportDataEditor::processChanged);
     connect(mpColorMapSelector, &QComboBox::currentIndexChanged, this, &ModeReportDataEditor::processChanged);
+    connect(mpColorTransformSelector, &QComboBox::currentIndexChanged, this, &ModeReportDataEditor::processChanged);
     connect(mpViewAngleEdit, &Edit1d::valueChanged, this, &ModeReportDataEditor::processChanged);
     connect(mpScaleEdit, &Edit1d::valueChanged, this, &ModeReportDataEditor::processChanged);
     connect(mpAmplitudeEdit, &Edit1d::valueChanged, this, &ModeReportDataEditor::processChanged);
@@ -678,6 +680,7 @@ QLayout* ModeReportDataEditor::createHeaderLayout()
     mpUnitSelector = createUnitSelector();
     mpViewSelector = createViewSelector();
     mpColorMapSelector = createColorMapSelector();
+    mpColorTransformSelector = createColorTransformSelector();
     mpViewAngleEdit = new Edit1d;
     mpScaleEdit = new Edit1d;
     mpAmplitudeEdit = new Edit1d;
@@ -694,14 +697,16 @@ QLayout* ModeReportDataEditor::createHeaderLayout()
     pLayout->addWidget(mpViewSelector, 1, 1);
     pLayout->addWidget(new QLabel(tr("Color map: ")), 2, 0);
     pLayout->addWidget(mpColorMapSelector, 2, 1);
-    pLayout->addWidget(new QLabel(tr("Rotation, %1: ").arg(Constants::Symbol::skDeg)), 3, 0);
-    pLayout->addWidget(mpViewAngleEdit, 3, 1);
-    pLayout->addWidget(new QLabel(tr("Scale: ")), 4, 0);
-    pLayout->addWidget(mpScaleEdit, 4, 1);
-    pLayout->addWidget(new QLabel(tr("Amplitude: ")), 5, 0);
-    pLayout->addWidget(mpAmplitudeEdit, 5, 1);
-    pLayout->addWidget(new QLabel(tr("Link: ")), 6, 0);
-    pLayout->addWidget(mpLinkSelector, 6, 1);
+    pLayout->addWidget(new QLabel(tr("Color transform: ")), 3, 0);
+    pLayout->addWidget(mpColorTransformSelector, 3, 1);
+    pLayout->addWidget(new QLabel(tr("Rotation, %1: ").arg(Constants::Symbol::skDeg)), 4, 0);
+    pLayout->addWidget(mpViewAngleEdit, 4, 1);
+    pLayout->addWidget(new QLabel(tr("Scale: ")), 5, 0);
+    pLayout->addWidget(mpScaleEdit, 5, 1);
+    pLayout->addWidget(new QLabel(tr("Amplitude: ")), 6, 0);
+    pLayout->addWidget(mpAmplitudeEdit, 6, 1);
+    pLayout->addWidget(new QLabel(tr("Link: ")), 7, 0);
+    pLayout->addWidget(mpLinkSelector, 7, 1);
     pLayout->addItem(new QSpacerItem(1, 1, QSizePolicy::Expanding, QSizePolicy::Preferred), 0, 2);
     return pLayout;
 }
@@ -735,6 +740,7 @@ void ModeReportDataEditor::processChanged()
     pItem->unit = mpUnitSelector->currentData().toString();
     pItem->view = (ReportView) mpViewSelector->currentData().toInt();
     pItem->colorMap = (ReportColorMap) mpColorMapSelector->currentData().toInt();
+    pItem->colorTransform = (ReportColorTransform) mpColorTransformSelector->currentData().toInt();
     pItem->viewAngle = mpViewAngleEdit->value();
     pItem->scale = mpScaleEdit->value();
     pItem->amplitude = mpAmplitudeEdit->value();
@@ -1648,6 +1654,19 @@ QComboBox* createColorMapSelector()
     pResult->addItem(QObject::tr("Jet"), (int) ReportColorMap::kJet);
     pResult->addItem(QObject::tr("Half-Jet"), (int) ReportColorMap::kHalfJet);
     pResult->addItem(QObject::tr("Plasma"), (int) ReportColorMap::kPlasma);
+    return pResult;
+}
+
+//! Helper function to create a combobox with predefined color transformations
+QComboBox* createColorTransformSelector()
+{
+    QComboBox* pResult = new QComboBox;
+    pResult->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    pResult->addItem(QObject::tr("Max"), (int) ReportColorTransform::kMax);
+    pResult->addItem(QObject::tr("Abs"), (int) ReportColorTransform::kAbs);
+    pResult->addItem(QObject::tr("X"), (int) ReportColorTransform::kX);
+    pResult->addItem(QObject::tr("Y"), (int) ReportColorTransform::kY);
+    pResult->addItem(QObject::tr("Z"), (int) ReportColorTransform::kZ);
     return pResult;
 }
 

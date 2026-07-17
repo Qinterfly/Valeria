@@ -175,16 +175,15 @@ void DiagramReportSceneItem::drawDeformedState()
     // Check if the state is valid to be rendered
     if (mState.isEmpty())
         return;
-    PairDouble range = Backend::Utility::getMagnitudeRange(mState, mGeometry);
-    if (std::abs(range.second - range.first) < skEps)
+    auto [minLimit, maxLimit] = Backend::Utility::getColorMagnitudeRange(mState, mGeometry, ReportColorTransform::kMax);
+    if (std::abs(maxLimit - minLimit) < skEps)
         return;
 
     // Create the lookup table
-    double limit = std::max(std::abs(range.first), std::abs(range.second));
-    mLookupTable = Utility::createLookupTable(pItem->colorMap, -limit, limit);
+    mLookupTable = Utility::createLookupTable(pItem->colorMap, minLimit, maxLimit);
 
     // Set the mode parametsr
-    mAmplitudeScale = pItem->amplitude * mMaximumDimension / limit;
+    mAmplitudeScale = pItem->amplitude * mMaximumDimension / maxLimit;
 
     // Loop through all the sections
     int numSections = pItem->sections.size();

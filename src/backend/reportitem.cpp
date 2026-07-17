@@ -394,6 +394,7 @@ ModeReportItem::ModeReportItem()
     // View
     view = ReportView::kIsometric;
     colorMap = ReportColorMap::kJet;
+    colorTransform = ReportColorTransform::kMax;
     viewAngle = 0.0;
     scale = 1.5;
     amplitude = 0.1;
@@ -428,6 +429,7 @@ ReportItem* ModeReportItem::clone() const
     pResult->unit = unit;
     pResult->view = view;
     pResult->colorMap = colorMap;
+    pResult->colorTransform = colorTransform;
     pResult->viewAngle = viewAngle;
     pResult->scale = scale;
     pResult->amplitude = amplitude;
@@ -459,6 +461,7 @@ QJsonObject ModeReportItem::toJson() const
     obj["unit"] = unit;
     obj["view"] = (int) view;
     obj["colorMap"] = (int) colorMap;
+    obj["colorTransform"] = (int) colorTransform;
     obj["viewAngle"] = viewAngle;
     obj["scale"] = scale;
     obj["amplitude"] = amplitude;
@@ -490,6 +493,8 @@ void ModeReportItem::fromJson(QJsonObject const& obj)
     unit = obj["unit"].toString();
     view = (ReportView) obj["view"].toInt();
     colorMap = (ReportColorMap) obj["colorMap"].toInt();
+    if (obj.contains("colorTransform"))
+        colorTransform = (ReportColorTransform) obj["colorTransform"].toInt();
     viewAngle = obj["viewAngle"].toDouble();
     scale = obj["scale"].toDouble();
     amplitude = obj["amplitude"].toDouble();
