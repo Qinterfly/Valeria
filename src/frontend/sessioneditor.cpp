@@ -4,6 +4,7 @@
 #include <QInputDialog>
 #include <QLabel>
 #include <QListWidget>
+#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QToolBar>
 #include <QVBoxLayout>
@@ -195,21 +196,18 @@ bool ResponseEditor::mergeSelectedBundle()
 }
 
 //! Rename the currently active bundle
-void ResponseEditor::renameBundle()
+void ResponseEditor::editBundle()
 {
+    // Get the bundle
     int iBundle = mpBundleList->currentRow();
     if (iBundle < 0)
         return;
     ResponseBundle& bundle = mCollection.get(iBundle);
-    bool isOk;
-    QString name = QInputDialog::getText(this, tr("Change bundle name"), tr("New name:"), QLineEdit::Normal, bundle.name, &isOk);
-    if (isOk)
-    {
-        bundle.name = name;
-        refresh();
-        qInfo() << tr("The selected bundle is renamed");
-        emit edited();
-    }
+
+    // Create the editor
+    ResponseBundleEditor* pEditor = new ResponseBundleEditor(bundle);
+    connect(pEditor, &ResponseBundleEditor::edited, this, &ResponseEditor::edited);
+    Utility::showAsDialog(pEditor, tr("Response Bundle Editor"), this, false);
 }
 
 //! Remove the currently selected bundle
@@ -367,7 +365,7 @@ QLayout* ResponseEditor::createBundleLayout()
     QToolBar* pToolBar = new QToolBar;
     pToolBar->addAction(QIcon(":/icons/list-add.svg"), tr("Add bundle"), this, &ResponseEditor::addSelectedBundle);
     pToolBar->addAction(QIcon(":/icons/list-merge.svg"), tr("Merge bundle"), this, &ResponseEditor::mergeSelectedBundle);
-    pToolBar->addAction(QIcon(":/icons/list-rename.svg"), tr("Rename bundle"), this, &ResponseEditor::renameBundle);
+    pToolBar->addAction(QIcon(":/icons/edit-edit.svg"), tr("Edit bundle"), this, &ResponseEditor::editBundle);
     pToolBar->addAction(QIcon(":/icons/list-remove.svg"), tr("Remove bundle"), this, &ResponseEditor::removeBundle);
     pToolBar->addSeparator();
     pToolBar->addAction(QIcon(":/icons/bundle-read.svg"), tr("Read bundle"), this, &ResponseEditor::readBundle);
@@ -465,4 +463,139 @@ void ResponseEditor::setBundleProperties()
 
     // Finish up the editing
     emit edited();
+}
+
+ResponseBundleEditor::ResponseBundleEditor(ResponseBundle& bundle, QWidget* pParent)
+    : QWidget(pParent)
+    , mBundle(bundle)
+{
+    setFont(Utility::getFont());
+    createContent();
+    refresh();
+}
+
+QSize ResponseBundleEditor::sizeHint() const
+{
+    return QSize(600, 600);
+}
+
+//! Update all the widgets
+void ResponseBundleEditor::refresh()
+{
+    // Set the name
+    QSignalBlocker blockerName(mpNameEdit);
+    mpNameEdit->setText(mBundle.name);
+
+    // Get the data
+    QString data;
+    QTextStream stream(&data, QIODevice::WriteOnly);
+    mBundle.write(stream);
+
+    // Set the data
+    QSignalBlocker blockerData(mpDataEdit);
+    mpDataEdit->clear();
+    mpDataEdit->setPlainText(data);
+}
+
+//! Create all the widgets
+void ResponseBundleEditor::createContent()
+{
+    // Create the name edit
+    mpNameEdit = new QLineEdit;
+    QHBoxLayout* pNameLayout = new QHBoxLayout;
+    pNameLayout->addWidget(new QLabel(tr("Name: ")));
+    pNameLayout->addWidget(mpNameEdit);
+
+    // Create the data edit
+    mpDataEdit = new QPlainTextEdit;
+    new ResponseBundleSyntaxHighlighter(mpDataEdit->document());
+    QFont dataFont = Utility::getMonospaceFont();
+    dataFont.setPointSize(dataFont.pointSize() - 1);
+    mpDataEdit->setFont(dataFont);
+
+    // Create the apply button
+    QPushButton* pApplyButton = new QPushButton(tr("Apply"));
+    connect(pApplyButton, &QPushButton::clicked, this, &ResponseBundleEditor::apply);
+    QHBoxLayout* pApplyLayout = new QHBoxLayout;
+    pApplyLayout->addStretch();
+    pApplyLayout->addWidget(pApplyButton);
+
+    // Combine all the widgets
+    QVBoxLayout* pMainLayout = new QVBoxLayout;
+    pMainLayout->addLayout(pNameLayout);
+    pMainLayout->addWidget(mpDataEdit);
+    pMainLayout->addLayout(pApplyLayout);
+    setLayout(pMainLayout);
+}
+
+//! Apply the changes
+void ResponseBundleEditor::apply()
+{
+    // Get the data
+    QString data = mpDataEdit->toPlainText();
+
+    // Set the data
+    QTextStream stream(&data, QIODevice::ReadOnly);
+    mBundle.read(stream);
+
+    // Set the name
+    mBundle.name = mpNameEdit->text();
+    mBundle.parseNameIntoProperties();
+
+    // Finish up the editing
+    refresh();
+    emit edited();
+}
+
+ResponseBundleSyntaxHighlighter::ResponseBundleSyntaxHighlighter(QTextDocument* pDocument)
+    : QSyntaxHighlighter(pDocument)
+{
+    // [Label] section headers, e.g. "[Response]"
+    mLabelFormat.setForeground(QColor("black"));
+    mLabelFormat.setFontWeight(QFont::Bold);
+
+    // Property name, e.g. "Name" in "Name = value"
+    mPropertyNameFormat.setForeground(QColor("blue"));
+
+    // The '=' character itself
+    mEqualsFormat.setForeground(QColor("gray"));
+
+    // Comments, starting with '#' or '//'
+    mCommentFormat.setFontItalic(true);
+
+    HighlightRule ruleLabel;
+    ruleLabel.pattern = QRegularExpression(R"(^\[.*\]$)");
+    ruleLabel.format = mLabelFormat;
+    mRules.append(ruleLabel);
+
+    HighlightRule rulePropertyName;
+    rulePropertyName.pattern = QRegularExpression(R"(^\s*\w+(?=\s*=))");
+    rulePropertyName.format = mPropertyNameFormat;
+    mRules.append(rulePropertyName);
+
+    HighlightRule ruleEquals;
+    ruleEquals.pattern = QRegularExpression(R"(=)");
+    ruleEquals.format = mEqualsFormat;
+    mRules.append(ruleEquals);
+
+    // Comment pattern kept separate so it can override earlier rules on the same line
+    mCommentPattern = QRegularExpression(R"((#|//).*$)");
+}
+
+void ResponseBundleSyntaxHighlighter::highlightBlock(QString const& text)
+{
+    for (HighlightRule const& rule : mRules)
+    {
+        QRegularExpressionMatchIterator it = rule.pattern.globalMatch(text);
+        while (it.hasNext())
+        {
+            QRegularExpressionMatch match = it.next();
+            setFormat(match.capturedStart(), match.capturedLength(), rule.format);
+        }
+    }
+
+    // Apply comment formatting last so it overrides label/property/equals
+    QRegularExpressionMatch commentMatch = mCommentPattern.match(text);
+    if (commentMatch.hasMatch())
+        setFormat(commentMatch.capturedStart(), commentMatch.capturedLength(), mCommentFormat);
 }

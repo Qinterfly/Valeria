@@ -37,6 +37,7 @@ int ResponseBundle::size() const
     return mResponses.size();
 }
 
+//! Get a response by its index
 Testlab::Response ResponseBundle::get(int index) const
 {
     if (index < 0 || index >= mResponses.size())
@@ -54,91 +55,24 @@ Testlab::Response ResponseBundle::get(int index) const
     return result;
 }
 
+//! Merge current set of responses with given ones
 void ResponseBundle::merge(Responses const& uResponses)
 {
     for (Testlab::Response const& v : uResponses)
         mResponses.push_back(v);
 }
 
+//! Get associated file suffix
 QString ResponseBundle::fileSuffix()
 {
     return "txt";
 }
 
-//! Write all the responses to a text file
-bool ResponseBundle::write(QString const& pathFile) const
-{
-    // Open file for writing
-    auto pFile = Utility::openFile(pathFile, fileSuffix(), QIODevice::WriteOnly);
-    if (!pFile)
-        return false;
-
-    // Create the stream
-    QTextStream stream(pFile.data());
-    stream.setFieldAlignment(QTextStream::AlignLeft);
-
-    // Helper functions
-    auto valueToString = [](double value) { return QString::number(value, 'g', 6); };
-    auto pointToString = [](Testlab::ResponsePoint const& point)
-    {
-        if (point.name.empty())
-            return QString();
-        QChar sign = point.sign > 0 ? '+' : '-';
-        QString component = QString::fromStdWString(point.component);
-        QString node = QString::fromStdWString(point.node);
-        QString direction = Utility::getDirLabel((ReportDirection) point.direction);
-        return QString("%1:%2:%3%4").arg(component, node, sign, direction);
-    };
-    auto writeProperty = [&stream](QString const& name, QString const& value)
-    {
-        if (value.isEmpty())
-            return;
-        stream << QString("%1 = %2\r\n").arg(name, value);
-    };
-
-    // Loop through all the responses
-    int numResponses = mResponses.size();
-    for (int iResponse = 0; iResponse != numResponses; ++iResponse)
-    {
-        Testlab::Response const& response = mResponses[iResponse];
-
-        // Write the label
-        stream << Qt::endl << "[Response]" << Qt::endl;
-
-        // Write the header
-        writeProperty("Name", QString::fromStdWString(response.header.name));
-        writeProperty("Point", pointToString(response.header.point));
-        writeProperty("RefPoint", pointToString(response.header.refPoint));
-        writeProperty("Unit", QString::fromStdWString(response.header.unit.name));
-        writeProperty("Type", QString::number((int) response.header.type));
-
-        // Write the data
-        int numData = response.keys.size();
-        for (int iData = 0; iData != numData; ++iData)
-        {
-            QString key = valueToString(response.keys[iData]);
-            QString real = valueToString(response.realValues[iData]);
-            QString imag = valueToString(response.imagValues[iData]);
-            stream << key << '\t' << real << '\t' << imag << Qt::endl;
-        }
-    }
-
-    return true;
-}
-
-//! Read responses from a text file
-bool ResponseBundle::read(QString const& pathFile)
+//! Read responses from a text stream
+bool ResponseBundle::read(QTextStream& stream)
 {
     // Erase the data
     *this = ResponseBundle();
-
-    // Open file for reading
-    auto pFile = Utility::openFile(pathFile, fileSuffix(), QIODevice::ReadOnly);
-    if (!pFile)
-        return false;
-
-    // Create the stream
-    QTextStream stream(pFile.data());
 
     // Helpers
     auto isEqual = [](QString const& lhs, QString const& rhs) { return lhs.compare(rhs, Qt::CaseInsensitive) == 0; };
@@ -241,11 +175,97 @@ bool ResponseBundle::read(QString const& pathFile)
         }
     }
 
+    return !mResponses.empty();
+}
+
+//! Write responses to a text stream
+bool ResponseBundle::write(QTextStream& stream) const
+{
+    // Helper functions
+    auto valueToString = [](double value) { return QString::number(value, 'g', 6); };
+    auto pointToString = [](Testlab::ResponsePoint const& point)
+    {
+        if (point.name.empty())
+            return QString();
+        QChar sign = point.sign > 0 ? '+' : '-';
+        QString component = QString::fromStdWString(point.component);
+        QString node = QString::fromStdWString(point.node);
+        QString direction = Utility::getDirLabel((ReportDirection) point.direction);
+        return QString("%1:%2:%3%4").arg(component, node, sign, direction);
+    };
+    auto writeProperty = [&stream](QString const& name, QString const& value)
+    {
+        if (value.isEmpty())
+            return;
+        stream << QString("%1 = %2\r\n").arg(name, value);
+    };
+
+    // Loop through all the responses
+    int numResponses = mResponses.size();
+    for (int iResponse = 0; iResponse != numResponses; ++iResponse)
+    {
+        Testlab::Response const& response = mResponses[iResponse];
+
+        // Write the label
+        stream << Qt::endl << "[Response]" << Qt::endl;
+
+        // Write the header
+        writeProperty("Name", QString::fromStdWString(response.header.name));
+        writeProperty("Point", pointToString(response.header.point));
+        writeProperty("RefPoint", pointToString(response.header.refPoint));
+        writeProperty("Unit", QString::fromStdWString(response.header.unit.name));
+        writeProperty("Type", QString::number((int) response.header.type));
+
+        // Write the data
+        int numData = response.keys.size();
+        for (int iData = 0; iData != numData; ++iData)
+        {
+            QString key = valueToString(response.keys[iData]);
+            QString real = valueToString(response.realValues[iData]);
+            QString imag = valueToString(response.imagValues[iData]);
+            stream << key << '\t' << real << '\t' << imag << Qt::endl;
+        }
+    }
+
+    return true;
+}
+
+//! Read responses from a text file
+bool ResponseBundle::read(QString const& pathFile)
+{
+    // Open file for reading
+    auto pFile = Utility::openFile(pathFile, fileSuffix(), QIODevice::ReadOnly);
+    if (!pFile)
+        return false;
+
+    // Create the stream
+    QTextStream stream(pFile.data());
+
+    // Read the data
+    bool isRead = read(stream);
+
     // Set the properties
     name = QFileInfo(pathFile).baseName();
     parseNameIntoProperties();
 
-    return !mResponses.empty();
+    return isRead;
+}
+
+//! Write responses to a text file
+bool ResponseBundle::write(QString const& pathFile) const
+{
+    // Open file for writing
+    auto pFile = Utility::openFile(pathFile, fileSuffix(), QIODevice::WriteOnly);
+    if (!pFile)
+        return false;
+
+    // Create the stream
+    QTextStream stream(pFile.data());
+
+    // Write the data
+    bool isWrite = write(stream);
+
+    return isWrite;
 }
 
 //! Estimate frequency and force by name

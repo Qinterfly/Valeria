@@ -2,6 +2,8 @@
 #define SESSIONEDITOR_H
 
 #include <QLabel>
+#include <QRegularExpression>
+#include <QSyntaxHighlighter>
 #include <QWidget>
 
 #include "session.h"
@@ -11,6 +13,7 @@ QT_FORWARD_DECLARE_CLASS(QSettings)
 QT_FORWARD_DECLARE_CLASS(QListWidget)
 QT_FORWARD_DECLARE_CLASS(QDoubleSpinBox)
 QT_FORWARD_DECLARE_CLASS(QCheckBox)
+QT_FORWARD_DECLARE_CLASS(QPlainTextEdit)
 
 namespace Frontend
 {
@@ -18,6 +21,7 @@ namespace Frontend
 class GeometryView;
 class ResponseEditor;
 
+//! Class to manipulate current geometry and response context
 class SessionEditor : public QWidget
 {
     Q_OBJECT
@@ -52,6 +56,7 @@ private:
     ResponseEditor* mpResponseEditor;
 };
 
+//! Class to edit and view collection of response bundles
 class ResponseEditor : public QWidget
 {
     Q_OBJECT
@@ -67,7 +72,7 @@ public:
     bool addBundle(QStringList const& paths);
     bool addSelectedBundle();
     bool mergeSelectedBundle();
-    void renameBundle();
+    void editBundle();
     void removeBundle();
     void removeAllBundles();
     bool readBundle();
@@ -102,6 +107,60 @@ private:
     // Response
     QListWidget* mpResponseList;
     QLabel* mpResponseCountLabel;
+};
+
+//! Class to edit a response bundle
+class ResponseBundleEditor : public QWidget
+{
+    Q_OBJECT
+
+public:
+    ResponseBundleEditor(Backend::Core::ResponseBundle& bundle, QWidget* pParent = nullptr);
+    virtual ~ResponseBundleEditor() = default;
+
+    QSize sizeHint() const override;
+
+    void refresh();
+
+signals:
+    void edited();
+
+private:
+    void createContent();
+    void apply();
+
+private:
+    Backend::Core::ResponseBundle& mBundle;
+    QLineEdit* mpNameEdit;
+    QPlainTextEdit* mpDataEdit;
+};
+
+//! Class to highlight text syntax of a response bundle
+class ResponseBundleSyntaxHighlighter : public QSyntaxHighlighter
+{
+    Q_OBJECT
+
+public:
+    ResponseBundleSyntaxHighlighter(QTextDocument* pDocument);
+
+protected:
+    void highlightBlock(QString const& text) override;
+
+private:
+    struct HighlightRule
+    {
+        QRegularExpression pattern;
+        QTextCharFormat format;
+    };
+
+    QVector<HighlightRule> mRules;
+
+    QTextCharFormat mLabelFormat;
+    QTextCharFormat mPropertyNameFormat;
+    QTextCharFormat mEqualsFormat;
+    QTextCharFormat mCommentFormat;
+
+    QRegularExpression mCommentPattern;
 };
 }
 

@@ -4,6 +4,8 @@
 #include <QList>
 #include <QString>
 
+QT_FORWARD_DECLARE_CLASS(QTextStream)
+
 namespace Testlab
 {
 class IProject;
@@ -30,8 +32,10 @@ public:
     void merge(Responses const& uResponses);
 
     static QString fileSuffix();
-    bool write(QString const& pathFile) const;
+    bool read(QTextStream& stream);
+    bool write(QTextStream& stream) const;
     bool read(QString const& pathFile);
+    bool write(QString const& pathFile) const;
     void parseNameIntoProperties();
 
 public:
