@@ -30,8 +30,10 @@ std::vector<double> convert(QList<double> const& data);
 Eigen::Vector3d convert3d(std::vector<double> const& data);
 int findClosestKey(Testlab::Response const& response, double searchKey);
 QString getDirLabel(Backend::Core::ReportDirection dir);
+Backend::Core::ReportDirection getDirValue(QString const& label);
 Backend::Core::ReportPoint getPoint(std::wstring const& name);
 double getSignedAbsMax(Eigen::Vector3d const& data);
+double parsePostfixValue(QString const& text, QString const& postfix);
 
 // Response
 Testlab::Response multiplyResponse(Testlab::Response const& response, double factor);

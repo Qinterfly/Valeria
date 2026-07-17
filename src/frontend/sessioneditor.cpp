@@ -130,22 +130,6 @@ bool ResponseEditor::addBundle(Responses const& responses)
     if (responses.empty())
         return false;
 
-    // Helper function to parse name
-    auto parseValue = [](QString const& text, QString const& postfix)
-    {
-        QString escapedPostfix = QRegularExpression::escape(postfix);
-        QString pattern = QString("(-?\\d+[\\.,]?\\d*)\\s*%1").arg(escapedPostfix);
-        QRegularExpression re(pattern);
-        QRegularExpressionMatch match = re.match(text);
-        if (match.hasMatch())
-        {
-            QString valueStr = match.captured(1);
-            valueStr.replace(",", ".");
-            return valueStr.toDouble();
-        }
-        return 0.0;
-    };
-
     // Construct the default name
     QString path = QString::fromStdWString(responses.front().header.path);
     QString name;
@@ -171,22 +155,6 @@ bool ResponseEditor::addBundle(Responses const& responses)
 
     // Construct the bundle
     ResponseBundle bundle(name, responses);
-    bundle.freq = parseValue(name, "Гц");
-    bundle.force = parseValue(name, "Н");
-
-    // Estimate the frequency by the first root, if necessary
-    if (bundle.freq < std::numeric_limits<double>::epsilon())
-    {
-        if (!responses.empty())
-        {
-            Testlab::Response const& response = responses.front();
-            QList<double> xData = Backend::Utility::convert(response.keys);
-            QList<double> yData = Backend::Utility::convert(response.realValues);
-            auto roots = Backend::Utility::findRoots(xData, yData);
-            if (!roots.empty())
-                bundle.freq = roots.front().key;
-        }
-    }
 
     // Add to the collection
     mCollection.add(bundle);
@@ -265,6 +233,70 @@ void ResponseEditor::removeAllBundles()
     qInfo() << tr("All the response bundles are removed");
 }
 
+//! Read a bundle from a file
+bool ResponseEditor::readBundle()
+{
+    // Get the file path
+    QString pathFile = QFileDialog::getOpenFileName(this, tr("Read Response Bundle"), Utility::getLastDirectory(mSettings).path(),
+                                                    tr("Response bundle format (*.%1)").arg(ResponseBundle::fileSuffix()));
+    if (pathFile.isEmpty())
+        return false;
+
+    // Read the document
+    ResponseBundle bundle;
+    if (bundle.read(pathFile))
+    {
+        mCollection.add(bundle);
+        refresh();
+        emit edited();
+        qInfo() << tr("Response bundle has been read from the file: %1").arg(pathFile);
+        return true;
+    }
+    else
+    {
+        qWarning() << tr("Could not read a response bundle from the file: %1").arg(pathFile);
+    }
+    return false;
+}
+
+//! Write a bundle to a file
+bool ResponseEditor::writeBundle()
+{
+    // Get the selected bundle
+    int iBundle = mpBundleList->currentRow();
+    if (iBundle < 0 || iBundle > mCollection.count())
+    {
+        qWarning() << tr("Response bundle selection is not valid for writing");
+        return false;
+    }
+    ResponseBundle const& bundle = mCollection.get(iBundle);
+
+    // Get the file path
+    QString fileName = Utility::getLastDirectory(mSettings).path() + QDir::separator() + bundle.name;
+    QString pathFile = QFileDialog::getSaveFileName(this, tr("Write Response Bundle"), fileName,
+                                                    tr("Response bundle format (*.%1)").arg(ResponseBundle::fileSuffix()));
+    if (pathFile.isEmpty())
+        return false;
+
+    // Modify the suffix, if necessary
+    Utility::modifyFileSuffix(pathFile, ResponseBundle::fileSuffix());
+
+    // Store the path
+    Utility::setLastPathFile(mSettings, pathFile);
+
+    // Write the bundle
+    if (bundle.write(pathFile))
+    {
+        qInfo() << tr("Response bundle has been written to the file: %1").arg(pathFile);
+        return true;
+    }
+    else
+    {
+        qWarning() << tr("Could not write the response bundle to the file: %1").arg(pathFile);
+    }
+    return false;
+}
+
 //! Update the widgets content
 void ResponseEditor::refresh()
 {
@@ -337,6 +369,9 @@ QLayout* ResponseEditor::createBundleLayout()
     pToolBar->addAction(QIcon(":/icons/list-merge.svg"), tr("Merge bundle"), this, &ResponseEditor::mergeSelectedBundle);
     pToolBar->addAction(QIcon(":/icons/list-rename.svg"), tr("Rename bundle"), this, &ResponseEditor::renameBundle);
     pToolBar->addAction(QIcon(":/icons/list-remove.svg"), tr("Remove bundle"), this, &ResponseEditor::removeBundle);
+    pToolBar->addSeparator();
+    pToolBar->addAction(QIcon(":/icons/bundle-read.svg"), tr("Read bundle"), this, &ResponseEditor::readBundle);
+    pToolBar->addAction(QIcon(":/icons/bundle-write.svg"), tr("Write bundle"), this, &ResponseEditor::writeBundle);
 
     // Create the list
     mpBundleList = new QListWidget;

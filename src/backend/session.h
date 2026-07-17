@@ -29,6 +29,11 @@ public:
 
     void merge(Responses const& uResponses);
 
+    static QString fileSuffix();
+    bool write(QString const& pathFile) const;
+    bool read(QString const& pathFile);
+    void parseNameIntoProperties();
+
 public:
     QString name;
     double freq;

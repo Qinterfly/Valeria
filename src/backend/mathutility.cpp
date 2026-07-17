@@ -2,6 +2,7 @@
 #include <complex.h>
 #include <QMap>
 #include <QRect>
+#include <QRegularExpression>
 #include <QtMath>
 
 #include "constants.h"
@@ -75,6 +76,20 @@ QString getDirLabel(ReportDirection dir)
     return QString();
 }
 
+//! Get direction value
+ReportDirection getDirValue(QString const& label)
+{
+    QMap<QString, ReportDirection> map = {
+        {"X", ReportDirection::kX},
+        {"Y", ReportDirection::kY},
+        {"Z", ReportDirection::kZ},
+        {"N", ReportDirection::kN},
+    };
+    if (map.contains(label))
+        return map[label];
+    return ReportDirection::kNone;
+}
+
 //! Get point out of full node name
 ReportPoint getPoint(std::wstring const& name)
 {
@@ -93,6 +108,22 @@ double getSignedAbsMax(Vector3d const& data)
     }
     return result;
 }
+
+//! Parse value which has a postfix
+double parsePostfixValue(QString const& text, QString const& postfix)
+{
+    QString escapedPostfix = QRegularExpression::escape(postfix);
+    QString pattern = QString("(-?\\d+[\\.,]?\\d*)\\s*%1").arg(escapedPostfix);
+    QRegularExpression re(pattern);
+    QRegularExpressionMatch match = re.match(text);
+    if (match.hasMatch())
+    {
+        QString valueStr = match.captured(1);
+        valueStr.replace(",", ".");
+        return valueStr.toDouble();
+    }
+    return 0.0;
+};
 
 //! Multiply real and imaginary parts of response by the specified factor
 Testlab::Response multiplyResponse(Testlab::Response const& response, double factor)
@@ -625,7 +656,7 @@ std::vector<Root> findRoots(QList<double> const& keys, QList<double> const& valu
     int numValues = values.size();
     std::vector<Root> roots;
     roots.reserve(numValues);
-    for (int i = 0; i != numValues - 1; ++i)
+    for (int i = 0; i < numValues - 1; ++i)
     {
         double y1 = values[i];
         double y2 = values[i + 1];

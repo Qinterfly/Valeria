@@ -1,4 +1,5 @@
 #include <config.h>
+#include <testlab/common.h>
 
 #include "fileutility.h"
 #include "reportdefaults.h"
@@ -311,6 +312,27 @@ void TestFrontend::writeDocument()
     ReportDocument compareDocument;
     QVERIFY(compareDocument.read(outputPathFile));
     QVERIFY(compareDocument.write(checkPathFile));
+}
+
+//! Export bundle to a file
+void TestFrontend::writeBundle()
+{
+    QString pathFile = Utility::combineFilePath(OUTPUT_DIR, "MC-21.txt");
+
+    // Get the bundle
+    ResponseEditor* pResponseEditor = mpSessionEditor->responseEditor();
+    ResponseBundle const& baseBundle = pResponseEditor->collection().get(0);
+
+    // Write the bundle
+    QVERIFY(baseBundle.write(pathFile));
+
+    // Read the bundle
+    ResponseBundle compareBundle;
+    QVERIFY(compareBundle.read(pathFile));
+
+    // Check the result
+    QVERIFY(baseBundle.size() == compareBundle.size());
+    QVERIFY(baseBundle.get(0).keys.size() == compareBundle.get(0).keys.size());
 }
 
 //! Write the report to a file

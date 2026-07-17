@@ -70,6 +70,8 @@ public:
     void renameBundle();
     void removeBundle();
     void removeAllBundles();
+    bool readBundle();
+    bool writeBundle();
 
 signals:
     void edited();

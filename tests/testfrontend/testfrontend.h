@@ -27,6 +27,7 @@ private slots:
     void setMode3DPage();
     void setDiagramPage();
     void writeDocument();
+    void writeBundle();
     void printReport();
 
 private:
