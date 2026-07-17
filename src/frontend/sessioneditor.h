@@ -90,6 +90,7 @@ private:
 
     // Slots
     void processBundleSelected();
+    void processBundleEdited();
     void setBundleProperties();
 
 private:

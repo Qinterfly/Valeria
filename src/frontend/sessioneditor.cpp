@@ -206,7 +206,7 @@ void ResponseEditor::editBundle()
 
     // Create the editor
     ResponseBundleEditor* pEditor = new ResponseBundleEditor(bundle);
-    connect(pEditor, &ResponseBundleEditor::edited, this, &ResponseEditor::edited);
+    connect(pEditor, &ResponseBundleEditor::edited, this, &ResponseEditor::processBundleEdited);
     Utility::showAsDialog(pEditor, tr("Response Bundle Editor"), this, false);
 }
 
@@ -444,6 +444,14 @@ void ResponseEditor::processBundleSelected()
 {
     refresh();
     emit selected();
+}
+
+//! Process bundle edition
+void ResponseEditor::processBundleEdited()
+{
+    qInfo() << tr("Response bundle has been edited");
+    refresh();
+    emit edited();
 }
 
 //! Set the current bundle properties
