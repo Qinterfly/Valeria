@@ -167,6 +167,8 @@ bool ResponseBundle::read(QString const& pathFile)
     {
         QString line = stream.readLine();
         QString trimmed = line.trimmed();
+
+        // Finish the response block if the empty line occurs
         if (trimmed.isEmpty())
         {
             pResponse = nullptr;
@@ -174,16 +176,19 @@ bool ResponseBundle::read(QString const& pathFile)
         }
 
         // Skip the comments
-        if (trimmed.startsWith('#'))
+        if (trimmed.startsWith('#') || trimmed.startsWith("//"))
             continue;
 
         // Parse the block label
         if (isEqual(trimmed, "[Response]"))
         {
             pResponse = &mResponses.emplace_back();
-            pResponse->header.type = Testlab::ResponseType::kAccel;
             continue;
         }
+
+        // Do not parse if the response is not created
+        if (!pResponse)
+            continue;
 
         // Parse the header
         int pos = trimmed.indexOf('=');
@@ -191,6 +196,8 @@ bool ResponseBundle::read(QString const& pathFile)
         {
             QString key = trimmed.left(pos).trimmed();
             QString value = trimmed.mid(pos + 1).trimmed();
+
+            // Parse the properties
             if (isEqual(key, "Name"))
                 pResponse->header.name = value.toStdWString();
             else if (isEqual(key, "Point"))
@@ -201,17 +208,22 @@ bool ResponseBundle::read(QString const& pathFile)
                 pResponse->header.unit.name = value.toStdWString();
             else if (isEqual(key, "Type"))
                 pResponse->header.type = (Testlab::ResponseType) value.toInt();
+
+            // Set default properties
             if (pResponse->header.name.empty() && !pResponse->header.point.name.empty())
                 pResponse->header.name = pResponse->header.point.name;
+            if (pResponse->header.type == Testlab::ResponseType::kNone)
+                pResponse->header.type = Testlab::ResponseType::kAccel;
+
             continue;
         }
 
         // Parse the data
-        if (!pResponse)
-            continue;
         line.replace(',', '.');
         auto fields = line.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
         int numFields = fields.size();
+        if (numFields > 3)
+            continue;
         if (numFields >= 2)
         {
             bool okKey = false, okReal = false, okImag = true;
