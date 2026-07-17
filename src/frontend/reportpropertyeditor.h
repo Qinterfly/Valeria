@@ -78,6 +78,7 @@ public:
         kModeVertexSize,
         kModeLineWidth,
         kModeShowUndeformed,
+        kModeShowScalarBar,
 
         // Diagram
         kDiagramTitle,
@@ -86,7 +87,8 @@ public:
         kDiagramUndeformedOpacity,
         kDiagramLineWidth,
         kDiagramBarWidth,
-        kDiagramShowRuler
+        kDiagramShowRuler,
+        kDiagramShowScalarBar
     };
 
     ReportPropertyEditor(QWidget* pParent = nullptr);

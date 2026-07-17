@@ -57,6 +57,7 @@ enum class ReportColorMap
     kBlueToRed3,
     kVaradis,
     kJet,
+    kHalfJet,
     kPlasma,
 };
 

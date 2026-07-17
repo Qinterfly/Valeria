@@ -192,7 +192,8 @@ void DiagramReportSceneItem::drawDeformedState()
         drawSection(pItem->sections[i]);
 
     // Show the scalar bar
-    drawScalarBar();
+    if (pItem->showScalarBar)
+        drawScalarBar();
 }
 
 //! Render elements using one color

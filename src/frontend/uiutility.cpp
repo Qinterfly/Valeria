@@ -229,6 +229,9 @@ vtkSmartPointer<vtkLookupTable> createLookupTable(ReportColorMap colorMap, doubl
     case ReportColorMap::kJet:
         result = Utility::createJetColorMap();
         break;
+    case ReportColorMap::kHalfJet:
+        result = Utility::createHalfJetColorMap();
+        break;
     case ReportColorMap::kPlasma:
         result = Utility::createPlasmaColorMap();
         break;
@@ -242,7 +245,7 @@ vtkSmartPointer<vtkLookupTable> createLookupTable(ReportColorMap colorMap, doubl
 }
 
 //! Build the lookup table out of the transfer function
-vtkSmartPointer<vtkLookupTable> buildLookupTable(vtkSmartPointer<vtkColorTransferFunction> ctf)
+vtkSmartPointer<vtkLookupTable> buildLookupTable(vtkSmartPointer<vtkColorTransferFunction> ctf, double tStart, double tEnd)
 {
     // Constants
     int const kTableSize = 256;
@@ -257,10 +260,11 @@ vtkSmartPointer<vtkLookupTable> buildLookupTable(vtkSmartPointer<vtkColorTransfe
     for (auto i = 0; i != numColors; ++i)
     {
         std::array<double, 3> rgb;
-        ctf->GetColor(static_cast<double>(i) / lut->GetNumberOfColors(), rgb.data());
+        double t = tStart + (tEnd - tStart) * i / numColors;
+        ctf->GetColor(t, rgb.data());
         std::array<double, 4> rgba{0.0, 0.0, 0.0, 1.0};
         std::copy(std::begin(rgb), std::end(rgb), std::begin(rgba));
-        lut->SetTableValue(static_cast<vtkIdType>(i), rgba.data());
+        lut->SetTableValue((vtkIdType) i, rgba.data());
     }
 
     return lut;
@@ -334,6 +338,18 @@ vtkSmartPointer<vtkLookupTable> createJetColorMap()
     ctf->AddRGBPoint(0.66, 1.0, 1.0, 0.0); // Yellow
     ctf->AddRGBPoint(1.0, 1.0, 0.0, 0.0);  // Red
     return buildLookupTable(ctf);
+}
+
+//! Create the upper half Jet color map
+vtkSmartPointer<vtkLookupTable> createHalfJetColorMap()
+{
+    vtkNew<vtkColorTransferFunction> ctf;
+    ctf->SetColorSpaceToRGB();
+    ctf->AddRGBPoint(0.0, 0.0, 0.0, 1.0);  // Blue
+    ctf->AddRGBPoint(0.33, 0.0, 1.0, 1.0); // Cyan
+    ctf->AddRGBPoint(0.66, 1.0, 1.0, 0.0); // Yellow
+    ctf->AddRGBPoint(1.0, 1.0, 0.0, 0.0);  // Red
+    return buildLookupTable(ctf, 0.5, 1.0);
 }
 
 //! Create the Plasma color map

@@ -207,6 +207,7 @@ public:
     double vertexSize;
     double lineWidth;
     bool showUndeformed;
+    bool showScalarBar;
 };
 
 //! Class to define a layout of a diagram element
@@ -249,6 +250,7 @@ public:
     double lineWidth;
     double barWidth;
     bool showRuler;
+    bool showScalarBar;
 };
 
 ReportItem* createItem(ReportItem::Type type);

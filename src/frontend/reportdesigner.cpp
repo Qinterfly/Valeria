@@ -894,17 +894,20 @@ void ReportDesigner::resolveItemLinks()
                     pModeSlaveItem->amplitude = pModeMasterItem->amplitude;
                     pModeSlaveItem->maskComponents = pModeMasterItem->maskComponents;
                     pModeSlaveItem->showUndeformed = pModeMasterItem->showUndeformed;
+                    pModeSlaveItem->showScalarBar = pModeMasterItem->showScalarBar;
                 }
                 else if (pMasterItem->type() == ReportItem::kDiagram)
                 {
-                    DiagramReportItem* pModeSlaveItem = (DiagramReportItem*) pSlaveItem;
-                    DiagramReportItem* pModeMasterItem = (DiagramReportItem*) pMasterItem;
-                    pModeSlaveItem->font = pModeMasterItem->font;
-                    pModeSlaveItem->unit = pModeMasterItem->unit;
-                    pModeSlaveItem->colorMap = pModeMasterItem->colorMap;
-                    pModeSlaveItem->scale = pModeMasterItem->scale;
-                    pModeSlaveItem->amplitude = pModeMasterItem->amplitude;
-                    pModeSlaveItem->maskComponents = pModeMasterItem->maskComponents;
+                    DiagramReportItem* pDiagramSlaveItem = (DiagramReportItem*) pSlaveItem;
+                    DiagramReportItem* pDiagramMasterItem = (DiagramReportItem*) pMasterItem;
+                    pDiagramSlaveItem->font = pDiagramMasterItem->font;
+                    pDiagramSlaveItem->unit = pDiagramMasterItem->unit;
+                    pDiagramSlaveItem->colorMap = pDiagramMasterItem->colorMap;
+                    pDiagramSlaveItem->scale = pDiagramMasterItem->scale;
+                    pDiagramSlaveItem->amplitude = pDiagramMasterItem->amplitude;
+                    pDiagramSlaveItem->maskComponents = pDiagramMasterItem->maskComponents;
+                    pDiagramSlaveItem->showRuler = pDiagramMasterItem->showRuler;
+                    pDiagramSlaveItem->showScalarBar = pDiagramMasterItem->showScalarBar;
                 }
             }
         }

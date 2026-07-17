@@ -1646,6 +1646,7 @@ QComboBox* createColorMapSelector()
     pResult->addItem(QObject::tr("Blue-red 3"), (int) ReportColorMap::kBlueToRed3);
     pResult->addItem(QObject::tr("Varadis"), (int) ReportColorMap::kVaradis);
     pResult->addItem(QObject::tr("Jet"), (int) ReportColorMap::kJet);
+    pResult->addItem(QObject::tr("Half-Jet"), (int) ReportColorMap::kHalfJet);
     pResult->addItem(QObject::tr("Plasma"), (int) ReportColorMap::kPlasma);
     return pResult;
 }

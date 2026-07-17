@@ -228,6 +228,10 @@ void ReportPropertyEditor::addModeProperties(ModeReportItem* pItem)
     QtVariantProperty* pShowUndeformedProperty = mpManager->addProperty(kModeShowUndeformed, QMetaType::Bool, tr("Show undeformed"));
     pShowUndeformedProperty->setValue(pItem->showUndeformed);
     mpEditor->addProperty(pShowUndeformedProperty);
+
+    QtVariantProperty* pShowScalarBarProperty = mpManager->addProperty(kModeShowScalarBar, QMetaType::Bool, tr("Show scalar bar"));
+    pShowScalarBarProperty->setValue(pItem->showScalarBar);
+    mpEditor->addProperty(pShowScalarBarProperty);
 }
 
 //! Create properties specific for diagram items
@@ -261,6 +265,10 @@ void ReportPropertyEditor::addDiagramProperties(DiagramReportItem* pItem)
     QtVariantProperty* pShowRulerProperty = mpManager->addProperty(kDiagramShowRuler, QMetaType::Bool, tr("Show ruler"));
     pShowRulerProperty->setValue(pItem->showRuler);
     mpEditor->addProperty(pShowRulerProperty);
+
+    QtVariantProperty* pShowScalarBarProperty = mpManager->addProperty(kDiagramShowScalarBar, QMetaType::Bool, tr("Show scalar bar"));
+    pShowScalarBarProperty->setValue(pItem->showScalarBar);
+    mpEditor->addProperty(pShowScalarBarProperty);
 }
 
 //! Change the item property value
@@ -369,6 +377,9 @@ void ReportPropertyEditor::setValue(QtProperty* pProperty, QVariant value)
     case kModeShowUndeformed:
         static_cast<ModeReportItem*>(pItem)->showUndeformed = value.toBool();
         break;
+    case kModeShowScalarBar:
+        static_cast<ModeReportItem*>(pItem)->showScalarBar = value.toBool();
+        break;
 
     // Diagram
     case kDiagramTitle:
@@ -391,6 +402,9 @@ void ReportPropertyEditor::setValue(QtProperty* pProperty, QVariant value)
         break;
     case kDiagramShowRuler:
         static_cast<DiagramReportItem*>(pItem)->showRuler = value.toBool();
+        break;
+    case kDiagramShowScalarBar:
+        static_cast<DiagramReportItem*>(pItem)->showScalarBar = value.toBool();
         break;
 
     default:

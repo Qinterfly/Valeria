@@ -407,6 +407,7 @@ ModeReportItem::ModeReportItem()
     vertexSize = 5.0;
     lineWidth = 2.0;
     showUndeformed = true;
+    showScalarBar = true;
 }
 
 ModeReportItem::ModeReportItem(ReportItem const* pAnother)
@@ -445,6 +446,7 @@ ReportItem* ModeReportItem::clone() const
     pResult->vertexSize = vertexSize;
     pResult->lineWidth = lineWidth;
     pResult->showUndeformed = showUndeformed;
+    pResult->showScalarBar = showScalarBar;
 
     return pResult;
 }
@@ -475,6 +477,7 @@ QJsonObject ModeReportItem::toJson() const
     obj["vertexSize"] = vertexSize;
     obj["lineWidth"] = lineWidth;
     obj["showUndeformed"] = showUndeformed;
+    obj["showScalarBar"] = showScalarBar;
 
     return obj;
 }
@@ -505,6 +508,8 @@ void ModeReportItem::fromJson(QJsonObject const& obj)
     vertexSize = obj["vertexSize"].toDouble();
     lineWidth = obj["lineWidth"].toDouble();
     showUndeformed = obj["showUndeformed"].toBool();
+    if (obj.contains("showScalarBar"))
+        showScalarBar = obj["showScalarBar"].toBool();
 }
 
 DiagramReportItem::DiagramReportItem()
@@ -524,6 +529,7 @@ DiagramReportItem::DiagramReportItem()
     lineWidth = 2.0;
     barWidth = 0.01;
     showRuler = false;
+    showScalarBar = true;
 }
 
 DiagramReportItem::DiagramReportItem(ReportItem const* pAnother)
@@ -562,6 +568,7 @@ ReportItem* DiagramReportItem::clone() const
     pResult->lineWidth = lineWidth;
     pResult->barWidth = barWidth;
     pResult->showRuler = showRuler;
+    pResult->showScalarBar = showScalarBar;
 
     return pResult;
 }
@@ -601,6 +608,7 @@ QJsonObject DiagramReportItem::toJson() const
     obj["lineWidth"] = lineWidth;
     obj["barWidth"] = barWidth;
     obj["showRuler"] = showRuler;
+    obj["showScalarBar"] = showScalarBar;
 
     return obj;
 }
@@ -636,6 +644,8 @@ void DiagramReportItem::fromJson(QJsonObject const& obj)
     lineWidth = obj["lineWidth"].toDouble();
     barWidth = obj["barWidth"].toDouble();
     showRuler = obj["showRuler"].toBool();
+    if (obj.contains("showScalarBar"))
+        showScalarBar = obj["showScalarBar"].toBool();
 }
 
 ReportItem* Backend::Core::createItem(ReportItem::Type type)

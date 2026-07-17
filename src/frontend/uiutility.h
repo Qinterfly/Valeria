@@ -59,13 +59,14 @@ QDialog* showAsDialog(QWidget* pWidget, QString const& title = QString(), QWidge
 
 // Render: color scheme
 vtkSmartPointer<vtkLookupTable> createLookupTable(Backend::Core::ReportColorMap colorMap, double lower, double upper);
-vtkSmartPointer<vtkLookupTable> buildLookupTable(vtkSmartPointer<vtkColorTransferFunction> ctf);
+vtkSmartPointer<vtkLookupTable> buildLookupTable(vtkSmartPointer<vtkColorTransferFunction> ctf, double tStart = 0.0, double tEnd = 1.0);
 vtkSmartPointer<vtkLookupTable> createCoolToWarmColorMap();
 vtkSmartPointer<vtkLookupTable> createBlueToRedColorMap1();
 vtkSmartPointer<vtkLookupTable> createBlueToRedColorMap2();
 vtkSmartPointer<vtkLookupTable> createBlueToRedColorMap3();
 vtkSmartPointer<vtkLookupTable> createVaradisColorMap();
 vtkSmartPointer<vtkLookupTable> createJetColorMap();
+vtkSmartPointer<vtkLookupTable> createHalfJetColorMap();
 vtkSmartPointer<vtkLookupTable> createPlasmaColorMap();
 
 // Render: view

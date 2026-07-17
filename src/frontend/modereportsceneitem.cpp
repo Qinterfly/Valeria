@@ -299,7 +299,8 @@ void ModeReportSceneItem::drawDeformedState()
     }
 
     // Show the scalar bar
-    drawScalarBar();
+    if (pItem->showScalarBar)
+        drawScalarBar();
 }
 
 //! Render color interpolated vertices
