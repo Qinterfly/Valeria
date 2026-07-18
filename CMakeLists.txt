@@ -8,8 +8,8 @@ set(APP_NAME Valeria)
 set(APP_CREATOR "Pavel Lakiza")
 ## Version
 set(VERSION_MAJOR 0)
-set(VERSION_MINOR 8)
-set(VERSION_PATCH 9)
+set(VERSION_MINOR 9)
+set(VERSION_PATCH 0)
 set(VERSION_FULL ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 ## Directories
 set(INPUT_DIR ${CMAKE_SOURCE_DIR}/input)

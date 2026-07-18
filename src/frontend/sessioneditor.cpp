@@ -11,6 +11,7 @@
 #include <QVBoxLayout>
 
 #include "customlineedit.h"
+#include "customplot.h"
 #include "customtabwidget.h"
 #include "geometryview.h"
 #include "mathutility.h"
@@ -436,6 +437,10 @@ QLayout* ResponseEditor::createBundleLayout()
 //! Create response related widgets
 QLayout* ResponseEditor::createResponseLayout()
 {
+    // Create the toolbar
+    QToolBar* pToolBar = new QToolBar;
+    pToolBar->addAction(QIcon(":/icons/draw-graph.svg"), tr("Plot responses"), this, &ResponseEditor::plotResponses);
+
     // Create the label
     mpResponseCountLabel = new QLabel;
 
@@ -447,6 +452,7 @@ QLayout* ResponseEditor::createResponseLayout()
     // Create the layout
     QVBoxLayout* pLayout = new QVBoxLayout;
     pLayout->setContentsMargins(0, 0, 0, 5);
+    pLayout->addWidget(pToolBar);
     pLayout->addWidget(mpResponseCountLabel);
     pLayout->addWidget(mpResponseList);
     return pLayout;
@@ -484,6 +490,149 @@ void ResponseEditor::setBundleProperties()
 
     // Finish up the editing
     emit edited();
+}
+
+//! Plot selected responses
+void ResponseEditor::plotResponses()
+{
+    // Get the current bundle
+    int iBundle = mpBundleList->currentRow();
+    if (iBundle < 0)
+        return;
+    ResponseBundle const& bundle = mCollection.get(iBundle);
+
+    // Get the selected responses
+    QModelIndexList indices = mpResponseList->selectionModel()->selectedIndexes();
+    if (indices.isEmpty())
+    {
+        qWarning() << tr("There are no selected responses to be plotted");
+        return;
+    }
+    Responses responses;
+    for (QModelIndex const& index : std::as_const(indices))
+    {
+        int iResponse = index.row();
+        if (iResponse >= 0 && iResponse < bundle.size())
+            responses.push_back(bundle.get(iResponse));
+    }
+
+    // Show the view
+    ResponseView* pView = new ResponseView;
+    Utility::showAsDialog(pView, tr("Response View"), this, false);
+    pView->plot(responses);
+}
+
+ResponseView::ResponseView(QWidget* pParent)
+    : QWidget(pParent)
+{
+    setFont(Utility::getFont());
+    createContent();
+}
+
+QSize ResponseView::sizeHint() const
+{
+    return QSize(600, 600);
+}
+
+//! Remove all the graphs
+void ResponseView::clear()
+{
+    mpRealPlot->clear();
+    mpImagPlot->clear();
+    mpRealPlot->replot();
+    mpImagPlot->replot();
+}
+
+//! Render the responses
+void ResponseView::plot(std::vector<Testlab::Response> const& responses)
+{
+    // Constants
+    QList<ReportCurve> const kCurves = ReportDefaults::curves();
+
+    // Clear all the plottables
+    clear();
+
+    // Render all the responses
+    int numResponses = responses.size();
+    for (int iResponse = 0; iResponse != numResponses; ++iResponse)
+    {
+        // Get the response
+        Testlab::Response const& response = responses[iResponse];
+        QString name = QString::fromStdWString(response.header.name);
+
+        // Slice the data
+        if (response.keys.empty())
+            continue;
+        QList<double> keys = Backend::Utility::convert(response.keys);
+        QList<double> realValues = Backend::Utility::convert(response.realValues);
+        QList<double> imagValues = Backend::Utility::convert(response.imagValues);
+
+        // Add the plottables
+        int iCurve = Utility::getRepeatedIndex(iResponse, kCurves.size());
+        ReportCurve const& curve = kCurves[iCurve];
+        addPlottable(mpRealPlot, keys, realValues, curve, name);
+        addPlottable(mpImagPlot, keys, imagValues, curve, name);
+    }
+
+    // Set the labels
+    mpRealPlot->xAxis->setLabel(tr("Frequency, Hz"));
+    mpRealPlot->yAxis->setLabel(tr("Real"));
+    mpImagPlot->xAxis->setLabel(tr("Frequency, Hz"));
+    mpImagPlot->yAxis->setLabel(tr("Imag"));
+
+    // Show the auxiliary axes
+    mpRealPlot->axisRect()->setupFullAxesBox(false);
+    mpImagPlot->axisRect()->setupFullAxesBox(false);
+
+    // Rescale the axes
+    mpRealPlot->rescaleAxes();
+    mpImagPlot->rescaleAxes();
+
+    // Render the plot
+    mpRealPlot->replot();
+    mpImagPlot->replot();
+}
+
+//! Create all the widgets
+void ResponseView::createContent()
+{
+    // Create plots
+    mpRealPlot = new CustomPlot;
+    mpImagPlot = new CustomPlot;
+
+    // Combine the widgets
+    QVBoxLayout* pLayout = new QVBoxLayout;
+    pLayout->addWidget(mpImagPlot);
+    pLayout->addWidget(mpRealPlot);
+    setLayout(pLayout);
+}
+
+//! Create the plottable and add it to the requested plot
+void ResponseView::addPlottable(CustomPlot* pPlot, QList<double> const& xData, QList<double> const& yData, ReportCurve const& curve,
+                                QString const& name)
+{
+    // Define the style
+    QPen pen(curve.lineColor, curve.lineWidth, curve.lineStyle);
+    QCPScatterStyle scatterStyle((QCPScatterStyle::ScatterShape) curve.markerShape, curve.markerSize);
+    if (curve.markerFill)
+        scatterStyle.setBrush(curve.lineColor);
+
+    // Modify the style, so that the markers are visible when the curve is not
+    auto lineStyle = QCPCurve::lsLine;
+    if (pen.style() == Qt::NoPen)
+    {
+        lineStyle = QCPCurve::lsNone;
+        pen.setStyle(Qt::SolidLine);
+    }
+
+    // Create the plottable
+    QCPCurve* pPlottable = new QCPCurve(pPlot->xAxis, pPlot->yAxis);
+    pPlottable->setData(xData, yData);
+    pPlottable->setLineStyle(lineStyle);
+    pPlottable->setPen(pen);
+    pPlottable->setName(name);
+    pPlottable->setScatterStyle(scatterStyle);
+    pPlottable->setScatterSkip(curve.markerSkip);
 }
 
 ResponseBundleEditor::ResponseBundleEditor(ResponseBundle& bundle, QWidget* pParent)

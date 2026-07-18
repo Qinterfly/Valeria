@@ -16,11 +16,17 @@ QT_FORWARD_DECLARE_CLASS(QCheckBox)
 QT_FORWARD_DECLARE_CLASS(QPlainTextEdit)
 QT_FORWARD_DECLARE_CLASS(QListWidgetItem)
 
+namespace Backend::Core
+{
+class ReportCurve;
+}
+
 namespace Frontend
 {
 
 class GeometryView;
 class ResponseEditor;
+class CustomPlot;
 
 //! Class to manipulate current geometry and response context
 class SessionEditor : public QWidget
@@ -94,6 +100,7 @@ private:
     void processBundleSelected();
     void processBundleEdited();
     void setBundleProperties();
+    void plotResponses();
 
 private:
     QSettings& mSettings;
@@ -112,6 +119,31 @@ private:
     QLabel* mpResponseCountLabel;
 };
 
+//! Class to plot responses
+class ResponseView : public QWidget
+{
+    Q_OBJECT
+
+public:
+    ResponseView(QWidget* pParent = nullptr);
+    virtual ~ResponseView() = default;
+
+    void clear();
+    void plot(std::vector<Testlab::Response> const& responses);
+
+protected:
+    QSize sizeHint() const override;
+
+private:
+    void createContent();
+    void addPlottable(CustomPlot* pPlot, QList<double> const& xData, QList<double> const& yData, Backend::Core::ReportCurve const& curve,
+                      QString const& name);
+
+private:
+    CustomPlot* mpRealPlot;
+    CustomPlot* mpImagPlot;
+};
+
 //! Class to edit a response bundle
 class ResponseBundleEditor : public QWidget
 {
@@ -121,12 +153,13 @@ public:
     ResponseBundleEditor(Backend::Core::ResponseBundle& bundle, QWidget* pParent = nullptr);
     virtual ~ResponseBundleEditor() = default;
 
-    QSize sizeHint() const override;
-
     void refresh();
 
 signals:
     void edited();
+
+protected:
+    QSize sizeHint() const override;
 
 private:
     void createContent();
