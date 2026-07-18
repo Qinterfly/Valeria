@@ -6,6 +6,7 @@
 #include <QListWidget>
 #include <QPlainTextEdit>
 #include <QPushButton>
+#include <QSplitter>
 #include <QToolBar>
 #include <QVBoxLayout>
 
@@ -503,6 +504,24 @@ void ResponseBundleEditor::refresh()
     QSignalBlocker blockerData(mpDataEdit);
     mpDataEdit->clear();
     mpDataEdit->setPlainText(data);
+
+    // Set the bookmarks
+    QSignalBlocker blockerBookmark(mpBookmarkList);
+    mpBookmarkList->clear();
+    QRegularExpression const pattern(R"(^\s*Point\s*=\s*(.*?)\s*$)"); // "Point = Value"
+    QTextBlock block = mpDataEdit->document()->begin();
+    while (block.isValid())
+    {
+        QRegularExpressionMatch match = pattern.match(block.text());
+        if (match.hasMatch())
+        {
+            QString const value = match.captured(1);
+            QListWidgetItem* pItem = new QListWidgetItem(value.isEmpty() ? tr("(unnamed)") : value);
+            pItem->setData(Qt::UserRole, block.blockNumber());
+            mpBookmarkList->addItem(pItem);
+        }
+        block = block.next();
+    }
 }
 
 //! Create all the widgets
@@ -521,6 +540,21 @@ void ResponseBundleEditor::createContent()
     dataFont.setPointSize(dataFont.pointSize() - 1);
     mpDataEdit->setFont(dataFont);
 
+    // Create the bookmark list
+    mpBookmarkList = new QListWidget;
+    mpBookmarkList->setFont(font());
+    mpBookmarkList->setSelectionMode(QAbstractItemView::SingleSelection);
+    mpBookmarkList->setResizeMode(QListWidget::Adjust);
+    mpBookmarkList->setSizeAdjustPolicy(QListWidget::AdjustToContents);
+    connect(mpBookmarkList, &QListWidget::itemClicked, this, &ResponseBundleEditor::navigateByBookmark);
+
+    // Add the splitter
+    QSplitter* pDataSplitter = new QSplitter(Qt::Horizontal);
+    pDataSplitter->addWidget(mpDataEdit);
+    pDataSplitter->addWidget(mpBookmarkList);
+    pDataSplitter->setStretchFactor(0, 1);
+    pDataSplitter->setStretchFactor(1, 0);
+
     // Create the apply button
     QPushButton* pApplyButton = new QPushButton(tr("Apply"));
     connect(pApplyButton, &QPushButton::clicked, this, &ResponseBundleEditor::apply);
@@ -531,7 +565,7 @@ void ResponseBundleEditor::createContent()
     // Combine all the widgets
     QVBoxLayout* pMainLayout = new QVBoxLayout;
     pMainLayout->addLayout(pNameLayout);
-    pMainLayout->addWidget(mpDataEdit);
+    pMainLayout->addWidget(pDataSplitter);
     pMainLayout->addLayout(pApplyLayout);
     setLayout(pMainLayout);
 }
@@ -553,6 +587,19 @@ void ResponseBundleEditor::apply()
     // Finish up the editing
     refresh();
     emit edited();
+}
+
+//! Navigate by the selected bookmark
+void ResponseBundleEditor::navigateByBookmark(QListWidgetItem* pItem)
+{
+    int blockNumber = pItem->data(Qt::UserRole).toInt();
+    QTextBlock block = mpDataEdit->document()->findBlockByNumber(blockNumber);
+    if (!block.isValid())
+        return;
+    QTextCursor cursor(block);
+    mpDataEdit->setTextCursor(cursor);
+    mpDataEdit->centerCursor();
+    mpDataEdit->setFocus();
 }
 
 ResponseBundleSyntaxHighlighter::ResponseBundleSyntaxHighlighter(QTextDocument* pDocument)

@@ -12,6 +12,8 @@
 using namespace Backend;
 using namespace Backend::Core;
 
+void writeDataTable(QTextStream& stream, Testlab::Response const& response);
+
 ResponseBundle::ResponseBundle()
     : freq(0.0)
     , force(0.0)
@@ -182,7 +184,6 @@ bool ResponseBundle::read(QTextStream& stream)
 bool ResponseBundle::write(QTextStream& stream) const
 {
     // Helper functions
-    auto valueToString = [](double value) { return QString::number(value, 'g', 6); };
     auto pointToString = [](Testlab::ResponsePoint const& point)
     {
         if (point.name.empty())
@@ -207,6 +208,7 @@ bool ResponseBundle::write(QTextStream& stream) const
         Testlab::Response const& response = mResponses[iResponse];
 
         // Write the label
+        stream.setFieldAlignment(QTextStream::AlignLeft);
         stream << Qt::endl << "[Response]" << Qt::endl;
 
         // Write the header
@@ -217,14 +219,7 @@ bool ResponseBundle::write(QTextStream& stream) const
         writeProperty("Type", QString::number((int) response.header.type));
 
         // Write the data
-        int numData = response.keys.size();
-        for (int iData = 0; iData != numData; ++iData)
-        {
-            QString key = valueToString(response.keys[iData]);
-            QString real = valueToString(response.realValues[iData]);
-            QString imag = valueToString(response.imagValues[iData]);
-            stream << key << '\t' << real << '\t' << imag << Qt::endl;
-        }
+        writeDataTable(stream, response);
     }
 
     return true;
@@ -406,4 +401,51 @@ Responses Session::getSelectedResponses()
     if (isProjectValid())
         return mpProject->getSelectedResponses();
     return {};
+}
+
+//! Helper function to print a data table to a text stream
+void writeDataTable(QTextStream& stream, Testlab::Response const& response)
+{
+    // Constants
+    int const kGap = 2;
+
+    // Helper functions
+    auto valueToString = [](double value) { return QString::number(value, 'g', 6); };
+    auto maxLength = [](QVector<QString> const& values)
+    {
+        int maxLen = 0;
+        for (QString const& value : values)
+            maxLen = std::max(maxLen, (int) value.size());
+        return maxLen;
+    };
+
+    // Convert the data to strings so column widths can be measured
+    int numData = response.keys.size();
+    QVector<QString> keyStrs(numData), realStrs(numData), imagStrs(numData);
+    for (int iData = 0; iData != numData; ++iData)
+    {
+        keyStrs[iData] = valueToString(response.keys[iData]);
+        realStrs[iData] = valueToString(response.realValues[iData]);
+        imagStrs[iData] = valueToString(response.imagValues[iData]);
+    }
+
+    // Determine the widest value in each column, plus a small gap
+    int widthKey = maxLength(keyStrs) + kGap;
+    int widthReal = maxLength(realStrs) + kGap;
+    int widthImag = maxLength(imagStrs) + kGap;
+
+    // Write the data as a fixed-width table
+    stream.setFieldAlignment(QTextStream::AlignRight);
+    for (int iData = 0; iData != numData; ++iData)
+    {
+        stream.setFieldWidth(widthKey);
+        stream << keyStrs[iData];
+        stream.setFieldWidth(widthReal);
+        stream << realStrs[iData];
+        stream.setFieldWidth(widthImag);
+        stream << imagStrs[iData];
+        stream.setFieldWidth(0);
+        stream << Qt::endl;
+    }
+    stream.setFieldAlignment(QTextStream::AlignLeft);
 }

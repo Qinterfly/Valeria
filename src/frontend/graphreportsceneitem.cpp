@@ -62,7 +62,7 @@ void GraphReportSceneItem::setState()
 {
     // Constants
     QColor const kGridColor(200, 200, 200);
-    double const kThreshold = 1e-9;
+    double const kThreshold = 1e-20;
 
     // Retrieve the item
     GraphReportItem* pItem = (GraphReportItem*) mpItem;

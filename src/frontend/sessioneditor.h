@@ -14,6 +14,7 @@ QT_FORWARD_DECLARE_CLASS(QListWidget)
 QT_FORWARD_DECLARE_CLASS(QDoubleSpinBox)
 QT_FORWARD_DECLARE_CLASS(QCheckBox)
 QT_FORWARD_DECLARE_CLASS(QPlainTextEdit)
+QT_FORWARD_DECLARE_CLASS(QListWidgetItem)
 
 namespace Frontend
 {
@@ -128,12 +129,15 @@ signals:
 
 private:
     void createContent();
+    void updateBookmarks();
     void apply();
+    void navigateByBookmark(QListWidgetItem* pItem);
 
 private:
     Backend::Core::ResponseBundle& mBundle;
     QLineEdit* mpNameEdit;
     QPlainTextEdit* mpDataEdit;
+    QListWidget* mpBookmarkList;
 };
 
 //! Class to highlight text syntax of a response bundle
