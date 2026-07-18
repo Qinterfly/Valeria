@@ -76,6 +76,7 @@ public:
     void editBundle();
     void removeBundle();
     void removeAllBundles();
+    void createBundle();
     bool readBundle();
     bool writeBundle();
 

@@ -1,5 +1,7 @@
 #include <QObject>
 
+#include <testlab/common.h>
+
 #include "reportdefaults.h"
 #include "reportitem.h"
 
@@ -366,4 +368,30 @@ ReportPage ReportDefaults::diagramPage()
     page.add(pCaption);
 
     return page;
+}
+
+//! Create a default response
+Testlab::Response ReportDefaults::response()
+{
+    Testlab::Response response;
+    Testlab::ResponseHeader& header = response.header;
+    Testlab::ResponsePoint& point = header.point;
+
+    // General info
+    header.type = Testlab::ResponseType::kAccel;
+    header.name = QObject::tr("Sine").toStdWString();
+
+    // Point
+    point.name = L"F:1:+Y";
+    point.component = L"F";
+    point.node = L"1";
+    point.direction = Testlab::Direction::kY;
+    point.sign = 1;
+
+    // Data: sine wave
+    response.keys = {0, 0.6981, 1.3963, 2.0944, 2.7925, 3.4907, 4.1888, 4.8869, 5.5851, 6.2832};
+    response.realValues = {0, 0.6428, 0.9848, 0.8660, 0.3420, -0.3420, -0.8660, -0.9848, -0.6428, -0.0000};
+    response.imagValues = {1.0000, 0.7660, 0.1736, -0.5000, -0.9397, -0.9397, -0.5000, 0.1736, 0.7660, 1.0000};
+
+    return response;
 }

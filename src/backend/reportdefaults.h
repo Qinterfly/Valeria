@@ -3,6 +3,11 @@
 
 #include <QList>
 
+namespace Testlab
+{
+struct Response;
+}
+
 namespace Backend::Core
 {
 
@@ -25,6 +30,7 @@ public:
     static ReportPage projModeYPage();
     static ReportPage mode3DPage();
     static ReportPage diagramPage();
+    static Testlab::Response response();
 };
 
 }

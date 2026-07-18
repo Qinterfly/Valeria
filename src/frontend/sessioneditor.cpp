@@ -14,6 +14,7 @@
 #include "customtabwidget.h"
 #include "geometryview.h"
 #include "mathutility.h"
+#include "reportdefaults.h"
 #include "sessioneditor.h"
 #include "uiconstants.h"
 #include "uiutility.h"
@@ -232,6 +233,16 @@ void ResponseEditor::removeAllBundles()
     qInfo() << tr("All the response bundles are removed");
 }
 
+//! Create a dummy bundle to be further edited
+void ResponseEditor::createBundle()
+{
+    ResponseBundle bundle(tr("New"), {ReportDefaults::response()});
+    mCollection.add(bundle);
+    refresh();
+    emit edited();
+    qInfo() << tr("The response bundle is created");
+}
+
 //! Read a bundle from a file
 bool ResponseEditor::readBundle()
 {
@@ -366,9 +377,10 @@ QLayout* ResponseEditor::createBundleLayout()
     QToolBar* pToolBar = new QToolBar;
     pToolBar->addAction(QIcon(":/icons/list-add.svg"), tr("Add bundle"), this, &ResponseEditor::addSelectedBundle);
     pToolBar->addAction(QIcon(":/icons/list-merge.svg"), tr("Merge bundle"), this, &ResponseEditor::mergeSelectedBundle);
-    pToolBar->addAction(QIcon(":/icons/edit-edit.svg"), tr("Edit bundle"), this, &ResponseEditor::editBundle);
     pToolBar->addAction(QIcon(":/icons/list-remove.svg"), tr("Remove bundle"), this, &ResponseEditor::removeBundle);
     pToolBar->addSeparator();
+    pToolBar->addAction(QIcon(":/icons/bundle-create.svg"), tr("Create bundle"), this, &ResponseEditor::createBundle);
+    pToolBar->addAction(QIcon(":/icons/edit-edit.svg"), tr("Edit bundle"), this, &ResponseEditor::editBundle);
     pToolBar->addAction(QIcon(":/icons/bundle-read.svg"), tr("Read bundle"), this, &ResponseEditor::readBundle);
     pToolBar->addAction(QIcon(":/icons/bundle-write.svg"), tr("Write bundle"), this, &ResponseEditor::writeBundle);
 
