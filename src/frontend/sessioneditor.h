@@ -129,7 +129,6 @@ signals:
 
 private:
     void createContent();
-    void updateBookmarks();
     void apply();
     void navigateByBookmark(QListWidgetItem* pItem);
 
