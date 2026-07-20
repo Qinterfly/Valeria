@@ -531,12 +531,13 @@ ResponseView::ResponseView(QWidget* pParent)
 
 QSize ResponseView::sizeHint() const
 {
-    return QSize(600, 600);
+    return QSize(700, 700);
 }
 
 //! Remove all the graphs
 void ResponseView::clear()
 {
+    mpCurveList->clear();
     mpRealPlot->clear();
     mpImagPlot->clear();
     mpRealPlot->replot();
@@ -558,7 +559,7 @@ void ResponseView::plot(std::vector<Testlab::Response> const& responses)
     {
         // Get the response
         Testlab::Response const& response = responses[iResponse];
-        QString name = QString::fromStdWString(response.header.name);
+        QString name = Backend::Utility::getPointLabel(response.header.point);
 
         // Slice the data
         if (response.keys.empty())
@@ -572,6 +573,20 @@ void ResponseView::plot(std::vector<Testlab::Response> const& responses)
         ReportCurve const& curve = kCurves[iCurve];
         addPlottable(mpRealPlot, keys, realValues, curve, name);
         addPlottable(mpImagPlot, keys, imagValues, curve, name);
+
+        // Get the plottable icon
+        QPen pen(curve.lineColor, curve.lineWidth, curve.lineStyle);
+        QCPScatterStyle style((QCPScatterStyle::ScatterShape) curve.markerShape, curve.markerSize);
+        if (curve.markerFill)
+            style.setBrush(curve.lineColor);
+        style.setPen(pen);
+        bool isLine = curve.lineStyle != Qt::NoPen;
+        bool isMarker = curve.markerShape != ReportMarkerShape::kNone;
+        QIcon icon = Utility::getIcon(style, mpCurveList->iconSize(), isLine, isMarker);
+
+        // Add the plottable to the list
+        QListWidgetItem* pItem = new QListWidgetItem(icon, name);
+        mpCurveList->addItem(pItem);
     }
 
     // Set the labels
@@ -596,15 +611,34 @@ void ResponseView::plot(std::vector<Testlab::Response> const& responses)
 //! Create all the widgets
 void ResponseView::createContent()
 {
+    // Create the list of curves
+    mpCurveList = new QListWidget;
+    mpCurveList->setFont(font());
+    mpCurveList->setSelectionMode(QAbstractItemView::NoSelection);
+    mpCurveList->setResizeMode(QListWidget::Adjust);
+    mpCurveList->setSizeAdjustPolicy(QListWidget::AdjustToContents);
+    mpCurveList->setIconSize(QSize(20, 20));
+
     // Create plots
     mpRealPlot = new CustomPlot;
     mpImagPlot = new CustomPlot;
+    QVBoxLayout* pPlotLayout = new QVBoxLayout;
+    pPlotLayout->addWidget(mpImagPlot);
+    pPlotLayout->addWidget(mpRealPlot);
+    QWidget* pPlotWidget = new QWidget;
+    pPlotWidget->setLayout(pPlotLayout);
+
+    // Create the splitter
+    QSplitter* pSplitter = new QSplitter(Qt::Horizontal);
+    pSplitter->addWidget(pPlotWidget);
+    pSplitter->addWidget(mpCurveList);
+    pSplitter->setStretchFactor(0, 1);
+    pSplitter->setStretchFactor(1, 0);
 
     // Combine the widgets
-    QVBoxLayout* pLayout = new QVBoxLayout;
-    pLayout->addWidget(mpImagPlot);
-    pLayout->addWidget(mpRealPlot);
-    setLayout(pLayout);
+    QVBoxLayout* pMainLayout = new QVBoxLayout;
+    pMainLayout->addWidget(pSplitter);
+    setLayout(pMainLayout);
 }
 
 //! Create the plottable and add it to the requested plot
@@ -641,12 +675,13 @@ ResponseBundleEditor::ResponseBundleEditor(ResponseBundle& bundle, QWidget* pPar
 {
     setFont(Utility::getFont());
     createContent();
+    createConnections();
     refresh();
 }
 
 QSize ResponseBundleEditor::sizeHint() const
 {
-    return QSize(600, 600);
+    return QSize(600, 700);
 }
 
 //! Update all the widgets
@@ -663,8 +698,10 @@ void ResponseBundleEditor::refresh()
 
     // Set the data
     QSignalBlocker blockerData(mpDataEdit);
+    QTextBlock focusBlock = mpDataEdit->textCursor().block();
     mpDataEdit->clear();
     mpDataEdit->setPlainText(data);
+    navigateByBlock(focusBlock);
 
     // Set the bookmarks
     QSignalBlocker blockerBookmark(mpBookmarkList);
@@ -683,6 +720,9 @@ void ResponseBundleEditor::refresh()
         }
         block = block.next();
     }
+
+    // Set the apply state
+    mpApplyButton->setEnabled(false);
 }
 
 //! Create all the widgets
@@ -707,7 +747,6 @@ void ResponseBundleEditor::createContent()
     mpBookmarkList->setSelectionMode(QAbstractItemView::SingleSelection);
     mpBookmarkList->setResizeMode(QListWidget::Adjust);
     mpBookmarkList->setSizeAdjustPolicy(QListWidget::AdjustToContents);
-    connect(mpBookmarkList, &QListWidget::itemClicked, this, &ResponseBundleEditor::navigateByBookmark);
 
     // Add the splitter
     QSplitter* pDataSplitter = new QSplitter(Qt::Horizontal);
@@ -717,11 +756,10 @@ void ResponseBundleEditor::createContent()
     pDataSplitter->setStretchFactor(1, 0);
 
     // Create the apply button
-    QPushButton* pApplyButton = new QPushButton(tr("Apply"));
-    connect(pApplyButton, &QPushButton::clicked, this, &ResponseBundleEditor::apply);
+    mpApplyButton = new QPushButton(QIcon(":/icons/apply.svg"), tr("Apply"));
     QHBoxLayout* pApplyLayout = new QHBoxLayout;
     pApplyLayout->addStretch();
-    pApplyLayout->addWidget(pApplyButton);
+    pApplyLayout->addWidget(mpApplyButton);
 
     // Combine all the widgets
     QVBoxLayout* pMainLayout = new QVBoxLayout;
@@ -729,6 +767,15 @@ void ResponseBundleEditor::createContent()
     pMainLayout->addWidget(pDataSplitter);
     pMainLayout->addLayout(pApplyLayout);
     setLayout(pMainLayout);
+}
+
+//! Specify widget connections
+void ResponseBundleEditor::createConnections()
+{
+    connect(mpNameEdit, &QLineEdit::textEdited, this, &ResponseBundleEditor::processStateChanged);
+    connect(mpDataEdit, &QPlainTextEdit::textChanged, this, &ResponseBundleEditor::processStateChanged);
+    connect(mpBookmarkList, &QListWidget::itemClicked, this, &ResponseBundleEditor::navigateByBookmark);
+    connect(mpApplyButton, &QPushButton::clicked, this, &ResponseBundleEditor::apply);
 }
 
 //! Apply the changes
@@ -755,12 +802,24 @@ void ResponseBundleEditor::navigateByBookmark(QListWidgetItem* pItem)
 {
     int blockNumber = pItem->data(Qt::UserRole).toInt();
     QTextBlock block = mpDataEdit->document()->findBlockByNumber(blockNumber);
+    navigateByBlock(block);
+}
+
+//! Navigate by the block number
+void ResponseBundleEditor::navigateByBlock(QTextBlock const& block)
+{
     if (!block.isValid())
         return;
     QTextCursor cursor(block);
     mpDataEdit->setTextCursor(cursor);
     mpDataEdit->centerCursor();
     mpDataEdit->setFocus();
+}
+
+//! Handle any change in editor
+void ResponseBundleEditor::processStateChanged()
+{
+    mpApplyButton->setEnabled(true);
 }
 
 ResponseBundleSyntaxHighlighter::ResponseBundleSyntaxHighlighter(QTextDocument* pDocument)

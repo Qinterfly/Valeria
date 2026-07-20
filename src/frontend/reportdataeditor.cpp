@@ -1635,7 +1635,7 @@ void ReportGlobalDataEditor::createContent()
 
     // Create the apply button
     QHBoxLayout* pButtonLayout = new QHBoxLayout;
-    QPushButton* pApplyButton = new QPushButton(tr("Apply"));
+    QPushButton* pApplyButton = new QPushButton(QIcon(":/icons/apply.svg"), tr("Apply"));
     pButtonLayout->addStretch();
     pButtonLayout->addWidget(pApplyButton);
     connect(pApplyButton, &QPushButton::clicked, this, &ReportGlobalDataEditor::apply);

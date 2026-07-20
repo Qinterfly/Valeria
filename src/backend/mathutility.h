@@ -29,6 +29,7 @@ QList<double> convert(std::vector<double> const& data);
 std::vector<double> convert(QList<double> const& data);
 Eigen::Vector3d convert3d(std::vector<double> const& data);
 int findClosestKey(Testlab::Response const& response, double searchKey);
+QString getPointLabel(Testlab::ResponsePoint const& point);
 QString getDirLabel(Backend::Core::ReportDirection dir);
 Backend::Core::ReportDirection getDirValue(QString const& label);
 Backend::Core::ReportPoint getPoint(std::wstring const& name);

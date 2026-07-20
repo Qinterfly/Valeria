@@ -198,6 +198,8 @@ QDialog* showAsDialog(QWidget* pWidget, QString const& title, QWidget* pParent, 
     pDialog->setAttribute(Qt::WA_DeleteOnClose, true);
     pDialog->setWindowTitle(title);
     pDialog->setModal(isModal);
+    pDialog->setWindowFlag(Qt::WindowMinimizeButtonHint);
+    pDialog->setWindowFlag(Qt::WindowMaximizeButtonHint);
     QVBoxLayout* pLayout = new QVBoxLayout;
     pLayout->addWidget(pWidget);
     pDialog->setLayout(pLayout);

@@ -184,16 +184,6 @@ bool ResponseBundle::read(QTextStream& stream)
 bool ResponseBundle::write(QTextStream& stream) const
 {
     // Helper functions
-    auto pointToString = [](Testlab::ResponsePoint const& point)
-    {
-        if (point.name.empty())
-            return QString();
-        QChar sign = point.sign > 0 ? '+' : '-';
-        QString component = QString::fromStdWString(point.component);
-        QString node = QString::fromStdWString(point.node);
-        QString direction = Utility::getDirLabel((ReportDirection) point.direction);
-        return QString("%1:%2:%3%4").arg(component, node, sign, direction);
-    };
     auto writeProperty = [&stream](QString const& name, QString const& value)
     {
         if (value.isEmpty())
@@ -213,8 +203,8 @@ bool ResponseBundle::write(QTextStream& stream) const
 
         // Write the header
         writeProperty("Name", QString::fromStdWString(response.header.name));
-        writeProperty("Point", pointToString(response.header.point));
-        writeProperty("RefPoint", pointToString(response.header.refPoint));
+        writeProperty("Point", Utility::getPointLabel(response.header.point));
+        writeProperty("RefPoint", Utility::getPointLabel(response.header.refPoint));
         writeProperty("Unit", QString::fromStdWString(response.header.unit.name));
         writeProperty("Type", QString::number((int) response.header.type));
 

@@ -15,6 +15,7 @@ QT_FORWARD_DECLARE_CLASS(QDoubleSpinBox)
 QT_FORWARD_DECLARE_CLASS(QCheckBox)
 QT_FORWARD_DECLARE_CLASS(QPlainTextEdit)
 QT_FORWARD_DECLARE_CLASS(QListWidgetItem)
+QT_FORWARD_DECLARE_CLASS(QPushButton)
 
 namespace Backend::Core
 {
@@ -142,6 +143,7 @@ private:
 private:
     CustomPlot* mpRealPlot;
     CustomPlot* mpImagPlot;
+    QListWidget* mpCurveList;
 };
 
 //! Class to edit a response bundle
@@ -163,14 +165,18 @@ protected:
 
 private:
     void createContent();
+    void createConnections();
     void apply();
     void navigateByBookmark(QListWidgetItem* pItem);
+    void navigateByBlock(QTextBlock const& block);
+    void processStateChanged();
 
 private:
     Backend::Core::ResponseBundle& mBundle;
     QLineEdit* mpNameEdit;
     QPlainTextEdit* mpDataEdit;
     QListWidget* mpBookmarkList;
+    QPushButton* mpApplyButton;
 };
 
 //! Class to highlight text syntax of a response bundle

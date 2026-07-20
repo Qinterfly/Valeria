@@ -76,6 +76,18 @@ QString getDirLabel(ReportDirection dir)
     return QString();
 }
 
+//! Get the label for the response point
+QString getPointLabel(Testlab::ResponsePoint const& point)
+{
+    if (point.name.empty())
+        return QString();
+    QChar sign = point.sign >= 0 ? '+' : '-';
+    QString component = QString::fromStdWString(point.component);
+    QString node = QString::fromStdWString(point.node);
+    QString direction = Utility::getDirLabel((ReportDirection) point.direction);
+    return QString("%1:%2:%3%4").arg(component, node, sign, direction);
+}
+
 //! Get direction value
 ReportDirection getDirValue(QString const& label)
 {
