@@ -377,7 +377,23 @@ void ResponseEditor::refresh()
         for (int i = 0; i != numResponses; ++i)
         {
             Testlab::Response response = bundle.get(i);
-            QListWidgetItem* pItem = new QListWidgetItem(QString::fromStdWString(response.header.name));
+            QString name = QString::fromStdWString(response.header.name);
+            QIcon icon;
+            switch (response.header.point.direction)
+            {
+            case Testlab::Direction::kX:
+                icon = QIcon(":/icons/letter-x.svg");
+                break;
+            case Testlab::Direction::kY:
+                icon = QIcon(":/icons/letter-y.svg");
+                break;
+            case Testlab::Direction::kZ:
+                icon = QIcon(":/icons/letter-z.svg");
+                break;
+            default:
+                break;
+            }
+            QListWidgetItem* pItem = new QListWidgetItem(icon, name);
             mpResponseList->addItem(pItem);
         }
     }
@@ -400,17 +416,18 @@ QLayout* ResponseEditor::createBundleLayout()
 {
     // Create the toolbar
     QToolBar* pToolBar = new QToolBar;
-    pToolBar->addAction(QIcon(":/icons/list-add.svg"), tr("Add bundle"), this, &ResponseEditor::addSelectedBundle);
-    pToolBar->addAction(QIcon(":/icons/list-merge.svg"), tr("Merge bundle"), this, &ResponseEditor::mergeSelectedBundle);
-    pToolBar->addAction(QIcon(":/icons/list-remove.svg"), tr("Remove bundle"), this, &ResponseEditor::removeBundle);
+    pToolBar->addAction(QIcon(":/icons/list-add.svg"), tr("Add bundle"), Qt::ALT | Qt::Key_A, this, &ResponseEditor::addSelectedBundle);
+    pToolBar->addAction(QIcon(":/icons/list-merge.svg"), tr("Merge bundle"), Qt::ALT | Qt::Key_M, this, &ResponseEditor::mergeSelectedBundle);
+    pToolBar->addAction(QIcon(":/icons/list-remove.svg"), tr("Remove bundle"), Qt::ALT | Qt::Key_D, this, &ResponseEditor::removeBundle);
     pToolBar->addSeparator();
     pToolBar->addAction(QIcon(":/icons/bundle-create.svg"), tr("Create bundle"), this, &ResponseEditor::createBundle);
-    pToolBar->addAction(QIcon(":/icons/edit-edit.svg"), tr("Edit bundle"), this, &ResponseEditor::editBundle);
-    pToolBar->addAction(QIcon(":/icons/bundle-read.svg"), tr("Read bundle"), this, &ResponseEditor::readBundle);
-    pToolBar->addAction(QIcon(":/icons/bundle-write.svg"), tr("Write bundle"), this, &ResponseEditor::writeBundle);
+    pToolBar->addAction(QIcon(":/icons/edit-edit.svg"), tr("Edit bundle"), Qt::ALT | Qt::Key_E, this, &ResponseEditor::editBundle);
+    pToolBar->addAction(QIcon(":/icons/bundle-read.svg"), tr("Read bundle"), Qt::ALT | Qt::Key_R, this, &ResponseEditor::readBundle);
+    pToolBar->addAction(QIcon(":/icons/bundle-write.svg"), tr("Write bundle"), Qt::ALT | Qt::Key_W, this, &ResponseEditor::writeBundle);
     pToolBar->addSeparator();
-    pToolBar->addAction(QIcon(":/icons/arrow-up.svg"), tr("Move up"), this, [this]() { moveBundle(-1); });
-    pToolBar->addAction(QIcon(":/icons/arrow-down.svg"), tr("Move down"), this, [this]() { moveBundle(+1); });
+    pToolBar->addAction(QIcon(":/icons/arrow-up.svg"), tr("Move up"), Qt::ALT | Qt::Key_Up, this, [this]() { moveBundle(-1); });
+    pToolBar->addAction(QIcon(":/icons/arrow-down.svg"), tr("Move down"), Qt::ALT | Qt::Key_Down, this, [this]() { moveBundle(+1); });
+    Utility::setShortcutHints(pToolBar);
 
     // Create the list
     mpBundleList = new QListWidget;
@@ -466,7 +483,8 @@ QLayout* ResponseEditor::createResponseLayout()
 {
     // Create the toolbar
     QToolBar* pToolBar = new QToolBar;
-    pToolBar->addAction(QIcon(":/icons/draw-graph.svg"), tr("Plot responses"), this, &ResponseEditor::plotResponses);
+    pToolBar->addAction(QIcon(":/icons/draw-graph.svg"), tr("Plot responses"), Qt::ALT | Qt::Key_V, this, &ResponseEditor::plotResponses);
+    Utility::setShortcutHints(pToolBar);
 
     // Create the label
     mpResponseCountLabel = new QLabel;
