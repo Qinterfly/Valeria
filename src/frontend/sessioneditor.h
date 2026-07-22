@@ -86,6 +86,8 @@ public:
     void createBundle();
     bool readBundle();
     bool writeBundle();
+    void moveBundle(int iShift);
+    void selectBundle(int index);
 
 signals:
     void edited();

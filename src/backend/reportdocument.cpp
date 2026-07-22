@@ -53,16 +53,21 @@ int ReportPage::count() const
     return mItems.size();
 }
 
+bool ReportPage::isExist(int index) const
+{
+    return index >= 0 && index < mItems.size();
+}
+
 ReportItem* ReportPage::get(int index)
 {
-    if (index >= 0 && index < mItems.size())
+    if (isExist(index))
         return mItems[index];
     return nullptr;
 }
 
 ReportItem const* ReportPage::get(int index) const
 {
-    if (index >= 0 && index < mItems.size())
+    if (isExist(index))
         return mItems[index];
     return nullptr;
 }
@@ -99,20 +104,19 @@ void ReportPage::add(ReportItem* pItem)
 bool ReportPage::remove(ReportItem* pItem)
 {
     int index = find(pItem);
-    if (index < 0)
+    if (!isExist(index))
         return false;
     delete mItems[index];
     mItems.remove(index);
     return true;
 }
 
-void ReportPage::swap(int iFirst, int iSecond)
+bool ReportPage::swap(int iFirst, int iSecond)
 {
-    int numItems = mItems.size();
-    bool isFirst = iFirst >= 0 && iFirst < numItems;
-    bool isSecond = iSecond >= 0 && iSecond < numItems;
-    if (isFirst && isSecond)
-        mItems.swapItemsAt(iFirst, iSecond);
+    if (!isExist(iFirst) || !isExist(iSecond))
+        return false;
+    mItems.swapItemsAt(iFirst, iSecond);
+    return true;
 }
 
 int ReportPage::find(ReportItem* pItem) const
@@ -124,13 +128,6 @@ int ReportPage::find(ReportItem* pItem) const
             return i;
     }
     return -1;
-}
-
-ReportItem* ReportPage::take(int index)
-{
-    if (index >= 0 && index < mItems.size())
-        return mItems[index];
-    return nullptr;
 }
 
 void ReportPage::clear()

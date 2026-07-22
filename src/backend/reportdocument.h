@@ -24,15 +24,15 @@ public:
     ReportPage& operator=(ReportPage const& another);
 
     int count() const;
+    bool isExist(int index) const;
     ReportItem* get(int index);
     ReportItem const* get(int index) const;
     ReportItem* get(QString const& name);
     ReportItem* get(QUuid const& id);
     void add(ReportItem* pItem);
     bool remove(ReportItem* pItem);
-    void swap(int iFirst, int iSecond);
+    bool swap(int iFirst, int iSecond);
     int find(ReportItem* pItem) const;
-    ReportItem* take(int index);
     void clear();
 
     QJsonObject toJson() const override;

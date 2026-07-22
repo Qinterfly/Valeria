@@ -284,6 +284,11 @@ bool ResponseCollection::isEmpty() const
     return mBundles.isEmpty();
 }
 
+bool ResponseCollection::isExist(int index) const
+{
+    return index >= 0 && index < mBundles.size();
+}
+
 int ResponseCollection::count() const
 {
     return mBundles.size();
@@ -309,27 +314,34 @@ void ResponseCollection::add(ResponseBundle const& bundle)
     mBundles.push_back(bundle);
 }
 
-void ResponseCollection::merge(int index, Responses const& responses)
+bool ResponseCollection::merge(int index, Responses const& responses)
 {
-    if (index < 0 || index >= mBundles.size())
-        return;
+    if (!isExist(index))
+        return false;
     ResponseBundle& bundle = mBundles[index];
     bundle.merge(responses);
+    return true;
 }
 
 bool ResponseCollection::remove(int index)
 {
-    if (index >= 0 && index < mBundles.size())
-    {
-        mBundles.remove(index);
-        return true;
-    }
-    return false;
+    if (!isExist(index))
+		return false;
+	mBundles.remove(index);
+	return true;
 }
 
 void ResponseCollection::clear()
 {
     mBundles.clear();
+}
+
+bool ResponseCollection::swap(int iFirst, int iSecond)
+{
+    if (!isExist(iFirst) || !isExist(iSecond))
+        return false;
+    mBundles.swapItemsAt(iFirst, iSecond);
+    return true;
 }
 
 Session::Session()

@@ -308,6 +308,30 @@ bool ResponseEditor::writeBundle()
     return false;
 }
 
+//! Move the selected bundle in the collection
+void ResponseEditor::moveBundle(int iShift)
+{
+    // Get the selected bundle
+    int iOld = mpBundleList->currentRow();
+
+    // Perform the movement
+    int iNew = iOld + iShift;
+    if (mCollection.swap(iOld, iNew))
+    {
+        refresh();
+        emit edited();
+        qInfo() << tr("Bundle is moved");
+        selectBundle(iNew);
+    }
+}
+
+//! Select a bundle by its index
+void ResponseEditor::selectBundle(int index)
+{
+    if (index >= 0 && index < mpBundleList->count())
+        mpBundleList->setCurrentRow(index);
+}
+
 //! Update the widgets content
 void ResponseEditor::refresh()
 {
@@ -384,6 +408,9 @@ QLayout* ResponseEditor::createBundleLayout()
     pToolBar->addAction(QIcon(":/icons/edit-edit.svg"), tr("Edit bundle"), this, &ResponseEditor::editBundle);
     pToolBar->addAction(QIcon(":/icons/bundle-read.svg"), tr("Read bundle"), this, &ResponseEditor::readBundle);
     pToolBar->addAction(QIcon(":/icons/bundle-write.svg"), tr("Write bundle"), this, &ResponseEditor::writeBundle);
+    pToolBar->addSeparator();
+    pToolBar->addAction(QIcon(":/icons/arrow-up.svg"), tr("Move up"), this, [this]() { moveBundle(-1); });
+    pToolBar->addAction(QIcon(":/icons/arrow-down.svg"), tr("Move down"), this, [this]() { moveBundle(+1); });
 
     // Create the list
     mpBundleList = new QListWidget;

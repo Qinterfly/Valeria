@@ -56,14 +56,16 @@ public:
     ~ResponseCollection() = default;
 
     bool isEmpty() const;
+    bool isExist(int index) const;
     int count() const;
     ResponseBundle& get(int index);
     ResponseBundle const& get(int index) const;
     ResponseBundle& add(Responses const& responses, QString const& name);
     void add(ResponseBundle const& bundle);
-    void merge(int index, Responses const& responses);
+    bool merge(int index, Responses const& responses);
     bool remove(int index);
     void clear();
+    bool swap(int iFirst, int iSecond);
 
 private:
     QList<ResponseBundle> mBundles;
