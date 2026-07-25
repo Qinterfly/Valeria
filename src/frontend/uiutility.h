@@ -9,6 +9,8 @@
 
 #include <vtkNew.h>
 
+#include <testlab/common.h>
+
 #include "reportcommon.h"
 
 QT_FORWARD_DECLARE_CLASS(QTableWidgetItem);
@@ -89,6 +91,8 @@ vtkSmartPointer<vtkScalarBarActor> createScalarBarActor(vtkSmartPointer<vtkLooku
 
 // Icons
 QIcon getIcon(QCPScatterStyle const& style, QSize const& size, bool isLine, bool isMarker);
+QIcon getIcon(Backend::Core::ReportDirection direction);
+QIcon getIcon(Testlab::Direction direction);
 }
 
 #endif // UIUTILITY_H

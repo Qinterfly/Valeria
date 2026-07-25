@@ -312,7 +312,10 @@ void DiagramReportSceneItem::drawSection(ReportSection const& section)
     if (isOnePoint)
     {
         tangentVec = normalVec.cross(binormalVec);
-        tangentVec /= tangentVec.norm();
+        if (tangentVec.norm() < skEps)
+            tangentVec = Vector3d::Unit(2);
+        else
+            tangentVec /= tangentVec.norm();
         double shift = pItem->barWidth * mMaximumDimension;
         firstCoords -= shift * tangentVec;
         secondCoords += shift * tangentVec;

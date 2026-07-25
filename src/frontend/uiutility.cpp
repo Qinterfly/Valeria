@@ -676,4 +676,27 @@ QIcon getIcon(QCPScatterStyle const& style, QSize const& size, bool isLine, bool
 
     return QIcon(pixmap);
 }
+
+//! Get an icon for a report direction
+QIcon getIcon(ReportDirection direction)
+{
+    switch (direction)
+    {
+    case ReportDirection::kX:
+        return QIcon(":/icons/letter-x.svg");
+    case ReportDirection::kY:
+        return QIcon(":/icons/letter-y.svg");
+    case ReportDirection::kZ:
+        return QIcon(":/icons/letter-z.svg");
+    default:
+        break;
+    }
+    return QIcon();
+}
+
+//! Get an icon for a Testlab direction
+QIcon getIcon(Testlab::Direction direction)
+{
+    return getIcon((ReportDirection) direction);
+}
 }

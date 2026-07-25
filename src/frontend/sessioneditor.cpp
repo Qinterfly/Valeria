@@ -378,21 +378,7 @@ void ResponseEditor::refresh()
         {
             Testlab::Response response = bundle.get(i);
             QString name = QString::fromStdWString(response.header.name);
-            QIcon icon;
-            switch (response.header.point.direction)
-            {
-            case Testlab::Direction::kX:
-                icon = QIcon(":/icons/letter-x.svg");
-                break;
-            case Testlab::Direction::kY:
-                icon = QIcon(":/icons/letter-y.svg");
-                break;
-            case Testlab::Direction::kZ:
-                icon = QIcon(":/icons/letter-z.svg");
-                break;
-            default:
-                break;
-            }
+            QIcon icon = Utility::getIcon(response.header.point.direction);
             QListWidgetItem* pItem = new QListWidgetItem(icon, name);
             mpResponseList->addItem(pItem);
         }
@@ -493,6 +479,7 @@ QLayout* ResponseEditor::createResponseLayout()
     mpResponseList = new QListWidget;
     mpResponseList->setFont(font());
     mpResponseList->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    connect(mpResponseList, &QListWidget::itemDoubleClicked, this, &ResponseEditor::plotResponses);
 
     // Create the layout
     QVBoxLayout* pLayout = new QVBoxLayout;
@@ -576,7 +563,7 @@ ResponseView::ResponseView(QWidget* pParent)
 
 QSize ResponseView::sizeHint() const
 {
-    return QSize(700, 700);
+    return QSize(800, 800);
 }
 
 //! Remove all the graphs
@@ -726,7 +713,7 @@ ResponseBundleEditor::ResponseBundleEditor(ResponseBundle& bundle, QWidget* pPar
 
 QSize ResponseBundleEditor::sizeHint() const
 {
-    return QSize(600, 700);
+    return QSize(800, 800);
 }
 
 //! Update all the widgets
@@ -758,8 +745,13 @@ void ResponseBundleEditor::refresh()
         QRegularExpressionMatch match = pattern.match(block.text());
         if (match.hasMatch())
         {
-            QString const value = match.captured(1);
-            QListWidgetItem* pItem = new QListWidgetItem(value.isEmpty() ? tr("(unnamed)") : value);
+            QString text = match.captured(1);
+            QIcon icon;
+            if (text.isEmpty())
+                text = tr("(unnamed)");
+            else
+                icon = Utility::getIcon(Backend::Utility::getDirValue(text.back()));
+            QListWidgetItem* pItem = new QListWidgetItem(icon, text);
             pItem->setData(Qt::UserRole, block.blockNumber());
             mpBookmarkList->addItem(pItem);
         }
@@ -904,7 +896,7 @@ ResponseBundleSyntaxHighlighter::ResponseBundleSyntaxHighlighter(QTextDocument* 
 
 void ResponseBundleSyntaxHighlighter::highlightBlock(QString const& text)
 {
-    for (HighlightRule const& rule : mRules)
+    for (HighlightRule const& rule : std::as_const(mRules))
     {
         QRegularExpressionMatchIterator it = rule.pattern.globalMatch(text);
         while (it.hasNext())
