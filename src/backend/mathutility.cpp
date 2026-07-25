@@ -352,6 +352,31 @@ Vector3cd projectResponse(Testlab::Response const& response, Testlab::Geometry c
     return value * proj;
 }
 
+//! Compute response phases
+std::vector<double> phases(Testlab::Response const& response, bool isRadian)
+{
+    int count = response.keys.size();
+    std::vector<double> res(count);
+    double factor = isRadian ? 1.0 : 180.0 / M_PI;
+    for (int i = 0; i != count; ++i)
+        res[i] = factor * std::atan2(response.imagValues[i], response.realValues[i]);
+    return res;
+}
+
+//! Compute response amplitudes
+std::vector<double> amplitudes(Testlab::Response const& response)
+{
+    int count = response.keys.size();
+    std::vector<double> res(count);
+    for (int i = 0; i != count; ++i)
+    {
+        double real = response.realValues[i];
+        double imag = response.imagValues[i];
+        res[i] = std::sqrt(real * real + imag * imag);
+    }
+    return res;
+}
+
 //! Estimate the maximum dimension of the model
 double getMaximumDimension(Testlab::Geometry const& geometry)
 {

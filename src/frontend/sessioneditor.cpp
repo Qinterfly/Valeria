@@ -1,4 +1,5 @@
 #include <QCheckBox>
+#include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QFileDialog>
 #include <QInputDialog>
@@ -570,14 +571,21 @@ QSize ResponseView::sizeHint() const
 void ResponseView::clear()
 {
     mpCurveList->clear();
-    mpRealPlot->clear();
-    mpImagPlot->clear();
-    mpRealPlot->replot();
-    mpImagPlot->replot();
+    mpUpPlot->clear();
+    mpDownPlot->clear();
+    mpUpPlot->replot();
+    mpDownPlot->replot();
 }
 
-//! Render the responses
+//! Copy the responses and render
 void ResponseView::plot(std::vector<Testlab::Response> const& responses)
+{
+    mResponses = responses;
+    plot();
+}
+
+//! Render the plots
+void ResponseView::plot()
 {
     // Constants
     QList<ReportCurve> const kCurves = ReportDefaults::curves();
@@ -586,25 +594,50 @@ void ResponseView::plot(std::vector<Testlab::Response> const& responses)
     clear();
 
     // Render all the responses
-    int numResponses = responses.size();
+    int numResponses = mResponses.size();
+    ResponseView::Type type = (ResponseView::Type) mpTypeSelector->currentData().toInt();
+    QString yUpLabel, yDownLabel;
     for (int iResponse = 0; iResponse != numResponses; ++iResponse)
     {
         // Get the response
-        Testlab::Response const& response = responses[iResponse];
+        Testlab::Response const& response = mResponses[iResponse];
         QString name = Backend::Utility::getPointLabel(response.header.point);
 
         // Slice the data
         if (response.keys.empty())
             continue;
         QList<double> keys = Backend::Utility::convert(response.keys);
-        QList<double> realValues = Backend::Utility::convert(response.realValues);
-        QList<double> imagValues = Backend::Utility::convert(response.imagValues);
+        QList<double> upValues;
+        QList<double> downValues;
+        switch (type)
+        {
+        case kImRe:
+            upValues = Backend::Utility::convert(response.imagValues);
+            downValues = Backend::Utility::convert(response.realValues);
+            yUpLabel = tr("Imag");
+            yDownLabel = tr("Real");
+            break;
+        case kReIm:
+            upValues = Backend::Utility::convert(response.realValues);
+            downValues = Backend::Utility::convert(response.imagValues);
+            yUpLabel = tr("Real");
+            yDownLabel = tr("Imag");
+            break;
+        case kAmpPhase:
+            upValues = Backend::Utility::convert(Backend::Utility::amplitudes(response));
+            downValues = Backend::Utility::convert(Backend::Utility::phases(response, false));
+            yUpLabel = tr("Amplitude");
+            yDownLabel = tr("Phase, %1").arg(Constants::Symbol::skDeg);
+            break;
+        default:
+            continue;
+        }
 
         // Add the plottables
         int iCurve = Utility::getRepeatedIndex(iResponse, kCurves.size());
         ReportCurve const& curve = kCurves[iCurve];
-        addPlottable(mpRealPlot, keys, realValues, curve, name);
-        addPlottable(mpImagPlot, keys, imagValues, curve, name);
+        addPlottable(mpUpPlot, keys, upValues, curve, name);
+        addPlottable(mpDownPlot, keys, downValues, curve, name);
 
         // Get the plottable icon
         QPen pen(curve.lineColor, curve.lineWidth, curve.lineStyle);
@@ -621,28 +654,55 @@ void ResponseView::plot(std::vector<Testlab::Response> const& responses)
         mpCurveList->addItem(pItem);
     }
 
-    // Set the labels
-    mpRealPlot->xAxis->setLabel(tr("Frequency, Hz"));
-    mpRealPlot->yAxis->setLabel(tr("Real"));
-    mpImagPlot->xAxis->setLabel(tr("Frequency, Hz"));
-    mpImagPlot->yAxis->setLabel(tr("Imag"));
+    // Set the X-axis labels
+    mpUpPlot->xAxis->setLabel(tr("Frequency, Hz"));
+    mpDownPlot->xAxis->setLabel(mpUpPlot->xAxis->label());
+
+    // Set the Y-axis labels
+    mpUpPlot->yAxis->setLabel(yUpLabel);
+    mpDownPlot->yAxis->setLabel(yDownLabel);
 
     // Show the auxiliary axes
-    mpRealPlot->axisRect()->setupFullAxesBox(false);
-    mpImagPlot->axisRect()->setupFullAxesBox(false);
+    mpUpPlot->axisRect()->setupFullAxesBox(false);
+    mpDownPlot->axisRect()->setupFullAxesBox(false);
 
     // Rescale the axes
-    mpRealPlot->rescaleAxes();
-    mpImagPlot->rescaleAxes();
+    mpUpPlot->rescaleAxes();
+    mpDownPlot->rescaleAxes();
+    if (type == kAmpPhase)
+        mpDownPlot->yAxis->setRange({-180.0, 180.0});
 
     // Render the plot
-    mpRealPlot->replot();
-    mpImagPlot->replot();
+    mpUpPlot->replot();
+    mpDownPlot->replot();
 }
 
 //! Create all the widgets
 void ResponseView::createContent()
 {
+    // Create the type selector
+    mpTypeSelector = new QComboBox;
+    mpTypeSelector->addItem("Im-Re", kImRe);
+    mpTypeSelector->addItem("Re-Im", kReIm);
+    mpTypeSelector->addItem("A-φ", kAmpPhase);
+    mpTypeSelector->setCurrentIndex(0);
+    connect(mpTypeSelector, &QComboBox::currentTextChanged, this, qOverload<>(&ResponseView::plot));
+
+    // Create type layout
+    QHBoxLayout* pTypeLayout = new QHBoxLayout;
+    pTypeLayout->addWidget(new QLabel(tr("Type: ")));
+    pTypeLayout->addWidget(mpTypeSelector);
+    pTypeLayout->addStretch();
+
+    // Create plots
+    mpUpPlot = new CustomPlot;
+    mpDownPlot = new CustomPlot;
+    QVBoxLayout* pPlotLayout = new QVBoxLayout;
+    pPlotLayout->addWidget(mpUpPlot);
+    pPlotLayout->addWidget(mpDownPlot);
+    QWidget* pPlotWidget = new QWidget;
+    pPlotWidget->setLayout(pPlotLayout);
+
     // Create the list of curves
     mpCurveList = new QListWidget;
     mpCurveList->setFont(font());
@@ -650,15 +710,6 @@ void ResponseView::createContent()
     mpCurveList->setResizeMode(QListWidget::Adjust);
     mpCurveList->setSizeAdjustPolicy(QListWidget::AdjustToContents);
     mpCurveList->setIconSize(QSize(20, 20));
-
-    // Create plots
-    mpRealPlot = new CustomPlot;
-    mpImagPlot = new CustomPlot;
-    QVBoxLayout* pPlotLayout = new QVBoxLayout;
-    pPlotLayout->addWidget(mpImagPlot);
-    pPlotLayout->addWidget(mpRealPlot);
-    QWidget* pPlotWidget = new QWidget;
-    pPlotWidget->setLayout(pPlotLayout);
 
     // Create the splitter
     QSplitter* pSplitter = new QSplitter(Qt::Horizontal);
@@ -669,6 +720,7 @@ void ResponseView::createContent()
 
     // Combine the widgets
     QVBoxLayout* pMainLayout = new QVBoxLayout;
+    pMainLayout->addLayout(pTypeLayout);
     pMainLayout->addWidget(pSplitter);
     setLayout(pMainLayout);
 }
@@ -677,6 +729,10 @@ void ResponseView::createContent()
 void ResponseView::addPlottable(CustomPlot* pPlot, QList<double> const& xData, QList<double> const& yData, ReportCurve const& curve,
                                 QString const& name)
 {
+    // Sanity check
+    if (xData.isEmpty() || xData.size() != yData.size())
+        return;
+
     // Define the style
     QPen pen(curve.lineColor, curve.lineWidth, curve.lineStyle);
     QCPScatterStyle scatterStyle((QCPScatterStyle::ScatterShape) curve.markerShape, curve.markerSize);
@@ -713,7 +769,7 @@ ResponseBundleEditor::ResponseBundleEditor(ResponseBundle& bundle, QWidget* pPar
 
 QSize ResponseBundleEditor::sizeHint() const
 {
-    return QSize(800, 800);
+    return QSize(700, 800);
 }
 
 //! Update all the widgets

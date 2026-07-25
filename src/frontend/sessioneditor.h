@@ -16,6 +16,7 @@ QT_FORWARD_DECLARE_CLASS(QCheckBox)
 QT_FORWARD_DECLARE_CLASS(QPlainTextEdit)
 QT_FORWARD_DECLARE_CLASS(QListWidgetItem)
 QT_FORWARD_DECLARE_CLASS(QPushButton)
+QT_FORWARD_DECLARE_CLASS(QComboBox)
 
 namespace Backend::Core
 {
@@ -128,11 +129,18 @@ class ResponseView : public QWidget
     Q_OBJECT
 
 public:
+    enum Type
+    {
+        kImRe,
+        kReIm,
+        kAmpPhase
+    };
     ResponseView(QWidget* pParent = nullptr);
     virtual ~ResponseView() = default;
 
     void clear();
     void plot(std::vector<Testlab::Response> const& responses);
+    void plot();
 
 protected:
     QSize sizeHint() const override;
@@ -143,8 +151,10 @@ private:
                       QString const& name);
 
 private:
-    CustomPlot* mpRealPlot;
-    CustomPlot* mpImagPlot;
+    std::vector<Testlab::Response> mResponses;
+    QComboBox* mpTypeSelector;
+    CustomPlot* mpDownPlot;
+    CustomPlot* mpUpPlot;
     QListWidget* mpCurveList;
 };
 

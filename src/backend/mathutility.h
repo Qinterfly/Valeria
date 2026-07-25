@@ -47,6 +47,8 @@ Testlab::Node getNode(Testlab::Geometry const& geometry, QString const& componen
 std::vector<double> getNodeCoords(Testlab::Geometry const& geometry, QString const& componentName, QString const& nodeName);
 std::vector<double> getNodeAngles(Testlab::Geometry const& geometry, QString const& componentName, QString const& nodeName);
 Eigen::Vector3cd projectResponse(Testlab::Response const& response, Testlab::Geometry const& geometry, int iKey);
+std::vector<double> phases(Testlab::Response const& response, bool isRadian = true);
+std::vector<double> amplitudes(Testlab::Response const& response);
 
 // Geometry
 double getMaximumDimension(Testlab::Geometry const& geometry);
