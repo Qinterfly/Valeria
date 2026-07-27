@@ -134,6 +134,7 @@ bool ResponseBundle::read(QTextStream& stream)
             QString value = trimmed.mid(pos + 1).trimmed();
 
             // Parse the properties
+            bool isParsed = true;
             if (isEqual(key, "Name"))
                 pResponse->header.name = value.toStdWString();
             else if (isEqual(key, "Point"))
@@ -144,6 +145,8 @@ bool ResponseBundle::read(QTextStream& stream)
                 pResponse->header.unit.name = value.toStdWString();
             else if (isEqual(key, "Type"))
                 pResponse->header.type = (Testlab::ResponseType) value.toInt();
+            else
+                isParsed = false;
 
             // Set default properties
             if (pResponse->header.name.empty() && !pResponse->header.point.name.empty())
@@ -151,30 +154,40 @@ bool ResponseBundle::read(QTextStream& stream)
             if (pResponse->header.type == Testlab::ResponseType::kNone)
                 pResponse->header.type = Testlab::ResponseType::kAccel;
 
-            continue;
+            // Go to the next line if the property is parsed successfully
+            if (isParsed)
+                continue;
         }
 
         // Parse the data
-        line.replace(',', '.');
-        auto fields = line.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
-        int numFields = fields.size();
-        if (numFields > 3)
+        QTextStream lineStream(&line);
+        double key, real, imag;
+        QString label;
+        // 1. Key
+        lineStream >> key;
+        if (lineStream.status() != QTextStream::Ok)
             continue;
-        if (numFields >= 2)
+        // 2. Real
+        lineStream >> real;
+        if (lineStream.status() != QTextStream::Ok)
+            continue;
+        // 3. Imag (optional)
+        qint64 linePos = lineStream.pos();
+        lineStream >> imag;
+        if (lineStream.status() != QTextStream::Ok)
         {
-            bool okKey = false, okReal = false, okImag = true;
-            double key = fields[0].toDouble(&okKey);
-            double real = fields[1].toDouble(&okReal);
-            double imag = 0.0;
-            if (numFields == 3)
-                imag = fields[2].toDouble(&okImag);
-            if (okKey && okReal && okImag)
-            {
-                pResponse->keys.push_back(key);
-                pResponse->realValues.push_back(real);
-                pResponse->imagValues.push_back(imag);
-            }
+            imag = 0.0;
+            lineStream.resetStatus();
+            lineStream.seek(linePos);
         }
+        // 4. Label (optional)
+        label = lineStream.readAll().trimmed();
+
+        // Add the data
+        pResponse->keys.push_back(key);
+        pResponse->realValues.push_back(real);
+        pResponse->imagValues.push_back(imag);
+        pResponse->labels.push_back(label.toStdWString());
     }
 
     return !mResponses.empty();
@@ -423,29 +436,40 @@ void writeDataTable(QTextStream& stream, Testlab::Response const& response)
 
     // Convert the data to strings so column widths can be measured
     int numData = response.keys.size();
-    QVector<QString> keyStrs(numData), realStrs(numData), imagStrs(numData);
+    QVector<QString> keyStrs(numData), realStrs(numData), imagStrs(numData), labelStrs(numData);
+    bool isLabels = response.labels.size() == numData;
     for (int iData = 0; iData != numData; ++iData)
     {
         keyStrs[iData] = valueToString(response.keys[iData]);
         realStrs[iData] = valueToString(response.realValues[iData]);
         imagStrs[iData] = valueToString(response.imagValues[iData]);
+        if (isLabels)
+            labelStrs[iData] = QString::fromStdWString(response.labels[iData]);
     }
 
     // Determine the widest value in each column, plus a small gap
     int widthKey = maxLength(keyStrs) + kGap;
     int widthReal = maxLength(realStrs) + kGap;
     int widthImag = maxLength(imagStrs) + kGap;
+    int widthLabel = maxLength(labelStrs) + kGap;
 
     // Write the data as a fixed-width table
     stream.setFieldAlignment(QTextStream::AlignRight);
     for (int iData = 0; iData != numData; ++iData)
     {
+        // Key
         stream.setFieldWidth(widthKey);
         stream << keyStrs[iData];
+        // Real
         stream.setFieldWidth(widthReal);
         stream << realStrs[iData];
+        // Imag
         stream.setFieldWidth(widthImag);
         stream << imagStrs[iData];
+        // Label
+        stream.setFieldWidth(widthLabel);
+        stream << labelStrs[iData];
+        // New line
         stream.setFieldWidth(0);
         stream << Qt::endl;
     }

@@ -64,6 +64,7 @@ namespace Testlab
 		std::vector<double> keys;
 		std::vector<double> realValues;
 		std::vector<double> imagValues;
+		std::vector<std::wstring> labels;
 
 		// Header
 		ResponseHeader header;
