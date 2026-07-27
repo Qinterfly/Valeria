@@ -112,6 +112,7 @@ GraphReportItem::GraphReportItem()
     // Flags
     showLegend = true;
     showBundleFreq = false;
+    showLabels = false;
 }
 
 GraphReportItem::GraphReportItem(ReportItem const* pAnother)
@@ -152,6 +153,7 @@ ReportItem* GraphReportItem::clone() const
     // Flags
     pResult->showLegend = showLegend;
     pResult->showBundleFreq = showBundleFreq;
+    pResult->showLabels = showLabels;
 
     return pResult;
 }
@@ -208,6 +210,7 @@ QJsonObject GraphReportItem::toJson() const
     // View
     obj["showLegend"] = showLegend;
     obj["showBundleFreq"] = showBundleFreq;
+    obj["showLabels"] = showLabels;
 
     return obj;
 }
@@ -245,6 +248,8 @@ void GraphReportItem::fromJson(QJsonObject const& obj)
     // View
     showLegend = obj["showLegend"].toBool();
     showBundleFreq = obj["showBundleFreq"].toBool();
+    if (obj.contains("showLabels"))
+        showLabels = obj["showLabels"].toBool();
 }
 
 PictureReportItem::PictureReportItem()

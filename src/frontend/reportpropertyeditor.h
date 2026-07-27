@@ -65,6 +65,7 @@ public:
         kGraphLegendAlign,
         kGraphShowLegend,
         kGraphShowBundleFreq,
+        kGraphShowLabels,
 
         // Table
         kTableNumRows,

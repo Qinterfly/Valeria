@@ -117,6 +117,7 @@ public:
     // View
     bool showLegend;
     bool showBundleFreq;
+    bool showLabels;
 };
 
 //! Class to define a layout of a picture element

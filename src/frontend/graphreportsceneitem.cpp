@@ -222,6 +222,17 @@ void GraphReportSceneItem::processReIm(ResponseBundle const& bundle)
             // Add the plottable
             QString name = tr("p. %1").arg(removeNonDigits(point.node));
             addPlottable(xData, yData, curve, name);
+
+            // Add the text tips
+            int numData = xData.size();
+            if (pItem->showLabels && response.labels.size() == numData)
+            {
+                for (int iData = 0; iData != numData; ++iData)
+                {
+                    QString label = QString::fromStdWString(response.labels[iData]);
+                    mpPlot->addTextTip(xData[iData], yData[iData], label, curve.lineColor);
+                }
+            }
         }
     }
 

@@ -161,6 +161,7 @@ bool ResponseBundle::read(QTextStream& stream)
 
         // Parse the data
         QTextStream lineStream(&line);
+        line.replace(',', '.');
         double key, real, imag;
         QString label;
         // 1. Key

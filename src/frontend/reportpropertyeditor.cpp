@@ -184,6 +184,10 @@ void ReportPropertyEditor::addGraphProperties(GraphReportItem* pItem)
     QtVariantProperty* pShowBundleFreqProperty = mpManager->addProperty(kGraphShowBundleFreq, QMetaType::Bool, tr("Bundle freq."));
     pShowBundleFreqProperty->setValue(pItem->showBundleFreq);
     mpEditor->addProperty(pShowBundleFreqProperty);
+
+    QtVariantProperty* pShowLabelsProperty = mpManager->addProperty(kGraphShowLabels, QMetaType::Bool, tr("Point labels"));
+    pShowLabelsProperty->setValue(pItem->showLabels);
+    mpEditor->addProperty(pShowLabelsProperty);
 }
 
 //! Create properties specific for table items
@@ -345,6 +349,9 @@ void ReportPropertyEditor::setValue(QtProperty* pProperty, QVariant value)
         break;
     case kGraphShowBundleFreq:
         static_cast<GraphReportItem*>(pItem)->showBundleFreq = value.toBool();
+        break;
+    case kGraphShowLabels:
+        static_cast<GraphReportItem*>(pItem)->showLabels = value.toBool();
         break;
 
     // Table

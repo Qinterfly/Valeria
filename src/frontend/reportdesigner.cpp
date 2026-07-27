@@ -882,6 +882,8 @@ void ReportDesigner::resolveItemLinks()
                     pGraphSlaveItem->unit = pGraphMasterItem->unit;
                     pGraphSlaveItem->curves = pGraphMasterItem->curves;
                     pGraphSlaveItem->xRange = pGraphMasterItem->xRange;
+                    pGraphSlaveItem->showBundleFreq = pGraphMasterItem->showBundleFreq;
+                    pGraphSlaveItem->showLabels = pGraphMasterItem->showLabels;
                 }
                 else if (pMasterItem->type() == ReportItem::kMode)
                 {

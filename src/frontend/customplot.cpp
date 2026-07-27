@@ -106,6 +106,11 @@ QColor CustomPlot::getAvailableColor() const
 //! Add a text tip
 void CustomPlot::addTextTip(double xData, double yData, QString const& text, QColor const& color)
 {
+    // Skip empty tips
+    if (text.isEmpty())
+        return;
+
+    // Create the text item
     QCPItemText* pItem = new QCPItemText(this);
 
     // Set text
