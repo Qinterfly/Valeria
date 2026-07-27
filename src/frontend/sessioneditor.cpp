@@ -575,6 +575,8 @@ void ResponseView::clear()
     mpDownPlot->clear();
     mpUpPlot->replot();
     mpDownPlot->replot();
+    mpUpPlot->setVisible(true);
+    mpDownPlot->setVisible(true);
 }
 
 //! Copy the responses and render
@@ -596,7 +598,6 @@ void ResponseView::plot()
     // Render all the responses
     int numResponses = mResponses.size();
     ResponseView::Type type = (ResponseView::Type) mpTypeSelector->currentData().toInt();
-    QString yUpLabel, yDownLabel;
     for (int iResponse = 0; iResponse != numResponses; ++iResponse)
     {
         // Get the response
@@ -606,28 +607,25 @@ void ResponseView::plot()
         // Slice the data
         if (response.keys.empty())
             continue;
-        QList<double> keys = Backend::Utility::convert(response.keys);
-        QList<double> upValues;
-        QList<double> downValues;
+        QList<double> xUpData, yUpData;
+        QList<double> xDownData, yDownData;
         switch (type)
         {
         case kImRe:
-            upValues = Backend::Utility::convert(response.imagValues);
-            downValues = Backend::Utility::convert(response.realValues);
-            yUpLabel = tr("Imag");
-            yDownLabel = tr("Real");
-            break;
-        case kReIm:
-            upValues = Backend::Utility::convert(response.realValues);
-            downValues = Backend::Utility::convert(response.imagValues);
-            yUpLabel = tr("Real");
-            yDownLabel = tr("Imag");
+            xUpData = Backend::Utility::convert(response.keys);
+            yUpData = Backend::Utility::convert(response.imagValues);
+            xDownData = xUpData;
+            yDownData = Backend::Utility::convert(response.realValues);
             break;
         case kAmpPhase:
-            upValues = Backend::Utility::convert(Backend::Utility::amplitudes(response));
-            downValues = Backend::Utility::convert(Backend::Utility::phases(response, false));
-            yUpLabel = tr("Amplitude");
-            yDownLabel = tr("Phase, %1").arg(Constants::Symbol::skDeg);
+            xUpData = Backend::Utility::convert(response.keys);
+            yUpData = Backend::Utility::convert(Backend::Utility::amplitudes(response));
+            xDownData = xUpData;
+            yDownData = Backend::Utility::convert(Backend::Utility::phases(response, false));
+            break;
+        case kNyquist:
+            xUpData = Backend::Utility::convert(response.realValues);
+            yUpData = Backend::Utility::convert(response.imagValues);
             break;
         default:
             continue;
@@ -636,8 +634,8 @@ void ResponseView::plot()
         // Add the plottables
         int iCurve = Utility::getRepeatedIndex(iResponse, kCurves.size());
         ReportCurve const& curve = kCurves[iCurve];
-        addPlottable(mpUpPlot, keys, upValues, curve, name);
-        addPlottable(mpDownPlot, keys, downValues, curve, name);
+        addPlottable(mpUpPlot, xUpData, yUpData, curve, name);
+        addPlottable(mpDownPlot, xDownData, yDownData, curve, name);
 
         // Get the plottable icon
         QPen pen(curve.lineColor, curve.lineWidth, curve.lineStyle);
@@ -654,13 +652,26 @@ void ResponseView::plot()
         mpCurveList->addItem(pItem);
     }
 
-    // Set the X-axis labels
-    mpUpPlot->xAxis->setLabel(tr("Frequency, Hz"));
-    mpDownPlot->xAxis->setLabel(mpUpPlot->xAxis->label());
-
-    // Set the Y-axis labels
-    mpUpPlot->yAxis->setLabel(yUpLabel);
-    mpDownPlot->yAxis->setLabel(yDownLabel);
+    // Set the axes labels
+    switch (type)
+    {
+    case kImRe:
+        mpUpPlot->xAxis->setLabel(tr("Frequency, Hz"));
+        mpUpPlot->yAxis->setLabel(tr("Imag"));
+        mpDownPlot->xAxis->setLabel(mpUpPlot->xAxis->label());
+        mpDownPlot->yAxis->setLabel(tr("Real"));
+        break;
+    case kAmpPhase:
+        mpUpPlot->xAxis->setLabel(tr("Frequency, Hz"));
+        mpUpPlot->yAxis->setLabel(tr("Amplitude"));
+        mpDownPlot->xAxis->setLabel(mpUpPlot->xAxis->label());
+        mpDownPlot->yAxis->setLabel(tr("Phase, %1").arg(Constants::Symbol::skDeg));
+        break;
+    case kNyquist:
+        mpUpPlot->xAxis->setLabel(tr("Real"));
+        mpUpPlot->yAxis->setLabel(tr("Imag"));
+        break;
+    }
 
     // Show the auxiliary axes
     mpUpPlot->axisRect()->setupFullAxesBox(false);
@@ -669,12 +680,36 @@ void ResponseView::plot()
     // Rescale the axes
     mpUpPlot->rescaleAxes();
     mpDownPlot->rescaleAxes();
-    if (type == kAmpPhase)
+
+    // Set the type specific ranges
+    switch (type)
+    {
+    case kAmpPhase:
         mpDownPlot->yAxis->setRange({-180.0, 180.0});
+        break;
+    case kNyquist:
+    {
+        double xMax = std::max(std::abs(mpUpPlot->xAxis->range().lower), std::abs(mpUpPlot->xAxis->range().upper));
+        double yMax = std::max(std::abs(mpUpPlot->yAxis->range().lower), std::abs(mpUpPlot->yAxis->range().upper));
+        double xyMax = std::max(xMax, yMax);
+        if (xyMax > std::numeric_limits<double>::epsilon())
+        {
+            mpUpPlot->xAxis->setRange({-xyMax, xyMax});
+            mpUpPlot->yAxis->setRange({-xyMax, xyMax});
+        }
+        break;
+    }
+    default:
+        break;
+    }
 
     // Render the plot
     mpUpPlot->replot();
     mpDownPlot->replot();
+
+    // Hide the plots which do not contain plottables
+    mpUpPlot->setVisible(mpUpPlot->plottableCount() > 0);
+    mpDownPlot->setVisible(mpDownPlot->plottableCount() > 0);
 }
 
 //! Create all the widgets
@@ -683,8 +718,8 @@ void ResponseView::createContent()
     // Create the type selector
     mpTypeSelector = new QComboBox;
     mpTypeSelector->addItem("Im-Re", kImRe);
-    mpTypeSelector->addItem("Re-Im", kReIm);
     mpTypeSelector->addItem("A-φ", kAmpPhase);
+    mpTypeSelector->addItem("Nyquist", kNyquist);
     mpTypeSelector->setCurrentIndex(0);
     connect(mpTypeSelector, &QComboBox::currentTextChanged, this, qOverload<>(&ResponseView::plot));
 

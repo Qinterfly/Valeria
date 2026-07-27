@@ -132,8 +132,8 @@ public:
     enum Type
     {
         kImRe,
-        kReIm,
-        kAmpPhase
+        kAmpPhase,
+        kNyquist
     };
     ResponseView(QWidget* pParent = nullptr);
     virtual ~ResponseView() = default;

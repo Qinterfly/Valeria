@@ -319,7 +319,10 @@ void GraphReportSceneItem::processFreqAmp()
         for (int iBundle = 0; iBundle != numBundles; ++iBundle)
         {
             ResponseBundle const& bundle = mCollection.get(iBundle);
-            if (bundle.freq < skEps)
+
+            // Get the resonance frequency
+            double const resonanceFreq = bundle.freq;
+            if (resonanceFreq < skEps)
             {
                 qWarning() << tr("The bundle frequncy is not specified for %1. Could not process the Freq-Amp graph").arg(bundle.name);
                 continue;
@@ -333,31 +336,8 @@ void GraphReportSceneItem::processFreqAmp()
                 continue;
             }
 
-            // Find all the roots
-            QList<double> xReal = Backend::Utility::convert(response.keys);
-            QList<double> yReal = Backend::Utility::convert(response.realValues);
-            auto roots = Backend::Utility::findRoots(xReal, yReal);
-            if (roots.empty())
-            {
-                qWarning() << tr("Could not find any roots for the Freq-Amp graph");
-                return;
-            }
-
-            // Get the closest root
-            double freq = bundle.freq;
-            double minDist = skInf;
-            for (auto const& root : roots)
-            {
-                double dist = std::abs(root.key - bundle.freq);
-                if (dist < minDist)
-                {
-                    freq = root.key;
-                    minDist = dist;
-                }
-            }
-
-            // Find the closest frequency to the resonance one
-            int iFound = Backend::Utility::findClosestKey(response, freq);
+            // Find the closest frequency index to the resonance one
+            int iFound = Backend::Utility::findClosestKey(response, resonanceFreq);
             if (iFound < 0)
                 continue;
 
@@ -369,7 +349,7 @@ void GraphReportSceneItem::processFreqAmp()
 
             // Add the variable
             QString varName = QString("%1:f").arg(point.name());
-            double varValue = freq;
+            double varValue = resonanceFreq;
             mTextEngine.setVariable(varName, varValue);
         }
 
