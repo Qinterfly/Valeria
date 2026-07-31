@@ -159,8 +159,9 @@ void GraphReportSceneItem::setState()
         {
             auto it = pCurve->data()->begin();
             double value = pItem->swapAxes ? it->mainKey() : it->mainValue();
-            double absValue = std::abs(value);
-            pYAxis->setRange(-absValue, absValue);
+            double limit = std::abs(value);
+            limit = std::max(limit, kThreshold);
+            pYAxis->setRange(-limit, limit);
         }
     }
 
