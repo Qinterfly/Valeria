@@ -62,7 +62,7 @@ void GraphReportSceneItem::setState()
 {
     // Constants
     QColor const kGridColor(200, 200, 200);
-    double const kThreshold = 1e-20;
+    double const kThreshold = 1e-15;
 
     // Retrieve the item
     GraphReportItem* pItem = (GraphReportItem*) mpItem;
@@ -150,6 +150,19 @@ void GraphReportSceneItem::setState()
     }
     if (isManualY)
         pYAxis->setRange(pItem->yRange.first, pItem->yRange.second);
+
+    // Check if the plot consisted of only one point and cannot be rescaled automatically
+    if (!isManualY && mpPlot->plottableCount() == 1)
+    {
+        QCPCurve* pCurve = qobject_cast<QCPCurve*>(mpPlot->plottable(0));
+        if (pCurve && pCurve->dataCount() == 1)
+        {
+            auto it = pCurve->data()->begin();
+            double value = pItem->swapAxes ? it->mainKey() : it->mainValue();
+            double absValue = std::abs(value);
+            pYAxis->setRange(-absValue, absValue);
+        }
+    }
 
     // Scale the axes range
     if (isPlottables)
@@ -310,6 +323,10 @@ void GraphReportSceneItem::processMultiReIm()
 void GraphReportSceneItem::processFreqAmp()
 {
     GraphReportItem* pItem = (GraphReportItem*) mpItem;
+
+    // Check if there are any bundles to process
+    if (mCollection.isEmpty())
+        return;
 
     // Loop through all the curves
     int numCurves = pItem->curves.size();
@@ -474,6 +491,10 @@ void GraphReportSceneItem::processModeshape(ResponseBundle const& bundle)
 QCPCurve* GraphReportSceneItem::addPlottable(QList<double> const& xData, QList<double> const& yData, ReportCurve const& curve,
                                              QString const& name)
 {
+    // Check if the data is valid
+    if (xData.isEmpty() || xData.size() != yData.size())
+        return nullptr;
+
     // Define the style
     QPen pen(curve.lineColor, curve.lineWidth, curve.lineStyle);
     QCPScatterStyle scatterStyle((QCPScatterStyle::ScatterShape) curve.markerShape, curve.markerSize);

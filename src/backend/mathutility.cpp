@@ -132,7 +132,10 @@ double parsePostfixValue(QString const& text, QString const& postfix)
     {
         QString valueStr = match.captured(1);
         valueStr.replace(",", ".");
-        return valueStr.toDouble();
+        bool isOk;
+        double value = valueStr.toDouble(&isOk);
+        if (isOk)
+            return value;
     }
     return 0.0;
 };
