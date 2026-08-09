@@ -1,6 +1,6 @@
 
-[![ru](https://img.shields.io/badge/lang-ru-red.svg)](https://github.com/Qinterfly/Modus/blob/master/README.md)
-[![en](https://img.shields.io/badge/lang-en-green.svg)](https://github.com/Qinterfly/Modus/blob/master/README.en.md)
+[![ru](https://img.shields.io/badge/lang-ru-red.svg)](https://github.com/Qinterfly/Valeria/blob/master/README.md)
+[![en](https://img.shields.io/badge/lang-en-green.svg)](https://github.com/Qinterfly/Valeria/blob/master/README.en.md)
 [![pdf](https://img.shields.io/badge/example-PDF-blue)](help/output.pdf)
 
 Программа `Valeria` предназначена для автоматического генерирования отчётов по результатам модальных испытаний. Для получения записанных откликов программа взаимодействует с программным интерфейсом `LMS TestLab Automation`.
@@ -20,5 +20,5 @@
 
 ![Редактор набора откликов](help/images/response-editor.png)
 
-![Пример отчёта](help/output.pdf)
+[Пример отчёта](help/output.pdf)
 
