@@ -527,25 +527,29 @@ void DiagramReportSceneItem::drawTriEpure(Vector3d const& firstCoords, Vector3d 
     Vector3d e1 = (secondCoords - firstCoords).normalized();
     Vector3d e2 = normalVec;
 
-    // Build the projection functions
+    // Get the coordinates of the first point
     Vector3d a1 = firstCoords;
     Vector3d a2 = secondCoords;
-    auto to2D = [&](Vector3d const& p)
-    {
-        Vector3d v = p - a1;
-        return Vector2d(v.dot(e1), v.dot(e2));
-    };
-    auto to3D = [&](Vector2d const& p2) { return a1 + p2.x() * e1 + p2.y() * e2; };
 
-    // Compute the state vectors
+    // Get the coordinates of the second point
     Vector3d firstState = firstValue * normalVec;
     Vector3d secondState = secondValue * normalVec;
     Vector3d b1 = firstCoords + firstState;
     Vector3d b2 = secondCoords + secondState;
 
+    // Define the projected coordinates in the basis (e1, e2)
+    double L = (secondCoords - firstCoords).norm();
+    Vector2d pa1(0.0, 0.0);
+    Vector2d pa2(L, 0.0);
+    Vector2d pb1(0.0, firstValue);
+    Vector2d pb2(L, secondValue);
+
+    // Build the projection function
+    auto to3D = [&](Vector2d const& p2) { return a1 + p2.x() * e1 + p2.y() * e2; };
+
     // Find the intersection
     Vector2d xp;
-    if (!Backend::Utility::findLineIntersect(to2D(a1), to2D(a2), to2D(b1), to2D(b2), xp))
+    if (!Backend::Utility::findLineIntersect(pa1, pa2, pb1, pb2, xp))
     {
         drawQuadEpure(firstCoords, secondCoords, firstValue, secondValue, normalVec);
         return;
