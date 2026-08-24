@@ -398,14 +398,22 @@ void setView(ReportView view, double angle, double scale, vtkSmartPointer<vtkRen
         break;
     }
 
-    // Copy the view to the overlay
+    // Get the view vectors
     double position[3];
+    double focalPoint[3];
     double viewUp[3];
     renderer->GetActiveCamera()->GetPosition(position);
+    renderer->GetActiveCamera()->GetFocalPoint(focalPoint);
     renderer->GetActiveCamera()->GetViewUp(viewUp);
+
+    // Compute the view direction
+    double direction[3] = {position[0] - focalPoint[0], position[1] - focalPoint[1], position[2] - focalPoint[2]};
+    vtkMath::Normalize(direction);
+
+    // Copy the view to the overlay
     axesRenderer->GetActiveCamera()->ParallelProjectionOn();
-    axesRenderer->GetActiveCamera()->SetPosition(position[0], position[1], position[2]);
     axesRenderer->GetActiveCamera()->SetFocalPoint(0, 0, 0);
+    axesRenderer->GetActiveCamera()->SetPosition(direction[0], direction[1], direction[2]);
     axesRenderer->GetActiveCamera()->SetViewUp(viewUp);
     axesRenderer->ResetCamera();
 

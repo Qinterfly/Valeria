@@ -781,7 +781,7 @@ DiagramReportDataEditor::DiagramReportDataEditor(GeometryView* pGeometryView, Re
 //! Get the editor type
 ReportItem::Type DiagramReportDataEditor::type() const
 {
-    return ReportItem::kMode;
+    return ReportItem::kDiagram;
 }
 
 //! Update the widgets content
