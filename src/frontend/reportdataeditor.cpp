@@ -629,6 +629,10 @@ void ModeReportDataEditor::refresh()
     QSignalBlocker blockerColorMap(mpColorMapSelector);
     Utility::setIndexByKey(mpColorMapSelector, (int) pItem->colorMap);
 
+    // Set the color transform
+    QSignalBlocker blockerColorTransform(mpColorTransformSelector);
+    Utility::setIndexByKey(mpColorTransformSelector, (int) pItem->colorTransform);
+
     // Set the view angle
     QSignalBlocker blockerViewAngle(mpViewAngleEdit);
     mpViewAngleEdit->setValue(pItem->viewAngle);
