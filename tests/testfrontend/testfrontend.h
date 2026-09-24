@@ -24,6 +24,7 @@ private slots:
     void setMultiImRePage();
     void setFreqAmpPage();
     void setProjModeYPage();
+    void setHodographPage();
     void setMode3DPage();
     void setDiagramPage();
     void writeDocument();

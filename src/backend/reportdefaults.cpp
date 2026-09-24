@@ -49,6 +49,7 @@ ReportDocument ReportDefaults::document()
     result.add(ReportDefaults::multiImRePage());
     result.add(ReportDefaults::freqAmpPage());
     result.add(ReportDefaults::projModeYPage());
+    result.add(ReportDefaults::hodographPage());
     result.add(ReportDefaults::mode3DPage());
     result.add(ReportDefaults::diagramPage());
     return result;
@@ -275,6 +276,52 @@ ReportPage ReportDefaults::projModeYPage()
     page.add(pHStab);
     page.add(pVStab);
     page.add(pTable);
+    page.add(pTitle);
+    page.add(pCaption);
+
+    return page;
+}
+
+//! Create a page with a hodograph
+ReportPage ReportDefaults::hodographPage()
+{
+    ReportPage page(QObject::tr("Hodograph"));
+
+    // Create a vertical hodograph
+    GraphReportItem* pVert = new GraphReportItem;
+    pVert->name = QObject::tr("Vertical");
+    pVert->rect = QRect(30, 35, 155, 110);
+    pVert->subType = GraphReportItem::kHodograph;
+    pVert->responseDir = ReportDirection::kY;
+    pVert->unit = Units::skM_S2;
+    pVert->xLabel = QObject::tr("Re a, ${UNIT}");
+    pVert->yLabel = QObject::tr("Im a, ${UNIT}");
+
+    // Create a horizontal hodograph
+    GraphReportItem* pHoriz = new GraphReportItem;
+    pHoriz->name = QObject::tr("Horizontal");
+    pHoriz->rect = QRect(30, 150, 155, 110);
+    pHoriz->subType = GraphReportItem::kHodograph;
+    pHoriz->responseDir = ReportDirection::kX;
+    pHoriz->unit = Units::skM_S2;
+    pHoriz->xLabel = QObject::tr("Re a, ${UNIT}");
+    pHoriz->yLabel = QObject::tr("Im a, ${UNIT}");
+
+    // Create title
+    TextReportItem* pTitle = new TextReportItem;
+    pTitle->name = QObject::tr("Title");
+    pTitle->rect = QRect(30, 10, 155, 20);
+    pTitle->text = QObject::tr("${MODE}, fr = ${FREQ} Hz.\n${EXCITE}.");
+
+    // Create the caption
+    TextReportItem* pCaption = new TextReportItem;
+    pCaption->name = QObject::tr("Caption");
+    pCaption->rect = QRect(30, 265, 155, 10);
+    pCaption->text = QObject::tr("Figure X.YY");
+
+    // Combine
+    page.add(pVert);
+    page.add(pHoriz);
     page.add(pTitle);
     page.add(pCaption);
 

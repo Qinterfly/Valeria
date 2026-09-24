@@ -37,6 +37,7 @@ public:
 
     void addTextTip(double xData, double yData, QString const& text, QColor const& color = Qt::black);
     void arrangeTextTips();
+    void setQuadScale();
 
 signals:
     void dataDropped(QList<QStandardItem*> items);

@@ -74,7 +74,8 @@ public:
         kMultiReal,
         kMultiImag,
         kFreqAmp,
-        kModeshape
+        kModeshape,
+        kHodograph
     };
     GraphReportItem();
     GraphReportItem(ReportItem const* pAnother);

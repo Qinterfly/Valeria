@@ -52,6 +52,7 @@ private:
     void processMultiReIm();
     void processFreqAmp();
     void processModeshape(Backend::Core::ResponseBundle const& bundle);
+    void processHodograph(Backend::Core::ResponseBundle const& bundle);
     QCPCurve* addPlottable(QList<double> const& xData, QList<double> const& yData, Backend::Core::ReportCurve const& curve,
                            QString const& name = QString());
     QPair<QCPAxis*, QCPAxis*> axes();

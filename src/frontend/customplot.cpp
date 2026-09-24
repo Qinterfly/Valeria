@@ -154,6 +154,21 @@ void CustomPlot::arrangeTextTips()
         mTextTips[i]->position->setPixelPosition(rects[i].topLeft());
 }
 
+//! Set unite axes scale
+void CustomPlot::setQuadScale()
+{
+    QCPRange const& xRange = xAxis->range();
+    QCPRange const& yRange = yAxis->range();
+    double xMax = std::max(std::abs(xRange.lower), std::abs(xRange.upper));
+    double yMax = std::max(std::abs(yRange.lower), std::abs(yRange.upper));
+    double xyMax = std::max(xMax, yMax);
+    if (xyMax > std::numeric_limits<double>::epsilon())
+    {
+        xAxis->setRange({-xyMax, xyMax});
+        yAxis->setRange({-xyMax, xyMax});
+    }
+}
+
 //! Set the plot configuration
 void CustomPlot::initializePlot()
 {

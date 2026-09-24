@@ -91,6 +91,9 @@ void GraphReportSceneItem::setState()
         case GraphReportItem::kModeshape:
             processModeshape(bundle);
             break;
+        case GraphReportItem::kHodograph:
+            processHodograph(bundle);
+            break;
         default:
             break;
         }
@@ -172,6 +175,10 @@ void GraphReportSceneItem::setState()
         pXAxis->scaleRange(pItem->scaleRange);
         pYAxis->scaleRange(pItem->scaleRange);
     }
+
+    // Set the equal axes scale for hodograph
+    if (pItem->subType == GraphReportItem::kHodograph)
+        mpPlot->setQuadScale();
 
     // Set the axes ticks
     setAxisTicker(pXAxis, pItem->xFormat);
@@ -488,6 +495,56 @@ void GraphReportSceneItem::processModeshape(ResponseBundle const& bundle)
         if (pItem->swapAxes)
             std::swap(xData, yData);
         addPlottable(xData, yData, curve, curve.name);
+    }
+}
+
+//! Process the item of the hodograph subtype
+void GraphReportSceneItem::processHodograph(Backend::Core::ResponseBundle const& bundle)
+{
+    GraphReportItem* pItem = (GraphReportItem*) mpItem;
+
+    // Loop through all the curves
+    int numCurves = pItem->curves.size();
+    for (int iCurve = 0; iCurve != numCurves; ++iCurve)
+    {
+        ReportCurve const& curve = pItem->curves[iCurve];
+
+        // Loop through all the points belonged to the curve
+        int numPoints = curve.points.size();
+        for (int iPoint = 0; iPoint != numPoints; ++iPoint)
+        {
+            // Get the response which has the requested unit and direction
+            ReportPoint const& point = curve.points[iPoint];
+            Testlab::Response response = Backend::Utility::getAcceleration(bundle, point, pItem->responseDir, pItem->unit);
+            if (response.keys.size() == 0)
+            {
+                qWarning() << tr("Could not find the response for point %1 which has %2 units").arg(point.name(), pItem->unit);
+                continue;
+            }
+
+            // Set the data
+            QList<double> xData = Backend::Utility::convert(response.realValues);
+            QList<double> yData = Backend::Utility::convert(response.imagValues);
+            if (xData.isEmpty() || xData.size() != yData.size())
+                continue;
+            if (pItem->swapAxes)
+                std::swap(xData, yData);
+
+            // Add the plottable
+            QString name = tr("p. %1").arg(removeNonDigits(point.node));
+            addPlottable(xData, yData, curve, name);
+
+            // Add the text tips
+            int numData = xData.size();
+            if (pItem->showLabels && response.labels.size() == numData)
+            {
+                for (int iData = 0; iData != numData; ++iData)
+                {
+                    QString label = QString::fromStdWString(response.labels[iData]);
+                    mpPlot->addTextTip(xData[iData], yData[iData], label, curve.lineColor);
+                }
+            }
+        }
     }
 }
 

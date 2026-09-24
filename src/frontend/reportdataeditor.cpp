@@ -116,6 +116,7 @@ QLayout* GraphReportDataEditor::createHeaderLayout()
     mpSubTypeSelector->addItem(tr("Multi Im"), GraphReportItem::kMultiImag);
     mpSubTypeSelector->addItem(tr("Freq Amp"), GraphReportItem::kFreqAmp);
     mpSubTypeSelector->addItem(tr("Modeshape"), GraphReportItem::kModeshape);
+    mpSubTypeSelector->addItem(tr("Hodograph"), GraphReportItem::kHodograph);
 
     // Combine the widgets
     QGridLayout* pLayout = new QGridLayout;

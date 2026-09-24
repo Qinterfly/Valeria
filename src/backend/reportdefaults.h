@@ -28,6 +28,7 @@ public:
     static ReportPage multiImRePage();
     static ReportPage freqAmpPage();
     static ReportPage projModeYPage();
+    static ReportPage hodographPage();
     static ReportPage mode3DPage();
     static ReportPage diagramPage();
     static Testlab::Response response();

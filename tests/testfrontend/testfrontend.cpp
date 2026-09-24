@@ -234,11 +234,43 @@ void TestFrontend::setProjModeYPage()
     pDesigner->selectItem(0);
 }
 
+//! Set the hodograph page of the report
+void TestFrontend::setHodographPage()
+{
+    QStringList points = {"W:2p22", "W:2p17", "W:2p14", "W:2p11"};
+    QList<QColor> colors = {Qt::red, Qt::green, Qt::blue, Qt::black};
+    QList<ReportMarkerShape> markerShapes = {ReportMarkerShape::kPlus, ReportMarkerShape::kDisc, ReportMarkerShape::kStar,
+                                             ReportMarkerShape::kTriangle};
+
+    // Get the designer
+    ReportDesigner* pDesigner = mpReportWorkspace->designer(4);
+    QVERIFY(pDesigner);
+
+    // Get the items
+    ReportPage& page = pDesigner->page();
+    GraphReportItem* pVert = (GraphReportItem*) page.get(0);
+    GraphReportItem* pHoriz = (GraphReportItem*) page.get(1);
+
+    // Add the curves
+    int numPoints = points.size();
+    for (int i = 0; i != numPoints; ++i)
+    {
+        ReportCurve& curveVert = pVert->addPoint(points[i]);
+        ReportCurve& curveHoriz = pHoriz->addPoint(points[i]);
+        curveVert.lineColor = colors[i];
+        curveVert.markerShape = markerShapes[i];
+        curveHoriz = curveVert;
+    }
+
+    // Select the first item
+    pDesigner->selectItem(0);
+}
+
 //! Set the three dimensional modeshape page of the report
 void TestFrontend::setMode3DPage()
 {
     // Get the designer
-    ReportDesigner* pDesigner = mpReportWorkspace->designer(4);
+    ReportDesigner* pDesigner = mpReportWorkspace->designer(5);
     QVERIFY(pDesigner);
 
     // Get the items
@@ -252,7 +284,7 @@ void TestFrontend::setMode3DPage()
 void TestFrontend::setDiagramPage()
 {
     // Get the designer
-    ReportDesigner* pDesigner = mpReportWorkspace->designer(5);
+    ReportDesigner* pDesigner = mpReportWorkspace->designer(6);
     QVERIFY(pDesigner);
 
     // Get the items

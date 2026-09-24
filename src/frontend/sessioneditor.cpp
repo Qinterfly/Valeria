@@ -688,17 +688,8 @@ void ResponseView::plot()
         mpDownPlot->yAxis->setRange({-180.0, 180.0});
         break;
     case kNyquist:
-    {
-        double xMax = std::max(std::abs(mpUpPlot->xAxis->range().lower), std::abs(mpUpPlot->xAxis->range().upper));
-        double yMax = std::max(std::abs(mpUpPlot->yAxis->range().lower), std::abs(mpUpPlot->yAxis->range().upper));
-        double xyMax = std::max(xMax, yMax);
-        if (xyMax > std::numeric_limits<double>::epsilon())
-        {
-            mpUpPlot->xAxis->setRange({-xyMax, xyMax});
-            mpUpPlot->yAxis->setRange({-xyMax, xyMax});
-        }
+        mpUpPlot->setQuadScale();
         break;
-    }
     default:
         break;
     }
