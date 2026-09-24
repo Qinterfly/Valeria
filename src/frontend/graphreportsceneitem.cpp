@@ -18,9 +18,10 @@ using namespace Frontend;
 static double const skEps = std::numeric_limits<double>::epsilon();
 static double const skInf = std::numeric_limits<double>::infinity();
 
-// Helper function
+// Helper functions
 PairDouble getValueRange(CustomPlot* pPlot, double keyLower = -skInf, double keyUpper = skInf);
 QString removeNonDigits(QString const& text);
+void setAxisTicker(QCPAxis* pAxis, QString const& format);
 
 GraphReportSceneItem::GraphReportSceneItem(GraphReportItem* pItem, ReportTextEngine& textEngine, ResponseCollection const& collection,
                                            int iSelectedBundle, Testlab::Geometry const& geometry, QGraphicsItem* pParent)
@@ -173,6 +174,8 @@ void GraphReportSceneItem::setState()
     }
 
     // Set the axes ticks
+    setAxisTicker(pXAxis, pItem->xFormat);
+    setAxisTicker(pYAxis, pItem->yFormat);
     if (pItem->numTicks > 0)
     {
         pXAxis->ticker()->setTickCount(pItem->numTicks);
@@ -657,4 +660,59 @@ QString removeNonDigits(QString const& text)
     QString result = text;
     result.remove(QRegularExpression("[^0-9]"));
     return result;
+}
+
+//! Helper class to use std::format-style formatting in ticks (e.g. "{:.2f}")
+class StdFormatAxisTicker : public QCPAxisTicker
+{
+public:
+    StdFormatAxisTicker(QString const& format)
+        : mFormat(format)
+    {
+    }
+    ~StdFormatAxisTicker() = default;
+
+    //! Check if the format is valid
+    bool isValidFormat(double testTick = M_PI) const
+    {
+        QString result = getTickLabel(testTick);
+        return !result.isEmpty();
+    }
+
+protected:
+    QString getTickLabel(double tick, const QLocale& locale, QChar formatChar, int precision) override
+    {
+        Q_UNUSED(locale)
+        Q_UNUSED(formatChar)
+        Q_UNUSED(precision)
+        return getTickLabel(tick);
+    }
+
+    QString getTickLabel(double tick) const
+    {
+        std::string fmtStr = mFormat.toStdString();
+        try
+        {
+            std::string result = std::vformat(fmtStr, std::make_format_args(tick));
+            return QString::fromStdString(result);
+        }
+        catch (std::format_error const& e)
+        {
+            qWarning() << QObject::tr("Invalid tick format: ") << e.what();
+        }
+        return QString();
+    }
+
+private:
+    QString mFormat;
+};
+
+//! Set axis numeric ticker
+void setAxisTicker(QCPAxis* pAxis, QString const& format)
+{
+    QSharedPointer<StdFormatAxisTicker> pTicker(new StdFormatAxisTicker(format));
+    if (pTicker->isValidFormat())
+        pAxis->setTicker(pTicker);
+    else
+        qWarning() << QObject::tr("Axis format is not valid: %1. Example of valid format: {:.3g}").arg(format);
 }

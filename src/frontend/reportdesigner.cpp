@@ -882,6 +882,8 @@ void ReportDesigner::resolveItemLinks()
                     pGraphSlaveItem->unit = pGraphMasterItem->unit;
                     pGraphSlaveItem->curves = pGraphMasterItem->curves;
                     pGraphSlaveItem->xRange = pGraphMasterItem->xRange;
+                    pGraphSlaveItem->xFormat = pGraphMasterItem->xFormat;
+                    pGraphSlaveItem->yFormat = pGraphMasterItem->yFormat;
                     pGraphSlaveItem->showBundleFreq = pGraphMasterItem->showBundleFreq;
                     pGraphSlaveItem->showLabels = pGraphMasterItem->showLabels;
                 }

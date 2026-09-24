@@ -100,6 +100,8 @@ GraphReportItem::GraphReportItem()
     // Axes
     xRange = {0.0, 0.0};
     yRange = {0.0, 0.0};
+    xFormat = "{:.3g}";
+    yFormat = "{:.3g}";
     scaleRange = 1.1;
     numTicks = 5;
     gridWidth = 1.0;
@@ -141,6 +143,8 @@ ReportItem* GraphReportItem::clone() const
     pResult->yRange = yRange;
     pResult->xLabel = xLabel;
     pResult->yLabel = yLabel;
+    pResult->xFormat = xFormat;
+    pResult->yFormat = yFormat;
     pResult->scaleRange = scaleRange;
     pResult->numTicks = numTicks;
     pResult->gridWidth = gridWidth;
@@ -198,6 +202,8 @@ QJsonObject GraphReportItem::toJson() const
     obj["yRange"] = Utility::toJson(yRange);
     obj["xLabel"] = xLabel;
     obj["yLabel"] = yLabel;
+    obj["xFormat"] = xFormat;
+    obj["yFormat"] = yFormat;
     obj["scaleRange"] = scaleRange;
     obj["numTicks"] = numTicks;
     obj["gridWidth"] = gridWidth;
@@ -236,6 +242,10 @@ void GraphReportItem::fromJson(QJsonObject const& obj)
     Utility::fromJson(yRange, obj["yRange"]);
     xLabel = obj["xLabel"].toString();
     yLabel = obj["yLabel"].toString();
+    if (obj.contains("xFormat"))
+        xFormat = obj["xFormat"].toString();
+    if (obj.contains("yFormat"))
+        yFormat = obj["yFormat"].toString();
     scaleRange = obj["scaleRange"].toDouble();
     numTicks = obj["numTicks"].toInt();
     gridWidth = obj["gridWidth"].toDouble();

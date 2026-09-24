@@ -134,6 +134,14 @@ void ReportPropertyEditor::addGraphProperties(GraphReportItem* pItem)
     pYLabelProperty->setValue(pItem->yLabel);
     mpEditor->addProperty(pYLabelProperty);
 
+    QtVariantProperty* pXFormatProperty = mpManager->addProperty(kGraphXFormat, QMetaType::QString, tr("X format"));
+    pXFormatProperty->setValue(pItem->xFormat);
+    mpEditor->addProperty(pXFormatProperty);
+
+    QtVariantProperty* pYFormatProperty = mpManager->addProperty(kGraphYFormat, QMetaType::QString, tr("Y format"));
+    pYFormatProperty->setValue(pItem->yFormat);
+    mpEditor->addProperty(pYFormatProperty);
+
     QtVariantProperty* pScaleRangeProperty = mpManager->addProperty(kGraphScaleRange, QMetaType::Double, tr("Scale range"));
     pScaleRangeProperty->setValue(pItem->scaleRange);
     mpEditor->addProperty(pScaleRangeProperty);
@@ -319,6 +327,12 @@ void ReportPropertyEditor::setValue(QtProperty* pProperty, QVariant value)
         break;
     case kGraphYLabel:
         static_cast<GraphReportItem*>(pItem)->yLabel = value.toString();
+        break;
+    case kGraphXFormat:
+        static_cast<GraphReportItem*>(pItem)->xFormat = value.toString();
+        break;
+    case kGraphYFormat:
+        static_cast<GraphReportItem*>(pItem)->yFormat = value.toString();
         break;
     case kGraphScaleRange:
         static_cast<GraphReportItem*>(pItem)->scaleRange = value.toDouble();

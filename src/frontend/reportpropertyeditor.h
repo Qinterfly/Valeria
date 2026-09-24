@@ -55,6 +55,8 @@ public:
         kGraphYRange,
         kGraphXLabel,
         kGraphYLabel,
+        kGraphXFormat,
+        kGraphYFormat,
         kGraphScaleRange,
         kGraphNumTicks,
         kGraphGridWidth,

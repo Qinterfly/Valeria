@@ -105,6 +105,8 @@ public:
     PairDouble yRange;
     QString xLabel;
     QString yLabel;
+    QString xFormat;
+    QString yFormat;
     double scaleRange;
     int numTicks;
     double gridWidth;
