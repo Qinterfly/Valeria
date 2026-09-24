@@ -855,9 +855,11 @@ void ReportDesigner::updateTextEngine()
     mTextEngine.setReplacement(Units::skM_S2, tr("m/s%1").arg(Constants::Symbol::skPow2));
     mTextEngine.setReplacement(Units::skM_S2_N, tr("(m/s%1)/N").arg(Constants::Symbol::skPow2));
     mTextEngine.setReplacement(Units::skM, tr("m"));
+    mTextEngine.setReplacement(Units::skM_N, tr("m/N"));
     mTextEngine.setReplacement(Units::skMM_S2, tr("mm/s%1").arg(Constants::Symbol::skPow2));
     mTextEngine.setReplacement(Units::skMM_S2_N, tr("(mm/s%1)/N").arg(Constants::Symbol::skPow2));
     mTextEngine.setReplacement(Units::skMM, tr("mm"));
+    mTextEngine.setReplacement(Units::skMM_N, tr("mm/N"));
     mTextEngine.setReplacement(Units::skN, tr("N"));
 }
 

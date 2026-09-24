@@ -1737,9 +1737,11 @@ QComboBox* createUnitSelector()
     pResult->addItem(QObject::tr("m/s%1").arg(Constants::Symbol::skPow2), Units::skM_S2);
     pResult->addItem(QObject::tr("(m/s%1)/N").arg(Constants::Symbol::skPow2), Units::skM_S2_N);
     pResult->addItem(QObject::tr("m"), Units::skM);
+    pResult->addItem(QObject::tr("m/N"), Units::skM_N);
     pResult->addItem(QObject::tr("mm/s%1").arg(Constants::Symbol::skPow2), Units::skMM_S2);
     pResult->addItem(QObject::tr("(mm/s%1)/N").arg(Constants::Symbol::skPow2), Units::skMM_S2_N);
     pResult->addItem(QObject::tr("mm"), Units::skMM);
+    pResult->addItem(QObject::tr("mm/N"), Units::skMM_N);
     return pResult;
 }
 

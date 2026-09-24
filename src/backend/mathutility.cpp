@@ -153,6 +153,23 @@ Testlab::Response multiplyResponse(Testlab::Response const& response, double fac
     return result;
 }
 
+//! Double integrate complex response
+Testlab::Response doubleIntegrateResponse(Testlab::Response const& response)
+{
+    Testlab::Response result = response;
+    int numKeys = result.keys.size();
+    for (int i = 0; i != numKeys; ++i)
+    {
+        std::complex<double> a = {result.realValues[i], result.imagValues[i]};
+        std::complex<double> r = {0.0, 0.0};
+        if (std::abs(result.keys[i]) > skEps)
+            r = -a / std::pow(2.0 * M_PI * result.keys[i], 2.0);
+        result.realValues[i] = r.real();
+        result.imagValues[i] = r.imag();
+    }
+    return result;
+}
+
 //! Find the response measured at the specified point along the requested direction
 int findResponse(ResponseBundle const& bundle, ReportPoint const& point, ReportDirection dir, Testlab::ResponseType type, QString const& unit)
 {
@@ -247,19 +264,9 @@ Testlab::Response convertAcceleration(ResponseBundle const& bundle, Testlab::Res
 
     // Double integrate to compute displacements
     if (responseSet.contains(Units::skM_S2))
-    {
-        Testlab::Response response = responseSet[Units::skM_S2];
-        for (int i = 0; i != numKeys; ++i)
-        {
-            std::complex<double> a = {response.realValues[i], response.imagValues[i]};
-            std::complex<double> r = {0.0, 0.0};
-            if (std::abs(response.keys[i]) > skEps)
-                r = -a / std::pow(2.0 * M_PI * response.keys[i], 2.0);
-            response.realValues[i] = r.real();
-            response.imagValues[i] = r.imag();
-        }
-        responseSet[Units::skM] = response;
-    }
+        responseSet[Units::skM] = doubleIntegrateResponse(responseSet[Units::skM_S2]);
+    if (responseSet.contains(Units::skM_S2_N))
+        responseSet[Units::skM_N] = doubleIntegrateResponse(responseSet[Units::skM_S2_N]);
 
     // Compute the results in millimeters
     if (responseSet.contains(Units::skM_S2))
@@ -268,6 +275,8 @@ Testlab::Response convertAcceleration(ResponseBundle const& bundle, Testlab::Res
         responseSet[Units::skMM_S2_N] = multiplyResponse(responseSet[Units::skM_S2_N], kMToMM);
     if (responseSet.contains(Units::skM))
         responseSet[Units::skMM] = multiplyResponse(responseSet[Units::skM], kMToMM);
+    if (responseSet.contains(Units::skM_N))
+        responseSet[Units::skMM_N] = multiplyResponse(responseSet[Units::skM_N], kMToMM);
 
     // Return the result
     if (responseSet.contains(targetUnit))

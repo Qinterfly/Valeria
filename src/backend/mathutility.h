@@ -38,6 +38,7 @@ double parsePostfixValue(QString const& text, QString const& postfix);
 
 // Response
 Testlab::Response multiplyResponse(Testlab::Response const& response, double factor);
+Testlab::Response doubleIntegrateResponse(Testlab::Response const& response);
 int findResponse(Backend::Core::ResponseBundle const& bundle, Backend::Core::ReportPoint const& point, Backend::Core::ReportDirection dir,
                  Testlab::ResponseType type, QString const& unit = QString());
 Testlab::Response getAcceleration(Backend::Core::ResponseBundle const& bundle, Backend::Core::ReportPoint const& point,
