@@ -203,6 +203,9 @@ void GraphReportSceneItem::setState()
     // Show the auxiliary axes
     mpPlot->axisRect()->setupFullAxesBox(false);
 
+    // Discard the points outside the final axes ranges
+    mpPlot->clipByRange(true, true);
+
     // Render the plot
     mpPlot->replot();
 

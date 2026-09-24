@@ -157,8 +157,8 @@ void CustomPlot::arrangeTextTips()
 //! Set unite axes scale
 void CustomPlot::setQuadScale()
 {
-    QCPRange const& xRange = xAxis->range();
-    QCPRange const& yRange = yAxis->range();
+    QCPRange xRange = xAxis->range();
+    QCPRange yRange = yAxis->range();
     double xMax = std::max(std::abs(xRange.lower), std::abs(xRange.upper));
     double yMax = std::max(std::abs(yRange.lower), std::abs(yRange.upper));
     double xyMax = std::max(xMax, yMax);
@@ -166,6 +166,47 @@ void CustomPlot::setQuadScale()
     {
         xAxis->setRange({-xyMax, xyMax});
         yAxis->setRange({-xyMax, xyMax});
+    }
+}
+
+//! Discard points of curves lying outside the current range
+void CustomPlot::clipByRange(bool isClipKey, bool isClipValue)
+{
+    // Sanity check
+    if (!isClipKey && !isClipValue)
+        return;
+
+    // Loop through all the plottables
+    int numPlottables = plottableCount();
+    for (int iPlottable = 0; iPlottable != numPlottables; ++iPlottable)
+    {
+        // Get the curve
+        QCPCurve* pCurve = qobject_cast<QCPCurve*>(plottable(iPlottable));
+        if (!pCurve || !pCurve->keyAxis() || !pCurve->valueAxis())
+            continue;
+
+        // Get the ranges
+        QCPRange xPlotRange = pCurve->keyAxis()->range();
+        QCPRange yPlotRange = pCurve->valueAxis()->range();
+
+        // Clip the curve data
+        auto pData = pCurve->data();
+        int numData = pData->size();
+        QVector<QCPCurveData> clipData;
+        clipData.reserve(numData);
+        for (auto it = pData->constBegin(); it != pData->constEnd(); ++it)
+        {
+            bool isOutsideKey = it->key < xPlotRange.lower || it->key > xPlotRange.upper;
+            bool isOutsideValue = it->value < yPlotRange.lower || it->value > yPlotRange.upper;
+            if (isClipKey && isOutsideKey)
+                continue;
+            if (isClipValue && isOutsideValue)
+                continue;
+            clipData.append(*it);
+        }
+
+        // Modify the data
+        pData->set(clipData, true);
     }
 }
 

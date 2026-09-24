@@ -38,6 +38,7 @@ public:
     void addTextTip(double xData, double yData, QString const& text, QColor const& color = Qt::black);
     void arrangeTextTips();
     void setQuadScale();
+    void clipByRange(bool isClipKey, bool isClipValue);
 
 signals:
     void dataDropped(QList<QStandardItem*> items);
